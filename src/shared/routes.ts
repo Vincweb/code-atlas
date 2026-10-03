@@ -22,4 +22,10 @@ export const API = {
   file: '/api/file',
   run: '/api/run',
   claude: '/api/claude',
+  claudeOpen: '/api/claude/open',
 } as const
+
+const CLAUDE_PROMPT_LIMIT = 14000
+
+export const claudeLink = (prompt: string, folder: string) =>
+  `claude://code/new?q=${encodeURIComponent(prompt.slice(0, CLAUDE_PROMPT_LIMIT))}&folder=${encodeURIComponent(folder)}`

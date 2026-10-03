@@ -78,10 +78,10 @@ tool writes lives under `.code-atlas/`.
 
 ## Handing work to Claude Code
 
-A prompt is offered two ways: copied, or opened through Claude Code's own `claude-cli://open`
-deep link (`q` = the prompt, at most 5000 characters; `cwd` = an absolute path). The link is not in
-the public docs; it is what the CLI registers and parses (`claude-cli://open?q=…&cwd=…`), so the
-copy button stays as the fallback.
+A prompt is offered two ways: copied, or opened in the Code tab of the Claude desktop app through
+its `claude://code/new` link (`q` = the prompt, cut at about 14,000 characters; `folder` = the
+project's absolute path, which the app asks to confirm). The prompt is filled in, never sent. The
+copy button stays as the fallback for anyone without the desktop app.
 
 ## Context for an AI assistant
 

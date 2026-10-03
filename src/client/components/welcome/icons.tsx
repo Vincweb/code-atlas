@@ -59,3 +59,17 @@ export const SearchIcon = ({ className }: { className?: string }) => (
     <path d="m19.5 19.5-4-4" />
   </Svg>
 )
+
+export const FilePlusIcon = ({ className }: { className?: string }) => (
+  <Svg className={className}>
+    <path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5l-5-5Z" />
+    <path d="M14 3.5v5h5M12 11.5v6M9 14.5h6" />
+  </Svg>
+)
+
+export const SparkIcon = ({ className }: { className?: string }) => (
+  <Svg className={className}>
+    <path d="M11 4.5 12.8 9.2 17.5 11l-4.7 1.8L11 17.5l-1.8-4.7L4.5 11l4.7-1.8L11 4.5Z" />
+    <path d="M18 15.5v4M16 17.5h4" />
+  </Svg>
+)

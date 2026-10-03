@@ -160,9 +160,9 @@ npx @vincweb/code-atlas describe
 
 prints the config format and the project's current state — features, layers, red edges with the
 imports behind them, rules, scores — written for an AI assistant. The page's "Open in Claude Code"
-buttons start Claude Code in the project with a prompt that runs it before editing
-`code-atlas.json` or fixing a rule, and again to check the result; "Copy the prompt" does the same
-for any other assistant.
+buttons open a new session in the Code tab of the Claude desktop app, on the project, with a prompt
+that runs it before editing `code-atlas.json` or fixing a rule, and again to check the result; the
+prompt is filled in, never sent. "Copy the prompt" does the same for any other assistant.
 
 ## CI
 

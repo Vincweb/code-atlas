@@ -92,7 +92,7 @@ export const AuditCard = ({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button primary onClick={onRun} disabled={locked || running}>
-          {help.run(formatUsd(preview.budgetUsd))}
+          {help.run}
         </Button>
         <Button onClick={() => setFull((open) => !open)} aria-expanded={full}>
           {full ? help.hideFull : help.showFull}

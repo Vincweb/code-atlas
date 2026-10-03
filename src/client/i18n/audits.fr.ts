@@ -17,9 +17,21 @@ export const auditsFr: typeof auditsEn = {
     `${n} ${n === 1 ? 'audit' : 'audits'} · ${ran} ${ran === 1 ? 'lancé' : 'lancés'}`,
   familyScore: 'Score Audits IA',
   spent: (usd: string) => `${usd} au total (estimation au tarif API)`,
-  runAll: (budget: string) => `Lancer tous les audits (max ${budget})`,
-  runAllConfirm: (n: number, budget: string) =>
-    `Lancer ${n} audits l’un après l’autre ? Ils consomment votre usage Claude, jusqu’à ${budget} au total.`,
+  runAll: 'Lancer tous les audits',
+  confirm: {
+    titleOne: 'Lancer cet audit IA ?',
+    titleAll: (n: number) => `Lancer ${n} audits IA ?`,
+    budget: 'Coût maximum',
+    budgetAll: 'Coût maximum, au total',
+    model: (model: string) => `modèle ${model}`,
+    text: 'Il passe par votre connexion Claude Code : votre abonnement, ou ANTHROPIC_API_KEY si vous êtes facturé à l’usage. Claude s’arrête une fois le budget atteint.',
+    textAll:
+      'Ils passent l’un après l’autre par votre connexion Claude Code, et chacun s’arrête à son propre budget. Vous pouvez annuler à tout moment.',
+    readOnly: (tools: string) =>
+      `Lecture seule : Claude n’utilise que ${tools} et ne modifie aucun fichier.`,
+    action: 'Lancer l’audit',
+    actionAll: (n: number) => `Lancer les ${n} audits`,
+  },
   connection: {
     title: 'Connexion',
     checking: 'Recherche de Claude Code…',
@@ -177,7 +189,7 @@ export const auditsFr: typeof auditsEn = {
   hideFull: 'Masquer le prompt complet',
   showCommand: 'Voir la commande',
   hideCommand: 'Masquer la commande',
-  run: (budget: string) => `Lancer l’audit (max ${budget})`,
+  run: 'Lancer l’audit',
   results: 'Voir les constats',
   lastRun: (when: string) => `Dernier passage ${when}`,
   neverRun: 'Jamais lancé',

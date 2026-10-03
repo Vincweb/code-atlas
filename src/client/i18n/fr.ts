@@ -10,6 +10,7 @@ export const fr: Strings = {
 
   common: {
     retry: 'Réessayer',
+    cancel: 'Annuler',
     copy: 'Copier',
     copied: 'Copié',
     loading: 'Chargement…',
@@ -218,10 +219,7 @@ export const fr: Strings = {
     stale: 'périmé',
     violations: (n: number) => `${n} ${n === 1 ? 'violation' : 'violations'}`,
     run: 'Lancer',
-    runAi: (budget: string) => `Lancer (jusqu’à ${budget})`,
     showing: (shown: number, total: number) => `${shown} affichées sur ${total}`,
-    confirmAi: (budget: string) =>
-      `Cet audit IA utilise votre connexion Claude Code et coûte de l’argent, jusqu’à ${budget}. Le lancer ?`,
     runAllCommands: 'Lancer toutes les commandes',
     cancelAll: (left: number) => `Annuler l’exécution (${left} restant${left > 1 ? 's' : ''})`,
   },
@@ -274,11 +272,14 @@ export const fr: Strings = {
 
   claude: {
     open: 'Ouvrir dans Claude Code',
+    opened: 'Ouvert dans l’app Claude',
+    failed: (reason: string) =>
+      `L’app Claude ne s’est pas ouverte (${reason}). Vérifiez qu’elle est installée, ou copiez le prompt.`,
     copy: 'Copier le prompt',
     copied: 'Prompt copié',
     show: 'Voir le prompt',
     hide: 'Masquer le prompt',
-    hint: 'Le bouton lance Claude Code dans le projet avec ce prompt prêt (le navigateur demande d’abord). Sinon, copiez-le dans n’importe quelle conversation Claude.',
+    hint: 'Le bouton ouvre une session dans l’onglet Code de l’app Claude, avec ce prompt prêt à envoyer ; l’app demande de confirmer le dossier. Sinon, copiez-le dans n’importe quelle conversation Claude.',
   },
 
   audits: auditsFr,

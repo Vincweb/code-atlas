@@ -14,9 +14,20 @@ export const auditsEn = {
   summary: (n: number, ran: number) => `${n} ${n === 1 ? 'audit' : 'audits'} · ${ran} run`,
   familyScore: 'AI audits score',
   spent: (usd: string) => `${usd} in total (estimate at API prices)`,
-  runAll: (budget: string) => `Run every audit (max ${budget})`,
-  runAllConfirm: (n: number, budget: string) =>
-    `Run ${n} audits one after the other? They use your Claude usage, up to ${budget} in total.`,
+  runAll: 'Run every audit',
+  confirm: {
+    titleOne: 'Run this AI audit?',
+    titleAll: (n: number) => `Run ${n} AI audits?`,
+    budget: 'Maximum cost',
+    budgetAll: 'Maximum cost, in total',
+    model: (model: string) => `model ${model}`,
+    text: 'It runs through your Claude Code login: your subscription, or ANTHROPIC_API_KEY when billed by usage. Claude stops when the budget is reached.',
+    textAll:
+      'They run one after the other through your Claude Code login, and each stops at its own budget. You can cancel the run at any time.',
+    readOnly: (tools: string) => `Read-only: Claude only uses ${tools} and changes no file.`,
+    action: 'Run the audit',
+    actionAll: (n: number) => `Run the ${n} audits`,
+  },
   connection: {
     title: 'Connection',
     checking: 'Looking for Claude Code…',
@@ -174,7 +185,7 @@ export const auditsEn = {
   hideFull: 'Hide the full prompt',
   showCommand: 'See the command',
   hideCommand: 'Hide the command',
-  run: (budget: string) => `Run the audit (max ${budget})`,
+  run: 'Run the audit',
   results: 'See the findings',
   lastRun: (when: string) => `Last run ${when}`,
   neverRun: 'Never run',

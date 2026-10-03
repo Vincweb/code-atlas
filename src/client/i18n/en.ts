@@ -14,6 +14,7 @@ export const en = {
 
   common: {
     retry: 'Retry',
+    cancel: 'Cancel',
     copy: 'Copy',
     copied: 'Copied',
     loading: 'Loading…',
@@ -218,10 +219,7 @@ export const en = {
     stale: 'stale',
     violations: (n: number) => `${n} ${n === 1 ? 'violation' : 'violations'}`,
     run: 'Run',
-    runAi: (budget: string) => `Run (up to ${budget})`,
     showing: (shown: number, total: number) => `Showing ${shown} of ${total}`,
-    confirmAi: (budget: string) =>
-      `This AI audit uses your Claude Code login and costs money, up to ${budget}. Run it?`,
     runAllCommands: 'Run all commands',
     cancelAll: (left: number) => `Cancel the run (${left} left)`,
   },
@@ -274,11 +272,14 @@ export const en = {
 
   claude: {
     open: 'Open in Claude Code',
+    opened: 'Opened in the Claude app',
+    failed: (reason: string) =>
+      `The Claude app did not open (${reason}). Check that it is installed, or copy the prompt.`,
     copy: 'Copy the prompt',
     copied: 'Prompt copied',
     show: 'See the prompt',
     hide: 'Hide the prompt',
-    hint: 'The button starts Claude Code in the project with this prompt ready (your browser asks first). Otherwise, copy it into any Claude conversation.',
+    hint: 'The button opens a session in the Code tab of the Claude app, with this prompt ready to send; the app asks you to confirm the folder. Otherwise, copy it into any Claude conversation.',
   },
 
   audits: auditsEn,

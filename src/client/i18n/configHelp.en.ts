@@ -18,7 +18,20 @@ export const configHelpEn = {
       text: 'Writes code-atlas.json at the project root, from the draft. It does not overwrite an existing file.',
       action: 'Create code-atlas.json',
       done: 'The file exists: code-atlas reads it on every analysis.',
-      confirm: 'Create code-atlas.json at the root of this project?',
+      confirm: {
+        title: 'Create code-atlas.json?',
+        text: 'code-atlas writes the draft config at the root of the project. Nothing else in the project changes.',
+        where: 'Location',
+        what: 'Content',
+        preparing: 'Preparing the draft…',
+        summary: (layers: number, features: number, rules: number) =>
+          `${layers} ${layers === 1 ? 'layer' : 'layers'} · ${features} ${features === 1 ? 'feature' : 'features'} · ${rules} ${rules === 1 ? 'rule' : 'rules'}`,
+        safe: [
+          'An existing file is never overwritten.',
+          'Edit or delete it whenever you like: code-atlas reads it again on every analysis.',
+        ],
+        action: 'Create the file',
+      },
     },
     claude: {
       title: 'Improve it with Claude Code',

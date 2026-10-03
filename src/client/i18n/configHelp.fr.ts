@@ -20,7 +20,20 @@ export const configHelpFr: typeof configHelpEn = {
       text: 'Écrit code-atlas.json à la racine du projet, à partir du brouillon. Un fichier existant n’est jamais écrasé.',
       action: 'Créer code-atlas.json',
       done: 'Le fichier existe : code-atlas le lit à chaque analyse.',
-      confirm: 'Créer code-atlas.json à la racine de ce projet ?',
+      confirm: {
+        title: 'Créer code-atlas.json ?',
+        text: 'code-atlas écrit le brouillon de config à la racine du projet. Rien d’autre n’est modifié dans le projet.',
+        where: 'Emplacement',
+        what: 'Contenu',
+        preparing: 'Préparation du brouillon…',
+        summary: (layers: number, features: number, rules: number) =>
+          `${layers} ${layers === 1 ? 'couche' : 'couches'} · ${features} ${features === 1 ? 'feature' : 'features'} · ${rules} ${rules === 1 ? 'règle' : 'règles'}`,
+        safe: [
+          'Un fichier existant n’est jamais écrasé.',
+          'Modifiez-le ou supprimez-le quand vous voulez : code-atlas le relit à chaque analyse.',
+        ],
+        action: 'Créer le fichier',
+      },
     },
     claude: {
       title: 'L’améliorer avec Claude Code',

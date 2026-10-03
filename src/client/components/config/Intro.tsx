@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import type { Analysis } from '../../../shared/types'
 import { cx } from '../../cx'
 import { useT } from '../../i18n'
 import { useCreateConfig, useInvalidateAnalysis } from '../../queries'
+import type { useDraft } from '../../queries'
 import { ClaudeActions } from '../ClaudeActions'
 import { configPrompt } from '../../util/claudePrompt'
-import { Button, ErrorBox, Spinner } from '../ui'
+import { Button, Spinner } from '../ui'
+import { CreateDialog } from './CreateDialog'
 
 const Step = ({
   index,
@@ -40,13 +43,13 @@ const Step = ({
 export const Intro = ({
   analysis,
   root,
+  draft,
   onDraft,
-  drafting,
 }: {
   analysis: Analysis
   root: string
+  draft: ReturnType<typeof useDraft>
   onDraft: () => void
-  drafting: boolean
 }) => {
   const t = useT()
   const help = t.configHelp
@@ -56,8 +59,12 @@ export const Intro = ({
   const isDefault = analysis.configSource === 'default'
   const prompt = configPrompt(analysis, t)
 
-  const createFile = () => {
-    if (window.confirm(steps.create.confirm)) create.mutate()
+  const [confirming, setConfirming] = useState(false)
+
+  const openConfirm = () => {
+    create.reset()
+    if (!draft.data && !draft.isPending) draft.mutate()
+    setConfirming(true)
   }
 
   return (
@@ -88,8 +95,12 @@ export const Intro = ({
       <ol className="flex flex-col gap-4 rounded-xl border border-line bg-bg p-4">
         {isDefault && (
           <Step index={1} done={false} title={steps.draft.title} text={steps.draft.text}>
-            <Button onClick={onDraft} disabled={drafting} className="flex w-fit items-center gap-2">
-              {drafting && <Spinner />}
+            <Button
+              onClick={onDraft}
+              disabled={draft.isPending}
+              className="flex w-fit items-center gap-2"
+            >
+              {draft.isPending && <Spinner />}
               {steps.draft.action}
             </Button>
           </Step>
@@ -101,17 +112,10 @@ export const Intro = ({
           text={isDefault ? steps.create.text : steps.create.done}
         >
           {isDefault && (
-            <Button
-              primary
-              onClick={createFile}
-              disabled={create.isPending}
-              className="flex w-fit items-center gap-2"
-            >
-              {create.isPending && <Spinner className="border-white/40 border-t-white" />}
+            <Button primary onClick={openConfirm} className="w-fit">
               {steps.create.action}
             </Button>
           )}
-          {create.error && <ErrorBox message={create.error.message} />}
         </Step>
         <Step
           index={isDefault ? 3 : 2}
@@ -132,6 +136,14 @@ export const Intro = ({
           </Button>
         </Step>
       </ol>
+      {confirming && (
+        <CreateDialog
+          root={analysis.root}
+          draft={draft}
+          create={create}
+          onClose={() => setConfirming(false)}
+        />
+      )}
     </section>
   )
 }

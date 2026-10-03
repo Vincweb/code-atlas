@@ -35,7 +35,6 @@ type Props = {
   rule: RuleResult
   title: string
   focused: boolean
-  budget: number | null
   state: RunState | undefined
   locked: boolean
   onRun: () => void
@@ -43,7 +42,7 @@ type Props = {
 }
 
 export const RuleCard = (props: Props) => {
-  const { analysis, rule, title, focused, budget, state, locked, onRun, onCancel } = props
+  const { analysis, rule, title, focused, state, locked, onRun, onCancel } = props
   const t = useT()
   const [open, setOpen] = useState(focused)
   const card = useRef<HTMLLIElement>(null)
@@ -125,9 +124,7 @@ export const RuleCard = (props: Props) => {
           </span>
           {runnable && (
             <Button onClick={onRun} disabled={running || locked}>
-              {rule.kind === 'ai' && budget !== null
-                ? t.rules.runAi(formatUsd(budget))
-                : t.rules.run}
+              {t.rules.run}
             </Button>
           )}
           <button

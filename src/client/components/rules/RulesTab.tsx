@@ -5,9 +5,9 @@ import { cx } from '../../cx'
 import { useT } from '../../i18n'
 import { useInvalidateAnalysis } from '../../queries'
 import { useRoute } from '../../router'
-import { formatUsd } from '../../util/format'
 import { ruleTitle } from '../../util/ruleTitle'
 import { BAND_TEXT, bandOf } from '../../util/score'
+import { RunDialog } from '../audits/RunDialog'
 import { Link } from '../Link'
 import { SearchIcon } from '../welcome/icons'
 import { Button } from '../ui'
@@ -26,17 +26,11 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
   const [status, setStatus] = useState<StatusFilter>('all')
   const [family, setFamily] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [confirming, setConfirming] = useState<string | null>(null)
 
-  const budgetOf = (rule: RuleResult) => {
-    if (rule.kind !== 'ai') return null
-    const configured = analysis.config.rules.find((r) => r.id === rule.id)
-    const own = configured?.kind === 'ai' ? configured.budgetUsd : undefined
-    return own ?? analysis.config.ai.budgetUsd
-  }
   const run = (rule: RuleResult) => {
-    if (rule.kind === 'ai' && !window.confirm(t.rules.confirmAi(formatUsd(budgetOf(rule) ?? 0))))
-      return
-    void runner.runOne(rule.id)
+    if (rule.kind === 'ai') setConfirming(rule.id)
+    else void runner.runOne(rule.id)
   }
   const commandIds = analysis.rules.filter((rule) => rule.kind === 'command').map((r) => r.id)
 
@@ -169,7 +163,6 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
                   rule={rule}
                   title={titled.find((entry) => entry.rule.id === rule.id)?.title ?? rule.title}
                   focused={rule.id === focused}
-                  budget={budgetOf(rule)}
                   state={runner.states[rule.id]}
                   locked={runner.busy}
                   onRun={() => run(rule)}
@@ -180,6 +173,17 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
           </section>
         )
       })}
+      {confirming && (
+        <RunDialog
+          analysis={analysis}
+          ids={[confirming]}
+          onConfirm={() => {
+            void runner.runOne(confirming)
+            setConfirming(null)
+          }}
+          onClose={() => setConfirming(null)}
+        />
+      )}
     </div>
   )
 }

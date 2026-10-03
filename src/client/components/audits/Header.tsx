@@ -65,7 +65,6 @@ export const AuditsHeader = ({
   const audits = analysis.rules.filter((rule) => rule.kind === 'ai')
   const ran = audits.filter((rule) => rule.ranAt !== null).length
   const spent = audits.reduce((sum, rule) => sum + (rule.costUsd ?? 0), 0)
-  const cap = analysis.audits.items.reduce((sum, item) => sum + item.budgetUsd, 0)
   const family = analysis.scores.families.find((f) => f.family === 'ai')?.score ?? null
 
   return (
@@ -91,7 +90,7 @@ export const AuditsHeader = ({
         <p className="max-w-2xl leading-relaxed text-muted">{help.intro}</p>
         <span className="flex flex-wrap gap-2">
           <Button primary onClick={onRunAll} disabled={busy || audits.length === 0}>
-            {help.runAll(formatUsd(cap))}
+            {help.runAll}
           </Button>
           {busy && <Button onClick={onCancelAll}>{t.rules.cancelAll(left)}</Button>}
         </span>

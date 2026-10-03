@@ -1,6 +1,6 @@
 {
   "name": "@vincweb/code-atlas",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Map and audit a TypeScript codebase — the feature dependency graph, its layers, its metrics, scripted and AI audit rules, and a CI guard against regressions",
   "keywords": [
     "architecture",

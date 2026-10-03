@@ -24,7 +24,7 @@ export const Badge = ({ className, children }: { className?: string; children: R
   </span>
 )
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { primary?: boolean }
+type ButtonProps = React.ComponentProps<'button'> & { primary?: boolean }
 
 export const Button = ({ className, primary = false, ...props }: ButtonProps) => (
   <button

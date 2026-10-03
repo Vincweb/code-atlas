@@ -1,7 +1,7 @@
+import { useState } from 'react'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { useInvalidateAnalysis } from '../../queries'
-import { formatUsd } from '../../util/format'
 import { ruleTitle } from '../../util/ruleTitle'
 import { useRunner } from '../rules/useRunner'
 import { AuditCard } from './AuditCard'
@@ -9,6 +9,7 @@ import { Explainer } from './Explainer'
 import { Extras } from './Extras'
 import { AuditsHeader } from './Header'
 import { Ideas } from './Ideas'
+import { RunDialog } from './RunDialog'
 
 export const AuditsTab = ({ analysis, root }: { analysis: Analysis; root: string }) => {
   const t = useT()
@@ -17,11 +18,14 @@ export const AuditsTab = ({ analysis, root }: { analysis: Analysis; root: string
   const runner = useRunner(root, () => void invalidate())
   const items = analysis.audits.items
   const everRan = analysis.rules.some((rule) => rule.kind === 'ai' && rule.ranAt !== null)
-  const cap = items.reduce((sum, item) => sum + item.budgetUsd, 0)
+  const [confirming, setConfirming] = useState<{ ids: string[]; all: boolean } | null>(null)
 
-  const runAll = () => {
-    if (window.confirm(help.runAllConfirm(items.length, formatUsd(cap))))
-      void runner.runAll(items.map((item) => item.id))
+  const confirm = () => {
+    if (!confirming) return
+    const [first] = confirming.ids
+    if (confirming.all) void runner.runAll(confirming.ids)
+    else if (first) void runner.runOne(first)
+    setConfirming(null)
   }
 
   return (
@@ -29,7 +33,7 @@ export const AuditsTab = ({ analysis, root }: { analysis: Analysis; root: string
       <AuditsHeader
         analysis={analysis}
         busy={runner.busy}
-        onRunAll={runAll}
+        onRunAll={() => setConfirming({ ids: items.map((item) => item.id), all: true })}
         onCancelAll={runner.cancelAll}
         left={runner.queue.length}
       />
@@ -60,10 +64,7 @@ export const AuditsTab = ({ analysis, root }: { analysis: Analysis; root: string
                   root={root}
                   state={runner.states[preview.id]}
                   locked={runner.busy}
-                  onRun={() => {
-                    if (window.confirm(t.rules.confirmAi(formatUsd(preview.budgetUsd))))
-                      void runner.runOne(preview.id)
-                  }}
+                  onRun={() => setConfirming({ ids: [preview.id], all: false })}
                   onCancel={() => runner.cancel(preview.id)}
                 />
               )
@@ -75,6 +76,14 @@ export const AuditsTab = ({ analysis, root }: { analysis: Analysis; root: string
       <Ideas analysis={analysis} />
       <Explainer analysis={analysis} open={!everRan} />
       <Extras analysis={analysis} />
+      {confirming && (
+        <RunDialog
+          analysis={analysis}
+          ids={confirming.ids}
+          onConfirm={confirm}
+          onClose={() => setConfirming(null)}
+        />
+      )}
     </div>
   )
 }

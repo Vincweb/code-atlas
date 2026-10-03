@@ -4,20 +4,21 @@ import os from 'os'
 import path from 'path'
 import { CONFIG_FILE, RUN_KINDS } from '../shared/config'
 import type { AiRuleConfig, CommandRuleConfig } from '../shared/config'
-import { API, projectPath } from '../shared/routes'
+import { API, claudeLink, projectPath } from '../shared/routes'
 import type { RunEvent } from '../shared/types'
 import { ConfigError, draftConfig, draftText } from './config'
 import { browseDirectories, canonicalDir, expandHome, isProject, places } from './discover'
 import { analyzeEngine, EngineError } from './engine'
 import { claudeStatus } from './claudeStatus'
 import { gitState } from './git'
-import { openBrowser } from './open'
+import { openBrowser, openUrl } from './open'
 import { analyzeProject, projectContext } from './project'
 import type { Overrides } from './project'
 import { runRule } from './rules'
 import { DEV_CLIENT, MISSING_CLIENT, clientIsBuilt, devPage, serveClientFile } from './static'
 
 const MAX_FILE_BYTES = 2_000_000
+const MAX_BODY_BYTES = 100_000
 
 const json = (response: http.ServerResponse, payload: unknown, status = 200) => {
   response.writeHead(status, {
@@ -27,13 +28,41 @@ const json = (response: http.ServerResponse, payload: unknown, status = 200) => 
   response.end(JSON.stringify(payload))
 }
 
+const readJson = (request: http.IncomingMessage) =>
+  new Promise<unknown>((resolve, reject) => {
+    let body = ''
+    request.setEncoding('utf8')
+    request.on('data', (chunk: string) => {
+      body += chunk
+      if (body.length > MAX_BODY_BYTES) {
+        reject(new Error('request body too large'))
+        request.destroy()
+      }
+    })
+    request.on('end', () => {
+      try {
+        resolve(JSON.parse(body))
+      } catch {
+        reject(new Error('request body is not JSON'))
+      }
+    })
+    request.on('error', reject)
+  })
+
 const isForeign = (request: http.IncomingMessage) => {
   const site = request.headers['sec-fetch-site']
   return typeof site === 'string' && site !== 'same-origin' && site !== 'none'
 }
 
-const PROJECT_ROUTES: string[] = [API.analysis, API.draft, API.createConfig, API.file, API.run]
-const GUARDED_ROUTES: string[] = [API.createConfig, API.file, API.run]
+const PROJECT_ROUTES: string[] = [
+  API.analysis,
+  API.draft,
+  API.createConfig,
+  API.claudeOpen,
+  API.file,
+  API.run,
+]
+const GUARDED_ROUTES: string[] = [API.createConfig, API.claudeOpen, API.file, API.run]
 
 type Target = { root: string } | { status: number; error: string }
 
@@ -209,6 +238,29 @@ export const serveAtlas = ({
       const draft = draftConfig(root, analyzeEngine(root, config))
       fs.writeFileSync(file, draftText(draft), { flag: 'wx' })
       json(response, { path: file }, 201)
+      return
+    }
+    if (url.pathname === API.claudeOpen) {
+      if (request.method !== 'POST') {
+        json(response, { error: 'opening Claude takes a POST' }, 405)
+        return
+      }
+      const message = (error: unknown) => (error instanceof Error ? error.message : String(error))
+      readJson(request).then(
+        (body) => {
+          const prompt =
+            typeof body === 'object' && body !== null && 'prompt' in body ? body.prompt : null
+          if (typeof prompt !== 'string') {
+            json(response, { error: 'the body needs a "prompt" string' }, 400)
+            return
+          }
+          openUrl(claudeLink(prompt, root)).then(
+            () => json(response, { opened: true }),
+            (error: unknown) => json(response, { error: message(error) }, 502),
+          )
+        },
+        (error: unknown) => json(response, { error: message(error) }, 400),
+      )
       return
     }
     if (url.pathname === API.file) {

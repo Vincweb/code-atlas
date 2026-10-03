@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "code-atlas",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev", "--no-open"],
+      "port": 4801
+    },
+    {
+      "name": "code-atlas (tidy-shop)",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev", "--root", "examples/tidy-shop", "--no-open"],
+      "port": 4801
+    }
+  ]
+}

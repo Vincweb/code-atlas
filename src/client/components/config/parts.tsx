@@ -41,8 +41,13 @@ export const Chip = ({ children, className }: { children: ReactNode; className?:
   </span>
 )
 
-export const Code = ({ text }: { text: string }) => (
-  <pre className="max-h-[32rem] overflow-auto rounded-xl border border-line bg-code-bg p-4 font-mono text-[12px] leading-5">
+export const Code = ({ text, className }: { text: string; className?: string }) => (
+  <pre
+    className={cx(
+      'max-h-[32rem] overflow-auto rounded-xl border border-line bg-code-bg p-4 font-mono text-[12px] leading-5',
+      className,
+    )}
+  >
     {text}
   </pre>
 )

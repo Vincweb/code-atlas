@@ -38,7 +38,7 @@ export const ConfigTab = ({ analysis, root }: { analysis: Analysis; root: string
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <Intro analysis={analysis} root={root} onDraft={generate} drafting={draft.isPending} />
+      <Intro analysis={analysis} root={root} draft={draft} onDraft={generate} />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[12rem_minmax(0,1fr)]">
         <nav className="hidden lg:block">
           <div className="sticky top-4 flex flex-col gap-0.5">
