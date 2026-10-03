@@ -7,7 +7,7 @@
 The feature dependency graph across your layers, the metrics behind it, scripted and AI audit
 rules, a score per family — and a CI guard that fails only when something got worse.
 
-[![npm](https://img.shields.io/npm/v/code-atlas?style=flat-square&label=npm&labelColor=08090b&color=3b82f6)](https://www.npmjs.com/package/code-atlas)
+[![npm](https://img.shields.io/npm/v/@vincweb/code-atlas?style=flat-square&label=npm&labelColor=08090b&color=3b82f6)](https://www.npmjs.com/package/@vincweb/code-atlas)
 [![release](https://img.shields.io/github/v/release/Vincweb/code-atlas?style=flat-square&label=release&labelColor=08090b&color=3b82f6)](https://github.com/Vincweb/code-atlas/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/Vincweb/code-atlas/ci.yml?branch=main&style=flat-square&label=CI&labelColor=08090b&color=3b82f6)](https://github.com/Vincweb/code-atlas/actions/workflows/ci.yml)
 [![node](https://img.shields.io/badge/node-%E2%89%A5%2020-3b82f6?style=flat-square&labelColor=08090b)](package.json)
@@ -25,8 +25,8 @@ rules, a score per family — and a CI guard that fails only when something got 
 <br>
 
 ```sh
-npx code-atlas            # open the page on the current project
-npx code-atlas --check    # fail CI on any regression against the baseline
+npx @vincweb/code-atlas            # open the page on the current project
+npx @vincweb/code-atlas --check    # fail CI on any regression against the baseline
 ```
 
 ## Why
@@ -39,11 +39,11 @@ and paints every dependency that climbs back up a layer or goes both ways betwee
 ## Install
 
 ```sh
-npx code-atlas                 # run it once
-npm install -D code-atlas      # or keep it in the project, for CI
+npx @vincweb/code-atlas               # run it once
+npm install -D @vincweb/code-atlas    # or keep it in the project, for CI
 ```
 
-It serves `http://127.0.0.1:4800` and opens it in your browser — on the current folder when it is a
+Installed, the command is `code-atlas`. It serves `http://127.0.0.1:4800` and opens it in your browser — on the current folder when it is a
 project, otherwise on a welcome screen with your recent projects and a folder browser. Node 20 or
 newer and no runtime dependencies: it uses the `typescript` package the analyzed project already
 has (TypeScript 7 ships no compiler API). Nothing leaves the machine, except what an AI rule sends
@@ -155,7 +155,7 @@ disagree.
 ## Working with Claude Code
 
 ```sh
-npx code-atlas describe
+npx @vincweb/code-atlas describe
 ```
 
 prints the config format and the project's current state — features, layers, red edges with the
@@ -167,8 +167,8 @@ for any other assistant.
 ## CI
 
 ```sh
-npx code-atlas --update-baseline   # once, and whenever you accept the current state
-npx code-atlas --check             # fails when any rule has more violations than the baseline
+npx @vincweb/code-atlas --update-baseline   # once, and whenever you accept the current state
+npx @vincweb/code-atlas --check             # fails when any rule has more violations than the baseline
 ```
 
 The baseline lives in `.code-atlas/baseline.json` — commit it. Runs land in `.code-atlas/runs/`:

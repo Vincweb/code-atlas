@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useT } from '../../i18n'
 import { AtlasArt } from './AtlasArt'
 
-const COMMAND = 'npx code-atlas'
+const COMMAND = 'npx @vincweb/code-atlas'
 
 const CommandChip = () => {
   const t = useT()

@@ -92,7 +92,7 @@ export const en = {
     ],
     stepsTitle: 'Up and running in three steps',
     steps: [
-      { title: 'Run it', command: 'npx code-atlas', text: 'in your project’s folder.' },
+      { title: 'Run it', command: 'npx @vincweb/code-atlas', text: 'in your project’s folder.' },
       {
         title: 'Describe your layers',
         command: 'code-atlas.json',
@@ -100,7 +100,7 @@ export const en = {
       },
       {
         title: 'Lock it in',
-        command: 'npx code-atlas --check',
+        command: 'npx @vincweb/code-atlas --check',
         text: 'in CI, against the baseline you saved.',
       },
     ],

@@ -15,8 +15,8 @@ const TARGET: Record<Step['id'], Tab | null> = {
   baseline: null,
 }
 
-const BASELINE_COMMAND = 'npx code-atlas --update-baseline'
-const CHECK_COMMAND = 'npx code-atlas --check'
+const BASELINE_COMMAND = 'npx @vincweb/code-atlas --update-baseline'
+const CHECK_COMMAND = 'npx @vincweb/code-atlas --check'
 
 const Command = ({ text }: { text: string }) => (
   <span className="flex items-center gap-2">

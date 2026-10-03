@@ -90,7 +90,7 @@ export const fr: Strings = {
     ],
     stepsTitle: 'Trois étapes pour démarrer',
     steps: [
-      { title: 'Lancez', command: 'npx code-atlas', text: 'dans le dossier du projet.' },
+      { title: 'Lancez', command: 'npx @vincweb/code-atlas', text: 'dans le dossier du projet.' },
       {
         title: 'Décrivez vos couches',
         command: 'code-atlas.json',
@@ -98,7 +98,7 @@ export const fr: Strings = {
       },
       {
         title: 'Verrouillez',
-        command: 'npx code-atlas --check',
+        command: 'npx @vincweb/code-atlas --check',
         text: 'en CI, contre la référence enregistrée.',
       },
     ],
