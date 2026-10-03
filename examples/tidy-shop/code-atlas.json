@@ -1,0 +1,98 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Vincweb/code-atlas/main/schema.json",
+  "features": ["src/components/*", "src/lib/*", "src/*"],
+  "layers": [
+    {
+      "name": "Screens",
+      "features": ["src", "src/routes", "src/pages"]
+    },
+    {
+      "name": "Features",
+      "siblings": true,
+      "features": ["src/components/{catalog,cart,checkout,account}"]
+    },
+    {
+      "name": "Shared UI",
+      "features": ["src/components/ui"]
+    },
+    {
+      "name": "State",
+      "features": ["src/hooks", "src/state"]
+    },
+    {
+      "name": "Foundation",
+      "features": ["src/lib/*"]
+    }
+  ],
+  "rules": [
+    {
+      "id": "ARCH-LAYERS",
+      "family": "architecture",
+      "severity": "high",
+      "kind": "layers"
+    },
+    {
+      "id": "ARCH-MUTUAL",
+      "family": "architecture",
+      "severity": "medium",
+      "kind": "mutual"
+    },
+    {
+      "id": "ARCH-SIBLINGS",
+      "family": "architecture",
+      "severity": "low",
+      "kind": "siblings"
+    },
+    {
+      "id": "ARCH-CYCLES",
+      "family": "architecture",
+      "severity": "high",
+      "kind": "no-cycle"
+    },
+    {
+      "id": "NO-UI-IN-LIB",
+      "family": "architecture",
+      "severity": "high",
+      "kind": "forbid-import",
+      "from": "src/lib/**",
+      "to": "src/components/**"
+    },
+    {
+      "id": "CC-LINES",
+      "family": "clean-code",
+      "severity": "medium",
+      "kind": "max-lines",
+      "max": 60
+    },
+    {
+      "id": "CC-COMPLEXITY",
+      "family": "clean-code",
+      "severity": "medium",
+      "kind": "complexity",
+      "max": 10
+    },
+    {
+      "id": "CC-PARAMS",
+      "family": "clean-code",
+      "severity": "low",
+      "kind": "max-params",
+      "max": 4
+    },
+    {
+      "id": "CC-ANY",
+      "family": "clean-code",
+      "severity": "high",
+      "kind": "pattern",
+      "pattern": ":\\s*any\\b|\\bas\\s+any\\b",
+      "files": "**/*.{ts,tsx}"
+    },
+    {
+      "id": "AI-ERRORS",
+      "family": "ai",
+      "severity": "medium",
+      "kind": "ai",
+      "title": "Error handling",
+      "prompt": "Review error handling: empty catch blocks, swallowed errors, messages without context."
+    }
+  ]
+}

@@ -1,0 +1,498 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Vincweb/code-atlas/main/schema.json",
+  "title": "code-atlas.json",
+  "description": "Configuration of code-atlas.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Globs of the analyzed files."
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Globs of the files left out."
+    },
+    "tsconfig": {
+      "type": "string",
+      "description": "Path of the tsconfig, relative to the project root."
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered patterns: `*` binds one directory, the first match wins."
+    },
+    "layers": {
+      "type": "array",
+      "description": "Layers ordered top to bottom.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Layer name."
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Feature globs of the layer."
+          },
+          "siblings": {
+            "type": "boolean",
+            "description": "Features of this layer should not depend on each other."
+          }
+        },
+        "required": ["name", "features"]
+      }
+    },
+    "allow": {
+      "type": "array",
+      "description": "Edges accepted whatever their direction, as [from, to] feature globs.",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Rules; defaults apply when absent.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Imports that go up a layer.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "layers"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Features that import each other in both directions inside a layer.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "mutual"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Imports between features of a layer marked siblings.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "siblings"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Import cycles between features.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "no-cycle"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Imports from files matching `from` to files matching `to`.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "forbid-import"
+              },
+              "from": {
+                "type": "string",
+                "description": "Glob of importing files."
+              },
+              "to": {
+                "type": "string",
+                "description": "Glob of imported files."
+              },
+              "types": {
+                "type": "boolean",
+                "description": "Also forbid type-only imports."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "from", "to"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Files longer than `max` lines.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "max-lines"
+              },
+              "max": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Maximum lines."
+              },
+              "files": {
+                "type": "string",
+                "description": "Glob restricting the files checked."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "max"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Functions above a cyclomatic complexity.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "complexity"
+              },
+              "max": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Maximum complexity."
+              },
+              "files": {
+                "type": "string",
+                "description": "Glob restricting the files checked."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "max"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Functions with more than `max` parameters.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "max-params"
+              },
+              "max": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Maximum parameters."
+              },
+              "files": {
+                "type": "string",
+                "description": "Glob restricting the files checked."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "max"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Every match of a regular expression in the source.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "pattern"
+              },
+              "pattern": {
+                "type": "string",
+                "description": "Regular expression source."
+              },
+              "flags": {
+                "type": "string",
+                "description": "Regular expression flags (g and m are always on)."
+              },
+              "files": {
+                "type": "string",
+                "description": "Glob restricting the files checked."
+              },
+              "exclude": {
+                "type": "string",
+                "description": "Glob of files skipped."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "pattern"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "A shell command; it fails on a non-zero exit. Runs on click or under --check.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "command"
+              },
+              "run": {
+                "type": "string",
+                "description": "Command line, run from the project root."
+              },
+              "timeoutSec": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Seconds before the command is killed (600)."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "run"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "A Claude Code review that reports findings. Runs on click only.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "ai"
+              },
+              "prompt": {
+                "type": "string",
+                "description": "What to review."
+              },
+              "files": {
+                "type": "string",
+                "description": "Glob restricting the files checked."
+              },
+              "model": {
+                "type": "string",
+                "description": "Model alias or name."
+              },
+              "budgetUsd": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Spending cap for this run."
+              }
+            },
+            "required": ["id", "family", "severity", "kind", "prompt"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "ai": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Defaults of the ai rules.",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Model alias (sonnet)."
+        },
+        "budgetUsd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Spending cap per rule, in USD (1)."
+        },
+        "language": {
+          "type": "string",
+          "description": "Language of the findings (English)."
+        }
+      }
+    }
+  }
+}

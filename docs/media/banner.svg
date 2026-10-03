@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1152" height="412" viewBox="0 0 1152 412" fill="none" role="img" aria-label="code-atlas">
+  <defs>
+    <linearGradient id="rim" x1="140" y1="0" x2="1012" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3b82f6" stop-opacity="0"/>
+      <stop offset="0.3" stop-color="#3b82f6" stop-opacity="0.9"/>
+      <stop offset="0.65" stop-color="#f87171" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-10%" y="-400%" width="120%" height="900%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <clipPath id="card">
+      <rect x="16" y="16" width="1120" height="380" rx="56"/>
+    </clipPath>
+    <marker id="grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6b7280"/>
+    </marker>
+    <marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#f87171"/>
+    </marker>
+    <marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#fbbf24"/>
+    </marker>
+  </defs>
+
+  <rect x="16" y="16" width="1120" height="380" rx="56" fill="#08090B"/>
+  <g clip-path="url(#card)">
+    <rect x="140" y="14" width="872" height="4" fill="url(#rim)" filter="url(#glow)"/>
+    <rect x="140" y="15" width="872" height="2" fill="url(#rim)"/>
+  </g>
+  <rect x="16.75" y="16.75" width="1118.5" height="378.5" rx="55.25" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1.5"/>
+
+  <g transform="translate(84 146)">
+    <rect width="120" height="120" rx="30" fill="#3b82f6"/>
+    <path d="M37.5 39.4 82.5 60M37.5 80.6 82.5 60M37.5 39.4v41.2" stroke="#ffffff" stroke-width="6.75" stroke-linecap="round"/>
+    <circle cx="37.5" cy="39.4" r="9.75" fill="#ffffff"/>
+    <circle cx="37.5" cy="80.6" r="9.75" fill="#ffffff"/>
+    <circle cx="82.5" cy="60" r="11.25" fill="#ffffff"/>
+  </g>
+
+  <text x="240" y="214" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="84" font-weight="700" letter-spacing="-2.5" fill="#F3F4F6">code<tspan fill="#60a5fa">-atlas</tspan></text>
+  <text x="244" y="262" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="25" fill="#9ca3af">Map and audit a TypeScript codebase</text>
+
+  <line x1="836" y1="96" x2="836" y2="316" stroke="#ffffff" stroke-opacity="0.14" stroke-width="1.5"/>
+
+  <g>
+    <rect x="866" y="72" width="236" height="74" rx="14" fill="#ffffff" fill-opacity="0.035"/>
+    <rect x="866" y="168" width="236" height="74" rx="14" fill="#ffffff" fill-opacity="0.035"/>
+    <rect x="866" y="264" width="236" height="74" rx="14" fill="#ffffff" fill-opacity="0.035"/>
+
+    <g stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#grey)" stroke-opacity="0.8">
+      <path d="M924 120 C924 158 904 158 904 192"/>
+      <path d="M924 120 C924 158 984 158 984 192"/>
+      <path d="M1040 120 C1040 158 1062 158 1062 192"/>
+      <path d="M904 214 C904 252 924 252 924 288"/>
+      <path d="M984 214 C984 252 1040 252 1040 288"/>
+      <path d="M1062 214 C1062 252 1040 252 1040 288"/>
+    </g>
+    <path d="M910 214 C910 234 978 234 978 216" stroke="#fbbf24" stroke-width="2.5" fill="none" marker-end="url(#amber)"/>
+    <path d="M934 288 C934 252 994 252 994 216" stroke="#f87171" stroke-width="3" stroke-dasharray="7 6" fill="none" marker-end="url(#red)"/>
+
+    <g fill="#16191e" stroke="#2b313b" stroke-width="1.5">
+      <rect x="896" y="98" width="56" height="22" rx="7"/>
+      <rect x="1012" y="98" width="56" height="22" rx="7"/>
+      <rect x="876" y="192" width="56" height="22" rx="7"/>
+      <rect x="1034" y="192" width="56" height="22" rx="7"/>
+      <rect x="1012" y="288" width="56" height="22" rx="7"/>
+    </g>
+    <g fill="#16191e" stroke="#f87171" stroke-width="1.75">
+      <rect x="956" y="192" width="56" height="22" rx="7"/>
+      <rect x="896" y="288" width="56" height="22" rx="7"/>
+    </g>
+  </g>
+</svg>

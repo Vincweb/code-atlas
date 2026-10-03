@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+@source './';
+
+@theme static {
+  --color-bg: #fbfbfd;
+  --color-panel: #ffffff;
+  --color-line: #e3e5ea;
+  --color-text: #16181d;
+  --color-muted: #6b7280;
+  --color-accent: #3b82f6;
+  --color-code-bg: #f6f7f9;
+  --color-hover: #f1f3f6;
+
+  --color-good: #15803d;
+  --color-good-bg: #f0fdf4;
+  --color-good-line: #86efac;
+  --color-warn: #b45309;
+  --color-warn-bg: #fff7ed;
+  --color-warn-line: #fdba74;
+  --color-bad: #b91c1c;
+  --color-bad-bg: #fef2f2;
+  --color-bad-line: #fca5a5;
+  --color-none: #6b7280;
+  --color-none-bg: #f3f4f6;
+
+  --color-edge-red: #dc2626;
+  --color-edge-amber: #d97706;
+  --color-edge-grey: #8b93a1;
+  --color-edge-light: #c5cad3;
+
+  --color-sev-critical: #dc2626;
+  --color-sev-high: #ea580c;
+  --color-sev-medium: #d97706;
+  --color-sev-low: #6b7280;
+
+  --font-sans: ui-sans-serif, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #0e1013;
+    --color-panel: #16191e;
+    --color-line: #262b33;
+    --color-text: #e6e8ec;
+    --color-muted: #8b93a1;
+    --color-code-bg: #101318;
+    --color-hover: #1d2128;
+
+    --color-good: #4ade80;
+    --color-good-bg: #0d1f14;
+    --color-good-line: #1f5133;
+    --color-warn: #fbbf24;
+    --color-warn-bg: #2a1c0c;
+    --color-warn-line: #7c4a12;
+    --color-bad: #f87171;
+    --color-bad-bg: #2a1214;
+    --color-bad-line: #7f1d1d;
+    --color-none: #8b93a1;
+    --color-none-bg: #1b1f26;
+
+    --color-edge-red: #f87171;
+    --color-edge-amber: #fbbf24;
+    --color-edge-grey: #6b7280;
+    --color-edge-light: #3a404a;
+
+    --color-sev-critical: #f87171;
+    --color-sev-high: #fb923c;
+    --color-sev-medium: #fbbf24;
+    --color-sev-low: #8b93a1;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0e1013;
+  --color-panel: #16191e;
+  --color-line: #262b33;
+  --color-text: #e6e8ec;
+  --color-muted: #8b93a1;
+  --color-code-bg: #101318;
+  --color-hover: #1d2128;
+
+  --color-good: #4ade80;
+  --color-good-bg: #0d1f14;
+  --color-good-line: #1f5133;
+  --color-warn: #fbbf24;
+  --color-warn-bg: #2a1c0c;
+  --color-warn-line: #7c4a12;
+  --color-bad: #f87171;
+  --color-bad-bg: #2a1214;
+  --color-bad-line: #7f1d1d;
+  --color-none: #8b93a1;
+  --color-none-bg: #1b1f26;
+
+  --color-edge-red: #f87171;
+  --color-edge-amber: #fbbf24;
+  --color-edge-grey: #6b7280;
+  --color-edge-light: #3a404a;
+
+  --color-sev-critical: #f87171;
+  --color-sev-high: #fb923c;
+  --color-sev-medium: #fbbf24;
+  --color-sev-low: #8b93a1;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+@keyframes atlas-flow {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+.atlas-flow {
+  animation: atlas-flow 1.4s linear infinite;
+}
+
+.atlas-grid {
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+@keyframes atlas-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.atlas-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-line) 25%,
+    var(--color-hover) 40%,
+    var(--color-line) 55%
+  );
+  background-size: 300% 100%;
+  animation: atlas-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes atlas-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.atlas-progress {
+  animation: atlas-progress 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-flow,
+  .atlas-skeleton,
+  .atlas-progress {
+    animation: none;
+  }
+}
