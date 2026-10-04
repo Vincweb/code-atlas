@@ -1,0 +1,111 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Vincweb/code-atlas/main/schema.json",
+  "features": ["src/client/*", "src/*"],
+  "layers": [
+    {
+      "name": "Layer 1",
+      "features": ["src", "src/client", "src/client/components"],
+      "siblings": true
+    },
+    {
+      "name": "Layer 2",
+      "features": ["src/client/i18n", "src/client/util", "src/server"],
+      "siblings": true
+    },
+    {
+      "name": "Layer 3",
+      "features": ["src/shared"]
+    }
+  ],
+  "allow": [],
+  "rules": [
+    {
+      "id": "ARCH-LAYERS",
+      "family": "architecture",
+      "severity": "high",
+      "kind": "layers"
+    },
+    {
+      "id": "ARCH-MUTUAL",
+      "family": "architecture",
+      "severity": "medium",
+      "kind": "mutual"
+    },
+    {
+      "id": "ARCH-SIBLINGS",
+      "family": "architecture",
+      "severity": "low",
+      "kind": "siblings"
+    },
+    {
+      "id": "ARCH-CYCLES",
+      "family": "architecture",
+      "severity": "high",
+      "kind": "no-cycle"
+    },
+    {
+      "id": "CC-LINES",
+      "family": "clean-code",
+      "severity": "medium",
+      "kind": "max-lines",
+      "max": 400
+    },
+    {
+      "id": "CC-COMPLEXITY",
+      "family": "clean-code",
+      "severity": "medium",
+      "kind": "complexity",
+      "max": 15
+    },
+    {
+      "id": "CC-PARAMS",
+      "family": "clean-code",
+      "severity": "low",
+      "kind": "max-params",
+      "max": 4
+    },
+    {
+      "id": "CC-ANY",
+      "family": "clean-code",
+      "severity": "high",
+      "kind": "pattern",
+      "pattern": ":\\s*any\\b|\\bas\\s+any\\b|<any>",
+      "files": "**/*.{ts,tsx}"
+    },
+    {
+      "id": "TL-LINT",
+      "family": "tooling",
+      "severity": "high",
+      "kind": "command",
+      "run": "pnpm run lint"
+    },
+    {
+      "id": "TL-TYPES",
+      "family": "tooling",
+      "severity": "high",
+      "kind": "command",
+      "run": "pnpm run type-check"
+    },
+    {
+      "id": "TL-TEST",
+      "family": "tooling",
+      "severity": "high",
+      "kind": "command",
+      "run": "pnpm run test"
+    },
+    {
+      "id": "AI-ARCH",
+      "family": "ai",
+      "severity": "medium",
+      "kind": "ai",
+      "prompt": "Review the architecture of this codebase: layering, the responsibility of each folder, and coupling between features. Report concrete violations: a feature reaching into another one's internals, a folder mixing unrelated responsibilities, a dependency pointing the wrong way."
+    },
+    {
+      "id": "AI-CLEAN",
+      "family": "ai",
+      "severity": "medium",
+      "kind": "ai",
+      "prompt": "Review the code for clean-code issues: unclear naming, functions that are too long or do several things, weak error handling, dead or duplicated code. Report concrete, specific occurrences only."
+    }
+  ]
+}
