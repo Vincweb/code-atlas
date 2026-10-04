@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Analysis, FeatureNode } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { SearchIcon } from '../welcome/icons'
 

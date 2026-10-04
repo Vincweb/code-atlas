@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { useInvalidateAnalysis } from '../../queries'
+import { useInvalidateAnalysis } from '../../state/queries'
 import { ruleTitle } from '../../util/ruleTitle'
 import { useRunner } from '../rules/useRunner'
 import { AuditCard } from './AuditCard'

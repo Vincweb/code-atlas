@@ -54,15 +54,11 @@ const isForeign = (request: http.IncomingMessage) => {
   return typeof site === 'string' && site !== 'same-origin' && site !== 'none'
 }
 
-const PROJECT_ROUTES: string[] = [
-  API.analysis,
-  API.draft,
-  API.createConfig,
-  API.claudeOpen,
-  API.file,
-  API.run,
-]
 const GUARDED_ROUTES: string[] = [API.createConfig, API.claudeOpen, API.file, API.run]
+const FOREIGN = 'this route only answers the page it belongs to'
+
+type ApiCall = { request: http.IncomingMessage; response: http.ServerResponse; url: URL }
+type ProjectCall = ApiCall & { root: string }
 
 type Target = { root: string } | { status: number; error: string }
 
@@ -77,12 +73,32 @@ const errorPayload = (error: unknown) => {
   }
 }
 
-const readProjectFile = (root: string, requested: string) => {
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+/**
+ * Whether a request names a host other than this machine. A page whose domain was rebound to
+ * 127.0.0.1 reaches the server as same-origin, so only the Host header gives it away. A server
+ * bound beyond loopback was exposed on purpose and answers any name.
+ */
+export const isRebound = (request: http.IncomingMessage, boundHost: string) => {
+  if (!LOOPBACK.has(boundHost) && boundHost !== '::1') return false
+  try {
+    const { hostname } = new URL(`http://${request.headers.host ?? ''}`)
+    return !LOOPBACK.has(hostname) && !hostname.endsWith('.localhost')
+  } catch {
+    return true
+  }
+}
+
+const isInside = (root: string, file: string) => file.startsWith(root + path.sep)
+
+export const readProjectFile = (root: string, requested: string) => {
   const file = path.resolve(root, requested)
-  if (!file.startsWith(root + path.sep)) return null
+  if (!isInside(root, file)) return null
   const segments = path.relative(root, file).split(path.sep)
   if (segments.some((segment) => segment.startsWith('.') || segment === 'node_modules')) return null
   try {
+    if (!isInside(fs.realpathSync(root), fs.realpathSync(file))) return null
     const stat = fs.statSync(file)
     if (!stat.isFile() || stat.size > MAX_FILE_BYTES) return null
     return fs.readFileSync(file, 'utf8')
@@ -170,114 +186,116 @@ export const serveAtlas = ({
       })
   }
 
-  const handleApi = (request: http.IncomingMessage, response: http.ServerResponse, url: URL) => {
-    if (url.pathname === API.projects) {
-      json(response, {
-        cwd: path.resolve(cwd),
-        home: os.homedir(),
-        default: startupRoot,
-        places: places(cwd),
-        version,
-      })
-      return
-    }
+  const createConfig = ({ request, response, root }: ProjectCall) => {
+    if (request.method !== 'POST')
+      return json(response, { error: 'creating the config takes a POST' }, 405)
+    const file = path.join(root, CONFIG_FILE)
+    if (fs.existsSync(file))
+      return json(response, { error: `${CONFIG_FILE} already exists in this project` }, 409)
+    const { config } = projectContext(root, overrides)
+    const draft = draftConfig(root, analyzeEngine(root, config))
+    fs.writeFileSync(file, draftText(draft), { flag: 'wx' })
+    json(response, { path: file }, 201)
+  }
 
-    if (url.pathname === API.claude) {
-      if (isForeign(request)) {
-        json(response, { error: 'this route only answers the page it belongs to' }, 403)
-        return
-      }
-      void claudeStatus().then((status) => json(response, status))
-      return
-    }
+  const openClaude = ({ request, response, root }: ProjectCall) => {
+    if (request.method !== 'POST')
+      return json(response, { error: 'opening Claude takes a POST' }, 405)
+    const message = (error: unknown) => (error instanceof Error ? error.message : String(error))
+    readJson(request).then(
+      (body) => {
+        const prompt =
+          typeof body === 'object' && body !== null && 'prompt' in body ? body.prompt : null
+        if (typeof prompt !== 'string')
+          return json(response, { error: 'the body needs a "prompt" string' }, 400)
+        openUrl(claudeLink(prompt, root)).then(
+          () => json(response, { opened: true }),
+          (error: unknown) => json(response, { error: message(error) }, 502),
+        )
+      },
+      (error: unknown) => json(response, { error: message(error) }, 400),
+    )
+  }
 
-    if (url.pathname === API.browse) {
-      const listing = browseDirectories(cwd, url.searchParams.get('path') ?? '')
-      if (!listing) json(response, { error: 'no such directory' }, 400)
-      else json(response, listing)
-      return
-    }
+  const globalRoutes = new Map<string, (call: ApiCall) => void>([
+    [
+      API.projects,
+      ({ response }) =>
+        json(response, {
+          cwd: path.resolve(cwd),
+          home: os.homedir(),
+          default: startupRoot,
+          places: places(cwd),
+          version,
+        }),
+    ],
+    [
+      API.claude,
+      ({ request, response }) => {
+        if (isForeign(request)) return json(response, { error: FOREIGN }, 403)
+        void claudeStatus().then((status) => json(response, status))
+      },
+    ],
+    [
+      API.browse,
+      ({ response, url }) => {
+        const listing = browseDirectories(cwd, url.searchParams.get('path') ?? '')
+        if (!listing) json(response, { error: 'no such directory' }, 400)
+        else json(response, listing)
+      },
+    ],
+  ])
 
-    if (!PROJECT_ROUTES.includes(url.pathname)) {
-      json(response, { error: `no such API route: ${url.pathname}` }, 404)
-      return
-    }
-    if (GUARDED_ROUTES.includes(url.pathname) && isForeign(request)) {
-      json(response, { error: 'this route only answers the page it belongs to' }, 403)
-      return
-    }
+  const projectRoutes = new Map<string, (call: ProjectCall) => void>([
+    [API.analysis, ({ response, root }) => json(response, analyzeProject(root, overrides))],
+    [
+      API.draft,
+      ({ response, root }) => {
+        const { config } = projectContext(root, overrides)
+        const draft = draftConfig(root, analyzeEngine(root, config))
+        json(response, { config: draft, text: draftText(draft) })
+      },
+    ],
+    [API.createConfig, createConfig],
+    [API.claudeOpen, openClaude],
+    [
+      API.file,
+      ({ response, url, root }) => {
+        const requested = url.searchParams.get('path') ?? ''
+        const text = readProjectFile(root, requested)
+        if (text === null) json(response, { error: `cannot show ${requested}` }, 404)
+        else json(response, { path: requested, text })
+      },
+    ],
+    [
+      API.run,
+      ({ response, url, root }) => streamRun(response, root, url.searchParams.get('rule') ?? ''),
+    ],
+  ])
 
+  const handleApi = (call: ApiCall) => {
+    const { request, response, url } = call
+    const global = globalRoutes.get(url.pathname)
+    if (global) return global(call)
+    const route = projectRoutes.get(url.pathname)
+    if (!route) return json(response, { error: `no such API route: ${url.pathname}` }, 404)
+    if (GUARDED_ROUTES.includes(url.pathname) && isForeign(request))
+      return json(response, { error: FOREIGN }, 403)
     const target = targetFor(url)
-    if (!('root' in target)) {
-      json(response, { error: target.error }, target.status)
-      return
-    }
-    const { root } = target
-
-    if (url.pathname === API.analysis) {
-      json(response, analyzeProject(root, overrides))
-      return
-    }
-    if (url.pathname === API.draft) {
-      const { config } = projectContext(root, overrides)
-      const draft = draftConfig(root, analyzeEngine(root, config))
-      json(response, { config: draft, text: draftText(draft) })
-      return
-    }
-    if (url.pathname === API.createConfig) {
-      if (request.method !== 'POST') {
-        json(response, { error: 'creating the config takes a POST' }, 405)
-        return
-      }
-      const file = path.join(root, CONFIG_FILE)
-      if (fs.existsSync(file)) {
-        json(response, { error: `${CONFIG_FILE} already exists in this project` }, 409)
-        return
-      }
-      const { config } = projectContext(root, overrides)
-      const draft = draftConfig(root, analyzeEngine(root, config))
-      fs.writeFileSync(file, draftText(draft), { flag: 'wx' })
-      json(response, { path: file }, 201)
-      return
-    }
-    if (url.pathname === API.claudeOpen) {
-      if (request.method !== 'POST') {
-        json(response, { error: 'opening Claude takes a POST' }, 405)
-        return
-      }
-      const message = (error: unknown) => (error instanceof Error ? error.message : String(error))
-      readJson(request).then(
-        (body) => {
-          const prompt =
-            typeof body === 'object' && body !== null && 'prompt' in body ? body.prompt : null
-          if (typeof prompt !== 'string') {
-            json(response, { error: 'the body needs a "prompt" string' }, 400)
-            return
-          }
-          openUrl(claudeLink(prompt, root)).then(
-            () => json(response, { opened: true }),
-            (error: unknown) => json(response, { error: message(error) }, 502),
-          )
-        },
-        (error: unknown) => json(response, { error: message(error) }, 400),
-      )
-      return
-    }
-    if (url.pathname === API.file) {
-      const requested = url.searchParams.get('path') ?? ''
-      const text = readProjectFile(root, requested)
-      if (text === null) json(response, { error: `cannot show ${requested}` }, 404)
-      else json(response, { path: requested, text })
-      return
-    }
-    streamRun(response, root, url.searchParams.get('rule') ?? '')
+    if (!('root' in target)) return json(response, { error: target.error }, target.status)
+    route({ ...call, root: target.root })
   }
 
   const server = http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
+    if (isRebound(request, host)) {
+      response.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' })
+      response.end(`code-atlas only answers to localhost, not to ${request.headers.host}\n`)
+      return
+    }
     try {
       if (url.pathname.startsWith('/api/')) {
-        handleApi(request, response, url)
+        handleApi({ request, response, url })
         return
       }
       if (devWeb) {

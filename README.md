@@ -178,7 +178,8 @@ ignore that folder.
 
 A `code-atlas.json` names commands to run, like a `package.json` names scripts: only open projects
 you trust. Nothing runs when a page opens; running is a click, refused to any other origin. The
-page reads no dotfile, nothing in `node_modules` and nothing outside the project.
+server answers only to `localhost` unless `--host` exposes it, and the page reads no dotfile,
+nothing in `node_modules` and nothing outside the project — not even through a symlink.
 
 ## Development
 

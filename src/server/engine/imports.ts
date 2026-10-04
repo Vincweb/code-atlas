@@ -27,6 +27,11 @@ export const parseFile = (ts: TsApi, file: SourceFile) =>
     scriptKindFor(ts, file.path),
   )
 
+type ImportOf = [specifier: TS.Node | undefined, kind: ImportKind] | null
+
+const allTypeOnly = (elements: readonly { isTypeOnly: boolean }[]) =>
+  elements.length > 0 && elements.every((element) => element.isTypeOnly)
+
 export const extractImports = (ts: TsApi, sourceFile: TS.SourceFile): RawImport[] => {
   const found: RawImport[] = []
   const add = (node: TS.Node, specifier: string, kind: ImportKind) => {
@@ -38,56 +43,49 @@ export const extractImports = (ts: TsApi, sourceFile: TS.SourceFile): RawImport[
       ? node.text
       : null
 
+  const kindOfImport = (node: TS.ImportDeclaration): ImportKind => {
+    const clause = node.importClause
+    const bindings = clause?.namedBindings
+    const onlyTypeNames =
+      !!clause &&
+      !clause.name &&
+      !!bindings &&
+      ts.isNamedImports(bindings) &&
+      allTypeOnly(bindings.elements)
+    return clause?.isTypeOnly || onlyTypeNames ? 'type' : 'static'
+  }
+  const kindOfExport = (node: TS.ExportDeclaration): ImportKind => {
+    const clause = node.exportClause
+    const onlyTypeNames = !!clause && ts.isNamedExports(clause) && allTypeOnly(clause.elements)
+    return node.isTypeOnly || onlyTypeNames ? 'type' : 'reexport'
+  }
+  const callImportOf = (node: TS.CallExpression): ImportOf => {
+    const [first] = node.arguments
+    if (node.expression.kind === ts.SyntaxKind.ImportKeyword) return [first, 'dynamic']
+    const isRequire =
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'require' &&
+      node.arguments.length === 1
+    return isRequire ? [first, 'static'] : null
+  }
+  /** The node naming the module a node imports, and how it imports it. */
+  const importOf = (node: TS.Node): ImportOf => {
+    if (ts.isImportDeclaration(node)) return [node.moduleSpecifier, kindOfImport(node)]
+    if (ts.isExportDeclaration(node)) return [node.moduleSpecifier, kindOfExport(node)]
+    if (ts.isCallExpression(node)) return callImportOf(node)
+    if (ts.isImportEqualsDeclaration(node))
+      return ts.isExternalModuleReference(node.moduleReference)
+        ? [node.moduleReference.expression, node.isTypeOnly ? 'type' : 'static']
+        : null
+    if (ts.isImportTypeNode(node))
+      return ts.isLiteralTypeNode(node.argument) ? [node.argument.literal, 'type'] : null
+    return null
+  }
+
   const visit = (node: TS.Node) => {
-    if (ts.isImportDeclaration(node)) {
-      const specifier = stringOf(node.moduleSpecifier)
-      if (specifier !== null) {
-        const clause = node.importClause
-        const bindings = clause?.namedBindings
-        const onlyTypeNames =
-          !!clause &&
-          !clause.name &&
-          !!bindings &&
-          ts.isNamedImports(bindings) &&
-          bindings.elements.length > 0 &&
-          bindings.elements.every((element) => element.isTypeOnly)
-        add(node, specifier, clause?.isTypeOnly || onlyTypeNames ? 'type' : 'static')
-      }
-    } else if (ts.isExportDeclaration(node)) {
-      const specifier = stringOf(node.moduleSpecifier)
-      if (specifier !== null) {
-        const clause = node.exportClause
-        const onlyTypeNames =
-          !!clause &&
-          ts.isNamedExports(clause) &&
-          clause.elements.length > 0 &&
-          clause.elements.every((element) => element.isTypeOnly)
-        add(node, specifier, node.isTypeOnly || onlyTypeNames ? 'type' : 'reexport')
-      }
-    } else if (ts.isImportEqualsDeclaration(node)) {
-      if (ts.isExternalModuleReference(node.moduleReference)) {
-        const specifier = stringOf(node.moduleReference.expression)
-        if (specifier !== null) add(node, specifier, node.isTypeOnly ? 'type' : 'static')
-      }
-    } else if (ts.isCallExpression(node)) {
-      const [first] = node.arguments
-      if (node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-        const specifier = stringOf(first)
-        if (specifier !== null) add(node, specifier, 'dynamic')
-      } else if (
-        ts.isIdentifier(node.expression) &&
-        node.expression.text === 'require' &&
-        node.arguments.length === 1
-      ) {
-        const specifier = stringOf(first)
-        if (specifier !== null) add(node, specifier, 'static')
-      }
-    } else if (ts.isImportTypeNode(node)) {
-      if (ts.isLiteralTypeNode(node.argument)) {
-        const specifier = stringOf(node.argument.literal)
-        if (specifier !== null) add(node, specifier, 'type')
-      }
-    }
+    const imported = importOf(node)
+    const specifier = imported && stringOf(imported[0])
+    if (imported && specifier !== null) add(node, specifier, imported[1])
     ts.forEachChild(node, visit)
   }
   visit(sourceFile)

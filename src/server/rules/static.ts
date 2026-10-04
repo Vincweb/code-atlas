@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ResolvedConfig, RuleConfig, StaticRuleConfig } from '../../shared/config'
 import type { EdgeClass, EngineResult, RuleResult, Violation } from '../../shared/types'
-import { matchGlob } from '../glob'
+import { matchGlob } from '../engine/glob'
 
 const MAX_VIOLATIONS = 500
 

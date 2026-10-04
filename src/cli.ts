@@ -83,6 +83,7 @@ const gate = async (root: string, overrides: Overrides, argv: string[]) => {
     stateDir,
     git,
     skipCommands: has(argv, '--skip-commands'),
+    recording: has(argv, '--update-baseline'),
     log: (line) => console.log(line),
   })
   if (has(argv, '--update-baseline')) {
@@ -91,6 +92,47 @@ const gate = async (root: string, overrides: Overrides, argv: string[]) => {
     return 0
   }
   return result.ok ? 0 : 1
+}
+
+const overridesFrom = (argv: string[], root: string | null): Overrides => {
+  const configFlag = valueOf(argv, '--config')
+  const stateFlag = valueOf(argv, '--state')
+  return {
+    root,
+    config: configFlag ? path.resolve(configFlag) : null,
+    state: stateFlag ? path.resolve(stateFlag) : null,
+  }
+}
+
+const runDescribe = (root: string, overrides: Overrides) => {
+  const { ok, text } = describeProject(root, overrides)
+  console.log(text)
+  return ok ? 0 : 2
+}
+
+/** The commands that need a project, each exiting 2 when the config or the engine fails. */
+const projectCommand = (argv: string[]) => {
+  if (argv[0] === 'describe') return runDescribe
+  if (has(argv, '-c', '--check', '--update-baseline'))
+    return (root: string, overrides: Overrides) => gate(root, overrides, argv)
+  return null
+}
+
+const serve = (argv: string[], overrides: Overrides) => {
+  const port = Number(valueOf(argv, '-p', '--port') ?? DEFAULT_PORT)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    console.error(`✗ invalid port: ${valueOf(argv, '-p', '--port')}`)
+    return 1
+  }
+  serveAtlas({
+    overrides,
+    port,
+    host: valueOf(argv, '--host') ?? DEFAULT_HOST,
+    cwd: process.cwd(),
+    version: readVersion(),
+    open: !has(argv, '--no-open') && process.stdout.isTTY && !process.env.CI,
+  })
+  return null
 }
 
 export const run = async (argv = process.argv.slice(2)): Promise<number | null> => {
@@ -110,58 +152,20 @@ export const run = async (argv = process.argv.slice(2)): Promise<number | null> 
     console.error(`✗ no project at ${root} — expected a folder with package.json and tsconfig.json`)
     return 1
   }
+  const overrides = overridesFrom(argv, found ? root : null)
 
-  const configFlag = valueOf(argv, '--config')
-  const stateFlag = valueOf(argv, '--state')
-  const overrides: Overrides = {
-    root: found ? root : null,
-    config: configFlag ? path.resolve(configFlag) : null,
-    state: stateFlag ? path.resolve(stateFlag) : null,
-  }
-
-  if (argv[0] === 'describe') {
-    if (!found) {
-      console.error(`✗ no project at ${root} — pass --root <path>`)
-      return 1
-    }
-    try {
-      const { ok, text } = describeProject(root, overrides)
-      console.log(text)
-      return ok ? 0 : 2
-    } catch (error) {
-      console.error(describe(error))
-      return 2
-    }
-  }
-
-  if (has(argv, '-c', '--check', '--update-baseline')) {
-    if (!found) {
-      console.error(`✗ no project at ${root} — pass --root <path>`)
-      return 1
-    }
-    try {
-      return await gate(root, overrides, argv)
-    } catch (error) {
-      console.error(describe(error))
-      return 2
-    }
-  }
-
-  const port = Number(valueOf(argv, '-p', '--port') ?? DEFAULT_PORT)
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    console.error(`✗ invalid port: ${valueOf(argv, '-p', '--port')}`)
+  const command = projectCommand(argv)
+  if (!command) return serve(argv, overrides)
+  if (!found) {
+    console.error(`✗ no project at ${root} — pass --root <path>`)
     return 1
   }
-
-  serveAtlas({
-    overrides,
-    port,
-    host: valueOf(argv, '--host') ?? DEFAULT_HOST,
-    cwd: process.cwd(),
-    version: readVersion(),
-    open: !has(argv, '--no-open') && process.stdout.isTTY && !process.env.CI,
-  })
-  return null
+  try {
+    return await command(root, overrides)
+  } catch (error) {
+    console.error(describe(error))
+    return 2
+  }
 }
 
 const code = await run()

@@ -46,7 +46,8 @@ path in the condensed feature graph — to copy and correct.
 - **Run** (`command`, `ai`): they execute something, so they run on an explicit click or under
   `--check`, never when a page opens. A `code-atlas.json` from a cloned repository is code
   execution, like its npm scripts. The routes that run are refused to other origins
-  (`Sec-Fetch-Site`). Results are kept under `.code-atlas/runs/`, keyed by the rule's hash, and
+  (`Sec-Fetch-Site`), and a server bound to loopback answers no `Host` but a loopback name — a
+  page whose domain was rebound to 127.0.0.1 would otherwise pass as same-origin. Results are kept under `.code-atlas/runs/`, keyed by the rule's hash, and
   marked stale when the commit moved.
 
 ## AI rules run Claude Code headless
@@ -88,5 +89,5 @@ copy button stays as the fallback for anyone without the desktop app.
 `code-atlas describe` prints the config reference and the project's state as plain text. The
 prompts the page hands to Claude Code cite it — with the CLI's own path, since the package may not
 be installed where Claude runs — before and after editing, and carry a short summary of the state so
-they still work if Claude does not run it. The summary is trimmed to keep the whole prompt under
-the deep link's 5000 characters.
+they still work if Claude does not run it. The page trims the summary to keep the whole prompt
+under 5000 characters, well inside the link's 14,000.

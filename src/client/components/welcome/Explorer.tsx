@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { projectPath } from '../../../shared/routes'
 import type { FolderEntry, Place } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
-import { useBrowse } from '../../queries'
-import { navigate } from '../../router'
+import { useBrowse } from '../../state/queries'
+import { navigate } from '../../state/router'
 import { Badge, Button, ErrorBox, Spinner } from '../ui'
 import {
   ArrowUpIcon,

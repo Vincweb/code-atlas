@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 
 const Svg = ({ className, children }: { className?: string; children: ReactNode }) => (
   <svg

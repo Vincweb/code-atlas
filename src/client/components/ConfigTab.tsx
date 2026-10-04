@@ -1,6 +1,6 @@
 import type { Analysis } from '../../shared/types'
 import { useT } from '../i18n'
-import { useDraft } from '../queries'
+import { useDraft } from '../state/queries'
 import { DraftSection, FileSection, ReferenceSection } from './config/Files'
 import { Intro } from './config/Intro'
 import {

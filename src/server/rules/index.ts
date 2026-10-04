@@ -69,6 +69,8 @@ export const runCheck = async (opts: {
   stateDir: string
   git: Git
   skipCommands: boolean
+  /** The run is about to become the baseline: report the counts, not a verdict against the old one. */
+  recording?: boolean
   log: (line: string) => void
 }): Promise<{
   ok: boolean
@@ -76,7 +78,7 @@ export const runCheck = async (opts: {
   scores: Scores
   regressions: { id: string; before: number; after: number }[]
 }> => {
-  const { root, config, engine, stateDir, git, skipCommands, log } = opts
+  const { root, config, engine, stateDir, git, skipCommands, recording = false, log } = opts
   const statics = new Map(evaluateStatic(root, config, engine, git.commit).map((r) => [r.id, r]))
   const rules: RuleResult[] = []
   for (const rule of config.rules) {
@@ -106,30 +108,31 @@ export const runCheck = async (opts: {
     return rule.count > before ? [{ id: rule.id, before, after: rule.count }] : []
   })
   const errored = rules.some((rule) => rule.kind === 'command' && rule.status === 'error')
-  report(rules, scores, baseline, log)
+  const countOf = (rule: RuleResult) =>
+    recording ? `${rule.count}` : `${rule.count} (baseline ${baseline?.violations[rule.id] ?? 0})`
+  report(rules, scores, countOf, log)
   const ok = regressions.length === 0 && !errored
-  log(
-    ok
-      ? '✓ No regression'
-      : `✗ ${regressions.length} regression(s)${errored ? ', a command could not run' : ''}`,
-  )
+  if (!recording)
+    log(
+      ok
+        ? '✓ No regression'
+        : `✗ ${regressions.length} regression(s)${errored ? ', a command could not run' : ''}`,
+    )
   return { ok, rules, scores, regressions }
 }
 
 const report = (
   rules: RuleResult[],
   scores: Scores,
-  baseline: Baseline | null,
+  countOf: (rule: RuleResult) => string,
   log: (line: string) => void,
 ) => {
   for (const family of scores.families) {
     log(`${family.family}: ${family.score ?? '—'}`)
     for (const rule of rules.filter((r) => r.family === family.family)) {
       if (rule.status === 'error') log(`  ✗ ${rule.id} ${rule.title} — error: ${rule.error}`)
-      else if (rule.status === 'fail') {
-        const before = baseline?.violations[rule.id] ?? 0
-        log(`  ✗ ${rule.id} ${rule.title} — ${rule.count} (baseline ${before})`)
-      } else if (rule.status === 'pass') log(`  ✓ ${rule.id} ${rule.title}`)
+      else if (rule.status === 'fail') log(`  ✗ ${rule.id} ${rule.title} — ${countOf(rule)}`)
+      else if (rule.status === 'pass') log(`  ✓ ${rule.id} ${rule.title}`)
     }
   }
   log(`overall: ${scores.overall ?? '—'}`)

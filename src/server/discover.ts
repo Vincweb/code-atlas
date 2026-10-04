@@ -63,7 +63,7 @@ export const projectLabel = (dir: string) => {
     )
       return manifest.name
   } catch {
-    return path.basename(dir)
+    // No readable package.json: the folder's name stands in.
   }
   return path.basename(dir)
 }

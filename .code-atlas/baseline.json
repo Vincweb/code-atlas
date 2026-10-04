@@ -1,0 +1,43 @@
+{
+  "commit": "808f42b330c4aa172653f06f927582306747e7da",
+  "savedAt": "2026-10-04T02:29:54.400Z",
+  "scores": {
+    "overall": 99,
+    "families": [
+      {
+        "family": "architecture",
+        "score": 100,
+        "rules": 4,
+        "failing": 0,
+        "pending": 0
+      },
+      {
+        "family": "clean-code",
+        "score": 98,
+        "rules": 4,
+        "failing": 1,
+        "pending": 0
+      },
+      {
+        "family": "tooling",
+        "score": 100,
+        "rules": 3,
+        "failing": 0,
+        "pending": 0
+      }
+    ]
+  },
+  "violations": {
+    "ARCH-LAYERS": 0,
+    "ARCH-MUTUAL": 0,
+    "ARCH-SIBLINGS": 0,
+    "ARCH-CYCLES": 0,
+    "CC-LINES": 0,
+    "CC-COMPLEXITY": 1,
+    "CC-PARAMS": 0,
+    "CC-ANY": 0,
+    "TL-LINT": 0,
+    "TL-TYPES": 0,
+    "TL-TEST": 0
+  }
+}

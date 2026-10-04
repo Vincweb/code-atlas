@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { openInClaude } from '../api'
+import { openInClaude } from '../state/api'
 import { useT } from '../i18n'
 import { Button, Spinner } from './ui'
 

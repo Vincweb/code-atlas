@@ -1,6 +1,6 @@
 import type { ResolvedConfig } from '../../shared/config'
 import type { EngineResult, FileNode, FunctionMetric } from '../../shared/types'
-import { featureOf } from '../glob'
+import { featureOf } from './glob'
 import { measureFunctions } from './complexity'
 import { buildGraph } from './graph'
 import { extractImports, parseFile, resolveImports } from './imports'

@@ -1,6 +1,6 @@
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { useClaudeStatus } from '../../queries'
+import { useClaudeStatus } from '../../state/queries'
 import { formatUsd } from '../../util/format'
 import { ruleTitle } from '../../util/ruleTitle'
 import { ConfirmDialog } from '../Dialog'

@@ -1,5 +1,5 @@
 import type { FeatureEdge, Graph } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { DASHED, FILL, STROKE, TONE, isRed, strokeWidth } from './edges'
 import type { Tone } from './edges'

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { PROJECT_PATH, TABS } from '../shared/routes'
-import type { Tab } from '../shared/routes'
+import { PROJECT_PATH, TABS } from '../../shared/routes'
+import type { Tab } from '../../shared/routes'
 
 export type Route = {
   view: 'welcome' | 'project'

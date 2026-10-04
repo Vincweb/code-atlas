@@ -1,5 +1,5 @@
 import type { FeatureEdge, FeatureNode } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'

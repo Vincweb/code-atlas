@@ -2,7 +2,7 @@ import type { FeatureEdge } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { FileLink } from '../viewer'
 import { CHIP, TONE } from './edges'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 
 export const EdgeImports = ({ edge }: { edge: FeatureEdge }) => {
   const t = useT()

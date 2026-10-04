@@ -254,6 +254,22 @@ test('runCheck ratchets against the baseline', async () => {
   assert.equal(second.rules.length, 1)
 })
 
+test('runCheck recording a baseline reports the counts without a verdict', async () => {
+  const lines: string[] = []
+  await runCheck({
+    root: project(),
+    config: configOf([{ ...base, id: 'LINES', kind: 'max-lines', max: 400 }]),
+    engine,
+    stateDir: join(project(), '.code-atlas'),
+    git: { commit: 'c', dirty: false },
+    skipCommands: true,
+    recording: true,
+    log: (l: string) => lines.push(l),
+  })
+  assert.ok(lines.some((l) => l.endsWith('✗ LINES Files over 400 lines — 1')))
+  assert.ok(lines.every((l) => !l.includes('regression') && !l.includes('baseline')))
+})
+
 test('runCheck runs command rules and fails on an error', async () => {
   const root = project()
   const stateDir = join(root, '.code-atlas')

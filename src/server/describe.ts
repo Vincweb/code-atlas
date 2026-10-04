@@ -1,4 +1,5 @@
 import path from 'path'
+import { CONFIG_FILE } from '../shared/config'
 import type { ResolvedConfig } from '../shared/config'
 import type { EngineResult, FeatureEdge, RuleResult, Scores } from '../shared/types'
 import { ConfigError } from './config'
@@ -56,10 +57,7 @@ const scoresLine = (scores: Scores) =>
 
 const stateOf = (
   root: string,
-  config: ResolvedConfig,
-  source: string,
-  configPath: string | null,
-  stateDir: string,
+  { config, source, configPath, stateDir }: ReturnType<typeof projectContext>,
 ) => {
   const engine = analyzeEngine(root, config)
   const { rules, scores } = evaluate({ root, config, engine, stateDir, git: gitState(root) })
@@ -71,7 +69,7 @@ const stateOf = (
   return [
     `# Current state of ${projectLabel(root)} (${root})`,
     '',
-    `Config: ${source === 'default' ? `defaults — there is no ${path.join(root, 'code-atlas.json')} yet` : `${source} ${configPath}`}`,
+    `Config: ${source === 'default' ? `defaults — there is no ${path.join(root, CONFIG_FILE)} yet` : `${source} ${configPath}`}`,
     `Files analysed: ${stats.files} · features: ${stats.features} · imports between files: ${stats.imports} (plus ${stats.typeImports} type-only)`,
     `Feature patterns: ${JSON.stringify(config.features)}`,
     '',
@@ -97,8 +95,7 @@ const stateOf = (
 
 export const describeProject = (root: string, overrides: Overrides) => {
   try {
-    const { config, source, configPath, stateDir } = projectContext(root, overrides)
-    const state = stateOf(root, config, source, configPath, stateDir)
+    const state = stateOf(root, projectContext(root, overrides))
     return { ok: true, text: `${CONFIG_REFERENCE}\n${state}\n` }
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
-import { useFile } from '../queries'
+import { useFile } from '../state/queries'
 import { Button, ErrorBox, Spinner } from './ui'
 
 type Props = { root: string; path: string; line: number | null; onClose: () => void }

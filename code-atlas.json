@@ -1,19 +1,28 @@
 {
   "$schema": "https://raw.githubusercontent.com/Vincweb/code-atlas/main/schema.json",
-  "features": ["src/client/*", "src/*"],
+  "features": ["src/client/*", "src/server/*", "src/*"],
   "layers": [
     {
-      "name": "Layer 1",
-      "features": ["src", "src/client", "src/client/components"],
+      "name": "Entry",
+      "features": ["src", "src/client"],
       "siblings": true
     },
     {
-      "name": "Layer 2",
-      "features": ["src/client/i18n", "src/client/util", "src/server"],
+      "name": "Interface",
+      "features": ["src/client/components", "src/server"],
       "siblings": true
     },
     {
-      "name": "Layer 3",
+      "name": "Core",
+      "features": ["src/client/state", "src/client/i18n", "src/client/util", "src/server/rules"],
+      "siblings": true
+    },
+    {
+      "name": "Engine",
+      "features": ["src/server/engine"]
+    },
+    {
+      "name": "Shared",
       "features": ["src/shared"]
     }
   ],
@@ -69,7 +78,7 @@
       "family": "clean-code",
       "severity": "high",
       "kind": "pattern",
-      "pattern": ":\\s*any\\b|\\bas\\s+any\\b|<any>",
+      "pattern": ":\\s*any\\b|\\bas\\s+any\\b|<\\s*any\\s*>",
       "files": "**/*.{ts,tsx}"
     },
     {

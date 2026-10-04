@@ -1,5 +1,5 @@
 import type { RuleResult } from '../../../shared/types'
-import { ruleScore } from '../../util/score'
+import { ruleScore } from '../../../shared/score'
 
 export type StatusFilter = 'all' | 'fail' | 'pass' | 'pending'
 

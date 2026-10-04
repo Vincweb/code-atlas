@@ -1,5 +1,5 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react'
-import { navigate } from '../router'
+import { navigate } from '../state/router'
 
 type Props = AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
 

@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RunEvent } from '../../../shared/types'
-import { runUrl } from '../../api'
+import { runUrl } from '../../state/api'
 import { useT } from '../../i18n'
 
 export type RunState = { running: boolean; lines: string[]; error: string | null }
+
+/** Whether a run has anything to show: it is running, printed something, or failed. */
+export const hasOutput = (state: RunState | undefined): state is RunState =>
+  !!state && (state.running || state.lines.length > 0 || !!state.error)
 
 const MAX_LINES = 200
 const IDLE: RunState = { running: false, lines: [], error: null }

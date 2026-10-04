@@ -59,7 +59,7 @@ export const defaultRules = (root: string, layers: LayerConfig[]): RuleConfig[] 
       family: 'clean-code',
       severity: 'high',
       kind: 'pattern',
-      pattern: String.raw`:\s*any\b|\bas\s+any\b|<any>`,
+      pattern: String.raw`:\s*any\b|\bas\s+any\b|<\s*any\s*>`,
       files: '**/*.{ts,tsx}',
     },
     ...toolingRules(root),

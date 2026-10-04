@@ -1,5 +1,5 @@
 import type { Analysis } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../../util/score'
 import type { Band } from '../../util/score'

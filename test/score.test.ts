@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Severity } from '../src/shared/config'
 import type { RuleResult, RuleStatus } from '../src/shared/types'
-import { computeScores, scoreRule } from '../src/server/rules/score'
+import { computeScores } from '../src/server/rules/score'
+import { ruleScore } from '../src/shared/score'
 
 const rule = (
   family: string,
@@ -25,13 +26,13 @@ const rule = (
   error: null,
 })
 
-test('scoreRule halves at the half-life', () => {
-  assert.equal(scoreRule('high', 0), 100)
-  assert.equal(scoreRule('critical', 1), 50)
-  assert.equal(scoreRule('high', 3), 50)
-  assert.equal(scoreRule('medium', 6), 50)
-  assert.equal(scoreRule('low', 12), 50)
-  assert.ok(scoreRule('low', 1000) >= 0)
+test('ruleScore halves at the half-life', () => {
+  assert.equal(ruleScore('high', 0), 100)
+  assert.equal(ruleScore('critical', 1), 50)
+  assert.equal(ruleScore('high', 3), 50)
+  assert.equal(ruleScore('medium', 6), 50)
+  assert.equal(ruleScore('low', 12), 50)
+  assert.ok(ruleScore('low', 1000) >= 0)
 })
 
 test('families are weighted and ordered', () => {

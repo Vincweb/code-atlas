@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ProjectsPayload } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Button, ErrorBox, Spinner } from '../ui'
 import { Explorer } from './Explorer'

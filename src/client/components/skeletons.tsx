@@ -1,5 +1,5 @@
 import type { Tab } from '../../shared/routes'
-import { cx } from '../cx'
+import { cx } from '../util/cx'
 
 const Bone = ({ className = '' }: { className?: string }) => (
   <span

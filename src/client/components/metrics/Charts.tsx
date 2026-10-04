@@ -1,5 +1,5 @@
 import type { Analysis, Distribution } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 
 export const limitOf = (analysis: Analysis, kind: 'complexity' | 'max-lines') => {

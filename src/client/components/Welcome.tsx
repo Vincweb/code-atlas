@@ -1,5 +1,5 @@
 import { useT } from '../i18n'
-import { useProjects } from '../queries'
+import { useProjects } from '../state/queries'
 import { Prefs } from './Prefs'
 import { Hero } from './welcome/Hero'
 import { Mark } from './welcome/Mark'

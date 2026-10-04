@@ -1,7 +1,7 @@
 import { projectPath } from '../../../shared/routes'
 import type { Tab } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Link } from '../Link'
 import { CopyButton } from '../ui'

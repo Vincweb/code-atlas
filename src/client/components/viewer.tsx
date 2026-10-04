@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { cx } from '../cx'
+import { cx } from '../util/cx'
 import { FileViewer } from './FileViewer'
 
 type Target = { path: string; line: number | null }

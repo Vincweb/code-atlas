@@ -1,3 +1,4 @@
+import { condensedDepths } from '../../../shared/graph'
 import type { FeatureEdge, FeatureNode, Graph } from '../../../shared/types'
 
 export const NODE_W = 140
@@ -28,66 +29,12 @@ export type Layout = {
 }
 
 export const depthsOf = (features: FeatureNode[], edges: FeatureEdge[]) => {
-  const out = new Map<string, string[]>()
-  for (const feature of features) out.set(feature.id, [])
+  const out = new Map<string, string[]>(features.map((feature) => [feature.id, []]))
   for (const edge of edges) if (edge.from !== edge.to) out.get(edge.from)?.push(edge.to)
-
-  let counter = 0
-  const index = new Map<string, number>()
-  const low = new Map<string, number>()
-  const stack: string[] = []
-  const onStack = new Set<string>()
-  const component = new Map<string, number>()
-  let components = 0
-
-  const visit = (id: string) => {
-    index.set(id, counter)
-    low.set(id, counter)
-    counter++
-    stack.push(id)
-    onStack.add(id)
-    for (const next of out.get(id) ?? []) {
-      if (!index.has(next)) {
-        visit(next)
-        low.set(id, Math.min(low.get(id) ?? 0, low.get(next) ?? 0))
-      } else if (onStack.has(next)) {
-        low.set(id, Math.min(low.get(id) ?? 0, index.get(next) ?? 0))
-      }
-    }
-    if (low.get(id) === index.get(id)) {
-      for (let member = stack.pop(); member !== undefined; member = stack.pop()) {
-        onStack.delete(member)
-        component.set(member, components)
-        if (member === id) break
-      }
-      components++
-    }
-  }
-  for (const feature of features) if (!index.has(feature.id)) visit(feature.id)
-
-  const next = Array.from({ length: components }, () => new Set<number>())
-  const incoming = new Array<number>(components).fill(0)
-  for (const [from, targets] of out) {
-    const a = component.get(from) ?? 0
-    for (const target of targets) {
-      const b = component.get(target) ?? 0
-      if (a !== b && !next[a]?.has(b)) {
-        next[a]?.add(b)
-        incoming[b] = (incoming[b] ?? 0) + 1
-      }
-    }
-  }
-
-  const depth = new Array<number>(components).fill(0)
-  const ready = incoming.flatMap((count, id) => (count === 0 ? [id] : []))
-  for (let id = ready.pop(); id !== undefined; id = ready.pop()) {
-    for (const target of next[id] ?? []) {
-      depth[target] = Math.max(depth[target] ?? 0, (depth[id] ?? 0) + 1)
-      incoming[target] = (incoming[target] ?? 0) - 1
-      if (incoming[target] === 0) ready.push(target)
-    }
-  }
-  return new Map(features.map((f) => [f.id, depth[component.get(f.id) ?? 0] ?? 0]))
+  return condensedDepths(
+    features.map((feature) => feature.id),
+    out,
+  )
 }
 
 const sharedParent = (ids: string[]) => {

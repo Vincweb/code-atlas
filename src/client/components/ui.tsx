@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { useT } from '../i18n'
-import { cx } from '../cx'
+import { cx } from '../util/cx'
 
 export const Spinner = ({ className }: { className?: string }) => (
   <span

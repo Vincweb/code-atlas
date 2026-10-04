@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type * as TS from 'typescript'
-import { matchAny } from '../glob'
+import { matchAny } from './glob'
 import type { ResolvedConfig } from '../../shared/config'
 import { EngineError } from './errors'
 import type { TsApi } from './typescript'

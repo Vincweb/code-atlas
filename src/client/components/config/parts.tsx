@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { cx } from '../../cx'
+import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 
 export const Section = ({

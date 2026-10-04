@@ -1,4 +1,4 @@
-import { API, rootQuery } from '../shared/routes'
+import { API, rootQuery } from '../../shared/routes'
 import type {
   Analysis,
   BrowsePayload,
@@ -6,7 +6,7 @@ import type {
   DraftPayload,
   FilePayload,
   ProjectsPayload,
-} from '../shared/types'
+} from '../../shared/types'
 
 const errorIn = (payload: unknown) =>
   typeof payload === 'object' &&

@@ -4,18 +4,30 @@ import { projectPath } from '../../../shared/routes'
 import type { Analysis, AuditPreview, RuleResult } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { formatUsd, relativeTime } from '../../util/format'
-import { BAND_TEXT, bandOf, ruleScore } from '../../util/score'
+import { BAND_TEXT, bandOf } from '../../util/score'
+import { ruleScore } from '../../../shared/score'
 import { Link } from '../Link'
 import { SeverityBadge, StatusBadge } from '../rules/badges'
 import { Violations } from '../rules/Violations'
 import { ClaudeActions } from '../ClaudeActions'
 import { fixPrompt } from '../../util/claudePrompt'
 import { AuditProgress } from './AuditProgress'
+import { hasOutput } from '../rules/useRunner'
 import type { RunState } from '../rules/useRunner'
 import { Badge, Button } from '../ui'
 
 const shellQuote = (arg: string) =>
   /^[\w@%+=:,./-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, `'\\''`)}'`
+
+const AuditScore = ({ result }: { result: RuleResult | undefined }) => {
+  const ran = result?.status === 'pass' || result?.status === 'fail'
+  const score = ran ? ruleScore(result.severity, result.count) : null
+  return (
+    <span className={`text-[18px] font-semibold tabular-nums ${BAND_TEXT[bandOf(score)]}`}>
+      {score ?? '–'}
+    </span>
+  )
+}
 
 type Props = {
   analysis: Analysis
@@ -28,6 +40,65 @@ type Props = {
   locked: boolean
   onRun: () => void
   onCancel: () => void
+}
+
+/** The model, the spending cap, the last run and its cost. */
+const AuditFacts = ({
+  preview,
+  result,
+}: {
+  preview: AuditPreview
+  result: RuleResult | undefined
+}) => {
+  const t = useT()
+  const help = t.audits
+  const ran = result?.status === 'pass' || result?.status === 'fail'
+  return (
+    <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
+      <span>
+        {help.model} · <span className="font-mono text-text">{preview.model}</span>
+      </span>
+      <span>
+        {help.cap} · <span className="text-text">{formatUsd(preview.budgetUsd)}</span>
+      </span>
+      <span>
+        {result?.ranAt ? help.lastRun(relativeTime(result.ranAt, t.locale)) : help.neverRun}
+        {typeof result?.costUsd === 'number' && ` · ${formatUsd(result.costUsd)}`}
+      </span>
+      {ran && <span>{t.rules.violations(result.count)}</span>}
+    </p>
+  )
+}
+
+const AuditFindings = ({
+  analysis,
+  result,
+  title,
+}: {
+  analysis: Analysis
+  result: RuleResult
+  title: string
+}) => {
+  const t = useT()
+  const help = t.audits
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[12px] font-semibold text-muted">{help.findingsTitle}</span>
+      {result.violations.length === 0 ? (
+        <p className="rounded-lg border border-good-line bg-good-bg px-3 py-2 text-good">
+          {help.noFindings}
+        </p>
+      ) : (
+        <>
+          <Violations rule={result} />
+          <div className="flex flex-col gap-2 rounded-xl border border-line bg-bg p-3">
+            <span className="font-semibold">{t.rules.fixTitle}</span>
+            <ClaudeActions prompt={fixPrompt(analysis, result, title, t)} cwd={analysis.root} />
+          </div>
+        </>
+      )}
+    </div>
+  )
 }
 
 export const AuditCard = ({
@@ -47,7 +118,6 @@ export const AuditCard = ({
   const [full, setFull] = useState(false)
   const [command, setCommand] = useState(false)
   const ran = result?.status === 'pass' || result?.status === 'fail'
-  const score = ran && result ? ruleScore(result.severity, result.count) : null
   const running = state?.running ?? false
 
   return (
@@ -60,26 +130,10 @@ export const AuditCard = ({
         )}
         <h3 className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</h3>
         <code className="font-mono text-[12px] text-muted">{rule.id}</code>
-        <span className={`text-[18px] font-semibold tabular-nums ${BAND_TEXT[bandOf(score)]}`}>
-          {score ?? '–'}
-        </span>
+        <AuditScore result={result} />
       </header>
 
-      <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
-        <span>
-          {help.model} · <span className="font-mono text-text">{preview.model}</span>
-        </span>
-        <span>
-          {help.cap} · <span className="text-text">{formatUsd(preview.budgetUsd)}</span>
-        </span>
-        <span>
-          {result?.ranAt ? help.lastRun(relativeTime(result.ranAt, t.locale)) : help.neverRun}
-          {result?.costUsd !== null &&
-            result?.costUsd !== undefined &&
-            ` · ${formatUsd(result.costUsd)}`}
-        </span>
-        {ran && result && <span>{t.rules.violations(result.count)}</span>}
-      </p>
+      <AuditFacts preview={preview} result={result} />
 
       <div className="flex flex-col gap-1.5">
         <span className="text-[12px] font-semibold text-muted">{help.rulePrompt}</span>
@@ -110,34 +164,15 @@ export const AuditCard = ({
         )}
       </div>
 
-      {state && (state.running || state.lines.length > 0 || state.error) && (
-        <AuditProgress state={state} onCancel={onCancel} />
-      )}
-      {ran && result && !running && (
-        <div className="flex flex-col gap-2">
-          <span className="text-[12px] font-semibold text-muted">{help.findingsTitle}</span>
-          {result.violations.length === 0 ? (
-            <p className="rounded-lg border border-good-line bg-good-bg px-3 py-2 text-good">
-              {help.noFindings}
-            </p>
-          ) : (
-            <>
-              <Violations rule={result} />
-              <div className="flex flex-col gap-2 rounded-xl border border-line bg-bg p-3">
-                <span className="font-semibold">{t.rules.fixTitle}</span>
-                <ClaudeActions prompt={fixPrompt(analysis, result, title, t)} cwd={analysis.root} />
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      {hasOutput(state) && <AuditProgress state={state} onCancel={onCancel} />}
+      {ran && !running && <AuditFindings analysis={analysis} result={result} title={title} />}
       {full && (
         <pre className="rounded-xl border border-line bg-code-bg p-4 font-mono text-[12px] leading-5 whitespace-pre-wrap">
           {preview.prompt}
         </pre>
       )}
       {command && (
-        <pre className="overflow-x-auto rounded-xl border border-line bg-code-bg p-4 font-mono text-[12px] leading-5 whitespace-pre-wrap break-all">
+        <pre className="overflow-x-auto rounded-xl border border-line bg-code-bg p-4 font-mono text-[12px] leading-5 break-all whitespace-pre-wrap">
           {['claude', ...preview.args.map(shellQuote)].join(' ')}
         </pre>
       )}

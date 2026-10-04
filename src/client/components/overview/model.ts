@@ -1,6 +1,6 @@
 import type { Severity } from '../../../shared/config'
 import type { Analysis, FamilyScore, RuleResult } from '../../../shared/types'
-import { ruleScore } from '../../util/score'
+import { ruleScore } from '../../../shared/score'
 
 const WEIGHT: Record<Severity, number> = { critical: 8, high: 4, medium: 2, low: 1 }
 

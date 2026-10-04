@@ -47,33 +47,27 @@ export const measureFunctions = (
     return '<anonymous>'
   }
 
-  const adds = (node: TS.Node) => {
-    switch (node.kind) {
-      case SyntaxKind.IfStatement:
-      case SyntaxKind.ConditionalExpression:
-      case SyntaxKind.CaseClause:
-      case SyntaxKind.ForStatement:
-      case SyntaxKind.ForInStatement:
-      case SyntaxKind.ForOfStatement:
-      case SyntaxKind.WhileStatement:
-      case SyntaxKind.DoStatement:
-      case SyntaxKind.CatchClause:
-        return true
-      case SyntaxKind.BinaryExpression: {
-        const operator = (node as TS.BinaryExpression).operatorToken.kind
-        return (
-          operator === SyntaxKind.AmpersandAmpersandToken ||
-          operator === SyntaxKind.BarBarToken ||
-          operator === SyntaxKind.QuestionQuestionToken ||
-          operator === SyntaxKind.AmpersandAmpersandEqualsToken ||
-          operator === SyntaxKind.BarBarEqualsToken ||
-          operator === SyntaxKind.QuestionQuestionEqualsToken
-        )
-      }
-      default:
-        return false
-    }
-  }
+  const branches = new Set<TS.SyntaxKind>([
+    SyntaxKind.IfStatement,
+    SyntaxKind.ConditionalExpression,
+    SyntaxKind.CaseClause,
+    SyntaxKind.ForStatement,
+    SyntaxKind.ForInStatement,
+    SyntaxKind.ForOfStatement,
+    SyntaxKind.WhileStatement,
+    SyntaxKind.DoStatement,
+    SyntaxKind.CatchClause,
+  ])
+  const logical = new Set<TS.SyntaxKind>([
+    SyntaxKind.AmpersandAmpersandToken,
+    SyntaxKind.BarBarToken,
+    SyntaxKind.QuestionQuestionToken,
+    SyntaxKind.AmpersandAmpersandEqualsToken,
+    SyntaxKind.BarBarEqualsToken,
+    SyntaxKind.QuestionQuestionEqualsToken,
+  ])
+  const adds = (node: TS.Node) =>
+    branches.has(node.kind) || (ts.isBinaryExpression(node) && logical.has(node.operatorToken.kind))
 
   const visit = (node: TS.Node, current: FunctionMetric | null) => {
     if (isFunctionLike(node)) {

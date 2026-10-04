@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { CONFIG_FILE } from '../../../shared/config'
 import { useT } from '../../i18n'
-import type { useCreateConfig, useDraft } from '../../queries'
+import type { useCreateConfig, useDraft } from '../../state/queries'
 import { ConfirmDialog } from '../Dialog'
 import { FilePlusIcon } from '../welcome/icons'
 import { Spinner } from '../ui'

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { cx } from '../cx'
+import { cx } from '../util/cx'
 import { LANGS, setLang, useLang, useT } from '../i18n'
-import { THEMES, setTheme, useTheme } from '../theme'
-import type { Theme } from '../theme'
+import { THEMES, setTheme, useTheme } from '../state/theme'
+import type { Theme } from '../state/theme'
 
 const ThemeIcon = ({ theme }: { theme: Theme }) => {
   const paths: Record<Theme, ReactNode> = {

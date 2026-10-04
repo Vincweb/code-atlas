@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useT } from './i18n'
 import { ProjectPage } from './components/ProjectPage'
 import { Welcome } from './components/Welcome'
-import { useRoute } from './router'
+import { useRoute } from './state/router'
 
 export const App = () => {
   const route = useRoute()
