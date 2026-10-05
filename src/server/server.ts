@@ -14,51 +14,30 @@ import { gitState } from './git'
 import { openBrowser, openUrl } from './open'
 import { analyzeProject, projectContext } from './project'
 import type { Overrides } from './project'
+import { json, messageOf, readJson } from './http'
+import type { ApiCall, ProjectCall } from './http'
 import { runRule } from './rules'
+import { securityRoutes } from './security'
+import { createScans } from './strixScan'
+import { strixTools } from './strixTooling'
 import { DEV_CLIENT, MISSING_CLIENT, clientIsBuilt, devPage, serveClientFile } from './static'
 
 const MAX_FILE_BYTES = 2_000_000
-const MAX_BODY_BYTES = 100_000
-
-const json = (response: http.ServerResponse, payload: unknown, status = 200) => {
-  response.writeHead(status, {
-    'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store',
-  })
-  response.end(JSON.stringify(payload))
-}
-
-const readJson = (request: http.IncomingMessage) =>
-  new Promise<unknown>((resolve, reject) => {
-    let body = ''
-    request.setEncoding('utf8')
-    request.on('data', (chunk: string) => {
-      body += chunk
-      if (body.length > MAX_BODY_BYTES) {
-        reject(new Error('request body too large'))
-        request.destroy()
-      }
-    })
-    request.on('end', () => {
-      try {
-        resolve(JSON.parse(body))
-      } catch {
-        reject(new Error('request body is not JSON'))
-      }
-    })
-    request.on('error', reject)
-  })
-
 const isForeign = (request: http.IncomingMessage) => {
   const site = request.headers['sec-fetch-site']
   return typeof site === 'string' && site !== 'same-origin' && site !== 'none'
 }
 
-const GUARDED_ROUTES: string[] = [API.createConfig, API.claudeOpen, API.file, API.run]
+const GUARDED_ROUTES: string[] = [
+  API.createConfig,
+  API.claudeOpen,
+  API.file,
+  API.run,
+  API.security,
+  API.securityScan,
+  API.securityCancel,
+]
 const FOREIGN = 'this route only answers the page it belongs to'
-
-type ApiCall = { request: http.IncomingMessage; response: http.ServerResponse; url: URL }
-type ProjectCall = ApiCall & { root: string }
 
 type Target = { root: string } | { status: number; error: string }
 
@@ -128,6 +107,7 @@ export const serveAtlas = ({
     : null
   const startupRoot = overrides.root === null ? null : path.resolve(overrides.root)
   const running = new Set<string>()
+  const scans = createScans()
 
   const targetFor = (url: URL): Target => {
     const asked = url.searchParams.get('root')
@@ -201,7 +181,6 @@ export const serveAtlas = ({
   const openClaude = ({ request, response, root }: ProjectCall) => {
     if (request.method !== 'POST')
       return json(response, { error: 'opening Claude takes a POST' }, 405)
-    const message = (error: unknown) => (error instanceof Error ? error.message : String(error))
     readJson(request).then(
       (body) => {
         const prompt =
@@ -210,10 +189,10 @@ export const serveAtlas = ({
           return json(response, { error: 'the body needs a "prompt" string' }, 400)
         openUrl(claudeLink(prompt, root)).then(
           () => json(response, { opened: true }),
-          (error: unknown) => json(response, { error: message(error) }, 502),
+          (error: unknown) => json(response, { error: messageOf(error) }, 502),
         )
       },
-      (error: unknown) => json(response, { error: message(error) }, 400),
+      (error: unknown) => json(response, { error: messageOf(error) }, 400),
     )
   }
 
@@ -234,6 +213,13 @@ export const serveAtlas = ({
       ({ request, response }) => {
         if (isForeign(request)) return json(response, { error: FOREIGN }, 403)
         void claudeStatus().then((status) => json(response, status))
+      },
+    ],
+    [
+      API.securityTools,
+      ({ request, response, url }) => {
+        if (isForeign(request)) return json(response, { error: FOREIGN }, 403)
+        void strixTools(url.searchParams.has('fresh')).then((tools) => json(response, tools))
       },
     ],
     [
@@ -271,6 +257,7 @@ export const serveAtlas = ({
       API.run,
       ({ response, url, root }) => streamRun(response, root, url.searchParams.get('rule') ?? ''),
     ],
+    ...securityRoutes(overrides, scans),
   ])
 
   const handleApi = (call: ApiCall) => {
@@ -342,6 +329,7 @@ export const serveAtlas = ({
   })
 
   const shutdown = () => {
+    scans.stopAll()
     server.close(() => process.exit(0))
     server.closeAllConnections()
   }

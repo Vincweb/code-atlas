@@ -10,7 +10,10 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 ]
 
 export const relativeTime = (iso: string, locale: string) => {
-  const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000)
+  const time = new Date(iso).getTime()
+  // Dates written by other tools may not parse everywhere; show them as they are.
+  if (Number.isNaN(time)) return iso
+  const seconds = Math.round((time - Date.now()) / 1000)
   const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
   for (const [unit, size] of UNITS) {
     if (Math.abs(seconds) >= size) return formatter.format(Math.round(seconds / size), unit)

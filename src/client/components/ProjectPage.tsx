@@ -13,6 +13,7 @@ import { Overview } from './Overview'
 import { ProjectHeader } from './ProjectHeader'
 import { ProjectTabs } from './ProjectTabs'
 import { RulesTab } from './rules/RulesTab'
+import { SecurityTab } from './security/SecurityTab'
 import { TabSkeleton } from './skeletons'
 import { ErrorBox, Spinner } from './ui'
 import { ViewerProvider } from './viewer'
@@ -24,6 +25,7 @@ const TAB_VIEWS: Record<Tab, ComponentType<{ analysis: Analysis; root: string }>
   graph: GraphTab,
   rules: RulesTab,
   audits: AuditsTab,
+  security: SecurityTab,
   metrics: MetricsTab,
   config: ConfigTab,
 }

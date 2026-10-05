@@ -2,7 +2,15 @@ export const WELCOME_PATH = '/'
 
 export const PROJECT_PATH = '/project'
 
-export const TABS = ['overview', 'graph', 'rules', 'audits', 'metrics', 'config'] as const
+export const TABS = [
+  'overview',
+  'graph',
+  'rules',
+  'audits',
+  'security',
+  'metrics',
+  'config',
+] as const
 
 export type Tab = (typeof TABS)[number]
 
@@ -23,6 +31,10 @@ export const API = {
   run: '/api/run',
   claude: '/api/claude',
   claudeOpen: '/api/claude/open',
+  security: '/api/security',
+  securityTools: '/api/security/tools',
+  securityScan: '/api/security/scan',
+  securityCancel: '/api/security/cancel',
 } as const
 
 const CLAUDE_PROMPT_LIMIT = 14000

@@ -2,6 +2,7 @@ import type { Strings } from './en'
 import { learnFr } from './learn.fr'
 import { configHelpFr } from './configHelp.fr'
 import { auditsFr } from './audits.fr'
+import { securityFr } from './security.fr'
 
 export const fr: Strings = {
   locale: 'fr-FR',
@@ -128,6 +129,7 @@ export const fr: Strings = {
     graph: 'Graphe',
     rules: 'Règles',
     audits: 'Audits IA',
+    security: 'Sécurité',
     metrics: 'Métriques',
     config: 'Config',
   },
@@ -283,6 +285,8 @@ export const fr: Strings = {
   },
 
   audits: auditsFr,
+
+  security: securityFr,
 
   configHelp: configHelpFr,
 

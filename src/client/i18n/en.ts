@@ -2,6 +2,7 @@ import type { EdgeClass } from '../../shared/types'
 import { learnEn } from './learn.en'
 import { configHelpEn } from './configHelp.en'
 import { auditsEn } from './audits.en'
+import { securityEn } from './security.en'
 
 /**
  * Every word the page shows, in English. The French file mirrors this object key for key, and the
@@ -129,6 +130,7 @@ export const en = {
     graph: 'Graph',
     rules: 'Rules',
     audits: 'AI audits',
+    security: 'Security',
     metrics: 'Metrics',
     config: 'Config',
   },
@@ -283,6 +285,8 @@ export const en = {
   },
 
   audits: auditsEn,
+
+  security: securityEn,
 
   configHelp: configHelpEn,
 

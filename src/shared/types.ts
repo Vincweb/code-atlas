@@ -211,3 +211,124 @@ export type DraftPayload = {
   config: AtlasConfig
   text: string
 }
+
+export type StrixSeverity = Severity | 'info'
+
+export const STRIX_MODES = ['quick', 'standard', 'deep'] as const
+
+export type StrixMode = (typeof STRIX_MODES)[number]
+
+export type StrixTools = {
+  strix: { found: boolean; version: string | null }
+  docker: { found: boolean; running: boolean; version: string | null }
+  llm: { model: string | null; apiKey: boolean; configFile: boolean }
+}
+
+export type StrixLocation = {
+  file: string
+  line: number
+  endLine: number | null
+  /** Whether the file exists in the project, so the page can open it. */
+  exists: boolean
+  label: string | null
+  snippet: string | null
+  fixBefore: string | null
+  fixAfter: string | null
+}
+
+export type StrixFinding = {
+  id: string
+  title: string
+  severity: StrixSeverity
+  timestamp: string | null
+  description: string | null
+  impact: string | null
+  technicalAnalysis: string | null
+  poc: string | null
+  pocCode: string | null
+  remediation: string | null
+  cvss: number | null
+  cwe: string | null
+  cve: string | null
+  endpoint: string | null
+  method: string | null
+  confidence: string | null
+  fixEffort: string | null
+  locations: StrixLocation[]
+  /** The finding's own Markdown report, absolute, for Claude to read. */
+  reportPath: string
+}
+
+export type StrixRunSummary = {
+  name: string
+  status: string
+  mode: string | null
+  startedAt: string | null
+  endedAt: string | null
+  costUsd: number | null
+  count: number
+  bySeverity: Record<StrixSeverity, number>
+}
+
+export type StrixRun = StrixRunSummary & {
+  instruction: string | null
+  findings: StrixFinding[]
+  report: string | null
+}
+
+export type StrixScanPhase = 'scanning' | 'done' | 'failed' | 'cancelled'
+
+export type StrixScan = {
+  running: boolean
+  phase: StrixScanPhase
+  mode: StrixMode
+  budgetUsd: number
+  startedAt: string
+  endedAt: string | null
+  files: number
+  run: string | null
+  costUsd: number | null
+  findings: number
+  exitCode: number | null
+  error: string | null
+  log: string[]
+}
+
+export type StrixCiStep = {
+  file: string
+  line: number
+  headless: boolean
+  mode: string | null
+  failOn: string | null
+  budget: string | null
+}
+
+export type StrixCiFile = {
+  file: string
+  provider: 'github' | 'gitlab' | 'jenkins' | 'circleci' | 'bitbucket' | 'azure'
+  steps: StrixCiStep[]
+  cloud: boolean
+  secrets: boolean
+  pullRequests: boolean | null
+  fullHistory: boolean | null
+}
+
+export type StrixSkill = { name: string; scope: 'project' | 'user'; path: string }
+
+export type StrixIntegration = {
+  ci: StrixCiFile[]
+  skills: StrixSkill[]
+  /** Whether git ignores the reports; null outside a git repository. */
+  reportsIgnored: boolean | null
+  rootRuns: { present: boolean; ignored: boolean | null }
+}
+
+export type SecurityPayload = {
+  runsDir: string
+  scan: StrixScan | null
+  runs: StrixRunSummary[]
+  run: StrixRun | null
+  integration: StrixIntegration
+}
+
+export type StrixScanRequest = { mode: StrixMode; budgetUsd: number; instruction: string }

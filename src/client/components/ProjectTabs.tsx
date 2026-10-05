@@ -52,6 +52,12 @@ const ICONS: Record<Tab, ReactNode> = {
       <path d="M12 3.5 13.8 9l5.7.2-4.5 3.5 1.6 5.5L12 15l-4.6 3.2L9 12.7 4.5 9.2l5.7-.2L12 3.5Z" />
     </Svg>
   ),
+  security: (
+    <Svg>
+      <path d="M12 3.5 5 6.2v5.3c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6.2l-7-2.7Z" />
+      <path d="m9.2 12 2 2 3.6-3.8" />
+    </Svg>
+  ),
   metrics: (
     <Svg>
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />

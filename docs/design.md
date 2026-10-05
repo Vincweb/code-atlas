@@ -84,6 +84,33 @@ its `claude://code/new` link (`q` = the prompt, cut at about 14,000 characters; 
 project's absolute path, which the app asks to confirm). The prompt is filled in, never sent. The
 copy button stays as the fallback for anyone without the desktop app.
 
+## Security tests run Strix, outside the score
+
+Strix is a Python CLI that drives LLM agents inside Docker; code-atlas runs it as a process, like
+`claude -p`, and bundles nothing. A scan is not a rule: it takes minutes to hours, costs money, and
+two runs on one commit find different things, so it has its own tab and stays out of the score and
+`--check`, like the AI rules.
+
+- **A copy, not the project.** Strix mounts local targets writable and has no read-only switch, so
+  the scan targets a temporary copy: `git ls-files -co --exclude-standard`, or a walk without git,
+  minus `.code-atlas`, `strix_runs`, `node_modules` and symbolic links, deleted afterwards. The copy
+  has no history, hence `--scope-mode full`.
+- **Owned by the server, not the page.** The rules stream one run per open `EventSource` and
+  closing it cancels; a 30-minute scan would die when the user switches tabs. The server keeps one
+  scan per project, the page polls `GET /api/security` while it runs, and stopping is a `POST`.
+  Shutting code-atlas down stops it.
+- **Progress from files, not stdout.** Headless Strix draws a rich panel meant for a terminal; the
+  run's `run.json` (status, cost) and `vulnerabilities.json` (findings) are read every two seconds
+  instead. The run folder is the one that appears in `strix_runs/` — Strix has no `--run-name`.
+  Strix starts in `<state>/runs`, so its reports land under the folder the README says to ignore.
+- **Stopping** sends SIGTERM to the process group — Strix's handler marks the run interrupted and
+  tears its sandbox down — and SIGKILL only 20 seconds later. A run still marked running that no
+  scan drives reads as interrupted.
+- **Telemetry** is turned off with `STRIX_TELEMETRY=0` unless the user set it, in keeping with a
+  tool where nothing leaves the machine but what a scan or an audit sends to its model.
+- Paths in findings are relative to Strix's workspace (`<name>/src/a.ts`, `/workspace/<name>/…`);
+  they are mapped back to the project and checked to exist before the page links them.
+
 ## Context for an AI assistant
 
 `code-atlas describe` prints the config reference and the project's state as plain text. The

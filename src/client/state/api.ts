@@ -6,6 +6,10 @@ import type {
   DraftPayload,
   FilePayload,
   ProjectsPayload,
+  SecurityPayload,
+  StrixScan,
+  StrixScanRequest,
+  StrixTools,
 } from '../../shared/types'
 
 const errorIn = (payload: unknown) =>
@@ -57,3 +61,17 @@ export const fetchFile = (root: string, path: string) =>
 
 export const runUrl = (root: string, rule: string) =>
   `${API.run}${rootQuery(root)}&rule=${encodeURIComponent(rule)}`
+
+export const fetchSecurity = (root: string, run: string | null) =>
+  read<SecurityPayload>(
+    `${API.security}${rootQuery(root)}${run ? `&run=${encodeURIComponent(run)}` : ''}`,
+  )
+
+export const fetchStrixTools = (fresh: boolean) =>
+  read<StrixTools>(`${API.securityTools}${fresh ? '?fresh=1' : ''}`)
+
+export const startScan = (root: string, request: StrixScanRequest) =>
+  post<{ scan: StrixScan }>(`${API.securityScan}${rootQuery(root)}`, request)
+
+export const cancelScan = (root: string) =>
+  post<{ cancelled: boolean }>(`${API.securityCancel}${rootQuery(root)}`)

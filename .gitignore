@@ -6,5 +6,5 @@ dist
 .eslintcache
 *.tsbuildinfo
 *.tgz
-.code-atlas/runs
+**/.code-atlas/runs
 .tmp-fixture

@@ -201,6 +201,7 @@ export const TabSkeleton = ({ tab }: { tab: Tab }) => {
       return <GraphSkeleton />
     case 'rules':
     case 'audits':
+    case 'security':
       return <RulesSkeleton />
     case 'metrics':
       return <MetricsSkeleton />

@@ -76,6 +76,8 @@ to Claude when you run one.
   to fix it. Command and AI rules run from here, their output streamed live.
 - **AI audits** — what an AI rule does and the prompt it sends, a gallery of ready-made audits, and
   the findings of each run.
+- **Security** — runs [Strix](https://github.com/usestrix/strix), an open-source AI pentester, on
+  a copy of the project and shows its findings, and checks whether Strix is wired into the CI.
 - **Metrics** — complexity and file-size distributions, each feature's size and instability, the
   most complex functions and the largest files.
 - **Config** — the effective config explained section by section, or a draft to start from.
@@ -151,6 +153,26 @@ it), and gets its findings back as structured data. It uses your own Claude Code
 `ANTHROPIC_API_KEY` when it is set: code-atlas never handles a key. Results are kept per rule and
 marked stale when the commit moves. They never gate `--check`: two runs on the same commit can
 disagree.
+
+## Security tests
+
+The Security tab runs [Strix](https://github.com/usestrix/strix) headless on a copy of the project:
+what git tracks or would track, without ignored files, symbolic links or `node_modules`, since
+Strix mounts its target writable. Its agents run in Docker and use the model in `STRIX_LLM` with
+`LLM_API_KEY` (or `~/.strix/cli-config.json`) from the environment code-atlas was started in; the
+code goes to that provider. Strix's telemetry is off unless `STRIX_TELEMETRY` says otherwise.
+
+```sh
+curl -sSL https://strix.ai/install | bash   # Strix itself, and Docker running
+```
+
+Pick a mode — quick, standard or deep — and a spending cap. The scan carries on when you leave the
+page and stops with code-atlas. Each finding comes with its severity, CVSS and CWE, its place in the
+code, its proof of concept and a button to hand the fix to Claude Code. Reports land in
+`.code-atlas/runs/strix_runs/`, under the folder you already ignore. The tab also checks whether a
+CI job runs Strix — headless, scan mode, failing severity, secrets — whether its skills are
+installed for coding agents, and whether git ignores the reports. A scan counts in no score and
+never in `--check`: two runs on one commit find different things.
 
 ## Working with Claude Code
 
