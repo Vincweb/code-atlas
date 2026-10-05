@@ -2,30 +2,78 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
 import type { CommandRuleConfig } from '../../shared/config'
-import type { RuleResult, RunEvent, Violation } from '../../shared/types'
+import type { PackageRef, RuleResult, RunEvent, Violation } from '../../shared/types'
 import { finishRun, killTree } from './result'
 
 const ANSI = new RegExp(String.raw`\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007`, 'g')
-const LOCATION = /(?:^|\s)((?:\/|\.{0,2}\/)?[\w@.\-/]+\.[a-z]{1,4})[:(](\d+)/i
+const PATH = String.raw`(?:\/|\.{0,2}\/)?[\w@.\-/]+\.[a-z]{1,4}`
+const LOCATION = new RegExp(String.raw`(?:^|\s)(${PATH})[:(](\d+)`, 'i')
+/** A line that names a file and nothing else, as ESLint's stylish format heads its messages. */
+const FILE_HEADER = new RegExp(String.raw`^\s*(${PATH})\s*$`, 'i')
+/** ESLint's stylish message under such a header: `  12:5  error  …`. */
+const STYLISH = /^\s+(\d+):\d+\s+(?:error|warning)\b/
+/** turbo prefixes each line with `<package>:<task>: `, pnpm -r with `<folder> <script>: `. */
+const TASK_PREFIX = /^(\S+?):[\w:-]+: ?|^(\S+) [\w:-]+: /
 const KEEP_LINES = 400
 
-export const parseCommandOutput = (root: string, lines: string[]): Violation[] => {
+/** The package a monorepo task prefix names, and the line without it. */
+const unprefix = (line: string, packages: PackageRef[]) => {
+  const match = TASK_PREFIX.exec(line)
+  const name = match?.[1] ?? match?.[2]
+  const pkg =
+    name && packages.find((candidate) => candidate.name === name || candidate.dir === name)
+  return pkg && match
+    ? { dir: pkg.dir, text: line.slice(match[0].length) }
+    : { dir: null, text: line }
+}
+
+/**
+ * The `file:line` places a command printed, relative to the root. In a monorepo a task's paths
+ * are relative to its package, which its prefix names.
+ */
+export const parseCommandOutput = (
+  root: string,
+  lines: string[],
+  packages: PackageRef[] = [],
+): Violation[] => {
   const seen = new Set<string>()
   const violations: Violation[] = []
-  for (const line of lines) {
-    const match = LOCATION.exec(line)
-    if (!match) continue
-    let file = match[1] ?? ''
+  const located = (raw: string, dir: string | null) => {
+    let file = raw
     if (isAbsolute(file)) {
       const rel = relative(root, file)
-      if (rel.startsWith('..')) continue
+      if (rel.startsWith('..')) return null
       file = rel
     }
     file = file.replace(/^\.\//, '')
-    const key = `${file}:${match[2]}`
-    if (seen.has(key) || !existsSync(join(root, file))) continue
+    for (const candidate of dir && dir !== '.' ? [join(dir, file), file] : [file])
+      if (
+        existsSync(join(root, candidate)) &&
+        !relative(root, join(root, candidate)).startsWith('..')
+      )
+        return candidate.split('\\').join('/')
+    return null
+  }
+  const add = (file: string, line: number, message: string) => {
+    const key = `${file}:${line}`
+    if (seen.has(key)) return
     seen.add(key)
-    violations.push({ file, line: Number(match[2]), message: line.trim().slice(0, 300) })
+    violations.push({ file, line, message: message.trim().slice(0, 300) })
+  }
+  let header: string | null = null
+  for (const raw of lines) {
+    const { dir, text } = unprefix(raw, packages)
+    const stylish = header ? STYLISH.exec(text) : null
+    if (header && stylish) {
+      add(header, Number(stylish[1]), text)
+      continue
+    }
+    const named = FILE_HEADER.exec(text)
+    header = named ? located(named[1] ?? '', dir) : null
+    if (header) continue
+    const match = LOCATION.exec(text)
+    const file = match ? located(match[1] ?? '', dir) : null
+    if (match && file) add(file, Number(match[2]), text)
   }
   return violations
 }
@@ -33,7 +81,12 @@ export const parseCommandOutput = (root: string, lines: string[]): Violation[] =
 export const runCommand = (
   root: string,
   rule: CommandRuleConfig,
-  opts: { commit: string | null; onEvent: (e: RunEvent) => void; signal?: AbortSignal },
+  opts: {
+    commit: string | null
+    onEvent: (e: RunEvent) => void
+    signal?: AbortSignal
+    packages?: PackageRef[]
+  },
 ): Promise<RuleResult> =>
   new Promise((resolve) => {
     const child = spawn(rule.run, {
@@ -83,7 +136,7 @@ export const runCommand = (
       const tail = lines.slice(-KEEP_LINES)
       const error = failure ?? spawnError
       if (error || code === 0) return resolve(finishRun(rule, opts.commit, { error }))
-      const parsed = parseCommandOutput(root, tail)
+      const parsed = parseCommandOutput(root, tail, opts.packages)
       const violations = parsed.length
         ? parsed
         : [{ file: null, line: null, message: tail.slice(-20).join('\n').trim() }]

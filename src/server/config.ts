@@ -3,7 +3,10 @@ import { join, resolve } from 'node:path'
 import type { AtlasConfig, LayerConfig, ResolvedConfig, RuleKind } from '../shared/config'
 import type { ConfigSource } from '../shared/types'
 import { CONFIG_FILE, SEVERITIES } from '../shared/config'
+import { matchGlob } from './engine/glob'
 import { defaultRules } from './rules/defaults'
+import { detectWorkspaces, workspaceMembers } from './engine/workspace'
+import type { WorkspaceMember } from './engine/workspace'
 
 export { defaultRules } from './rules/defaults'
 
@@ -22,6 +25,7 @@ const TOP_KEYS = [
   'include',
   'exclude',
   'tsconfig',
+  'workspaces',
   'features',
   'layers',
   'allow',
@@ -193,7 +197,7 @@ const validate = (raw: unknown): string[] => {
   if (!isRecord(raw)) return ['the file must contain a JSON object']
   const issues: string[] = []
   for (const key of Object.keys(raw)) if (!TOP_KEYS.includes(key)) issues.push(`unknown key ${key}`)
-  for (const key of ['include', 'exclude', 'features'])
+  for (const key of ['include', 'exclude', 'workspaces', 'features'])
     if (raw[key] !== undefined && !isStringArray(raw[key]))
       issues.push(`${key} must be an array of strings`)
   if (raw.tsconfig !== undefined && typeof raw.tsconfig !== 'string')
@@ -230,6 +234,40 @@ const defaultFeatures = (root: string, hasSrc: boolean) => {
   return [...grouped, `${prefix}*`]
 }
 
+const membersUnder = (pattern: string, members: WorkspaceMember[]) =>
+  members.filter((member) =>
+    matchGlob(member.dir, pattern.replace(/^\.\//, '').replace(/\/+$/, '')),
+  )
+
+const ownPatterns = (patterns: readonly string[]) =>
+  patterns.filter((pattern) => !pattern.startsWith('!'))
+
+/** `<pattern>/src/**` for the packages with a src folder, the whole folder for the others. */
+const workspaceInclude = (
+  patterns: readonly string[],
+  members: WorkspaceMember[],
+  rootSrc: boolean,
+) => {
+  const include = ownPatterns(patterns).flatMap((pattern) =>
+    membersUnder(pattern, members).some((member) => member.hasSrc)
+      ? [`${pattern.replace(/\/+$/, '')}/src/**`]
+      : [],
+  )
+  for (const member of members) if (!member.hasSrc) include.push(`${member.dir}/**`)
+  return rootSrc ? [...include, 'src/**'] : include
+}
+
+/** The single-project defaults inside each package, deepest packages first. */
+const workspaceFeatures = (root: string, members: WorkspaceMember[], rootSrc: boolean) => {
+  const byDepth = [...members].sort((a, b) => b.dir.split('/').length - a.dir.split('/').length)
+  const features = byDepth.flatMap((member) =>
+    defaultFeatures(join(root, member.dir), member.hasSrc).map(
+      (pattern) => `${member.dir}/${pattern}`,
+    ),
+  )
+  return rootSrc ? [...features, ...defaultFeatures(root, true)] : features
+}
+
 const DEFAULT_EXCLUDE = [
   '**/*.test.*',
   '**/*.spec.*',
@@ -254,11 +292,24 @@ const readConfigFile = (path: string): AtlasConfig => {
 const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
   const hasSrc = isDirectory(join(root, 'src'))
   const layers: LayerConfig[] = raw.layers ?? []
+  const tsconfig = raw.tsconfig ?? 'tsconfig.json'
+  const workspaces = raw.workspaces ?? detectWorkspaces(root)
+  const members = workspaceMembers(root, workspaces, tsconfig)
+  const rootSrc = hasSrc && existsSync(join(root, tsconfig))
   return {
-    include: raw.include ?? (hasSrc ? ['src/**'] : ['**']),
+    include:
+      raw.include ??
+      (members.length
+        ? workspaceInclude(workspaces, members, rootSrc)
+        : hasSrc
+          ? ['src/**']
+          : ['**']),
     exclude: raw.exclude ?? DEFAULT_EXCLUDE,
-    tsconfig: raw.tsconfig ?? 'tsconfig.json',
-    features: raw.features ?? defaultFeatures(root, hasSrc),
+    tsconfig,
+    workspaces,
+    features:
+      raw.features ??
+      (members.length ? workspaceFeatures(root, members, rootSrc) : defaultFeatures(root, hasSrc)),
     layers,
     allow: raw.allow ?? [],
     rules: raw.rules ?? defaultRules(root, layers),

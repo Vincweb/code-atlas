@@ -50,6 +50,8 @@ export type AtlasConfig = {
   include?: string[]
   exclude?: string[]
   tsconfig?: string
+  /** Package folders of a monorepo; detected from the package manager when left out. */
+  workspaces?: string[]
   features?: string[]
   layers?: LayerConfig[]
   allow?: [string, string][]

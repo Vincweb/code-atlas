@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import type { ResolvedConfig, RuleConfig, StaticRuleConfig } from '../../shared/config'
 import type { EdgeClass, EngineResult, RuleResult, Violation } from '../../shared/types'
 import { matchGlob } from '../engine/glob'
-
-const MAX_VIOLATIONS = 500
+import { ownersOf, settle } from './packages'
+import type { Owners } from './packages'
 
 export const defaultTitle = (rule: RuleConfig): string => {
   switch (rule.kind) {
@@ -85,7 +85,19 @@ const patternViolations = (
   return violations
 }
 
-const collect = (root: string, rule: StaticRuleConfig, engine: EngineResult): Violation[] => {
+/** The package a cycle counts against: the one that holds all of it, or none. */
+const cycleOwner = (cycle: string[], owners: Owners | null) => {
+  if (!owners) return {}
+  const [first, ...others] = cycle.map((file) => owners.ownerOf(file))
+  return { package: others.every((owner) => owner === first) ? (first ?? null) : null }
+}
+
+const collect = (
+  root: string,
+  rule: StaticRuleConfig,
+  engine: EngineResult,
+  owners: Owners | null,
+): Violation[] => {
   switch (rule.kind) {
     case 'layers':
       return edgeViolations(engine, ['up'])
@@ -98,6 +110,7 @@ const collect = (root: string, rule: StaticRuleConfig, engine: EngineResult): Vi
         file: cycle[0] ?? null,
         line: null,
         message: `cycle: ${[...cycle, cycle[0] ?? ''].join(' → ')}`,
+        ...cycleOwner(cycle, owners),
       }))
     case 'forbid-import':
       return engine.imports
@@ -150,11 +163,12 @@ export const evaluateStatic = (
   engine: EngineResult,
   commit: string | null,
 ): RuleResult[] => {
+  const owners = ownersOf(engine)
   const results: RuleResult[] = []
   for (const rule of config.rules) {
     if (rule.kind === 'command' || rule.kind === 'ai') continue
-    const violations = collect(root, rule, engine).sort(compare)
-    results.push({
+    const violations = collect(root, rule, engine, owners).sort(compare)
+    const result: RuleResult = {
       id: rule.id,
       family: rule.family,
       severity: rule.severity,
@@ -162,13 +176,15 @@ export const evaluateStatic = (
       title: rule.title ?? defaultTitle(rule),
       status: violations.length ? 'fail' : 'pass',
       count: violations.length,
-      violations: violations.slice(0, MAX_VIOLATIONS),
+      score: null,
+      violations: [],
       ranAt: new Date().toISOString(),
       commit,
       stale: false,
       costUsd: null,
       error: null,
-    })
+    }
+    results.push(settle(rule, result, violations, owners))
   }
   return results
 }

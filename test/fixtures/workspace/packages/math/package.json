@@ -1,0 +1,10 @@
+{
+  "name": "@ws/math",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}

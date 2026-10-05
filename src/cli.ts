@@ -87,7 +87,7 @@ const gate = async (root: string, overrides: Overrides, argv: string[]) => {
     log: (line) => console.log(line),
   })
   if (has(argv, '--update-baseline')) {
-    writeBaseline(stateDir, makeBaseline(result.rules, result.scores, git.commit))
+    writeBaseline(stateDir, makeBaseline(result.rules, result.scores, git.commit, result.packages))
     console.log(`Baseline saved to ${path.join(stateDir, 'baseline.json')}`)
     return 0
   }
@@ -149,7 +149,9 @@ export const run = async (argv = process.argv.slice(2)): Promise<number | null> 
   const root = path.resolve(asked ?? '.')
   const found = isProject(root)
   if (asked !== undefined && !found) {
-    console.error(`✗ no project at ${root} — expected a folder with package.json and tsconfig.json`)
+    console.error(
+      `✗ no project at ${root} — expected a folder with package.json and tsconfig.json, or a monorepo root`,
+    )
     return 1
   }
   const overrides = overridesFrom(argv, found ? root : null)

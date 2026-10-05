@@ -26,19 +26,28 @@ const SOURCE_EXTENSIONS = /\.(?:[cm]?[jt]s|[jt]sx)$/
 const toRelative = (root: string, file: string) =>
   path.relative(root, file).split(path.sep).join('/')
 
+/**
+ * The projects of the given tsconfigs and of every tsconfig they reference. The first one must
+ * exist; in a monorepo the root's own tsconfig comes last and may be missing.
+ */
 export const loadProjects = (
   ts: TsApi,
   root: string,
-  tsconfig: string,
+  tsconfigs: string[],
   warnings: string[],
 ): Project[] => {
-  const entry = path.resolve(root, tsconfig)
+  const [first = 'tsconfig.json', ...rest] = tsconfigs
+  const entry = path.resolve(root, first)
   if (!fs.existsSync(entry)) {
-    throw new EngineError('tsconfig-missing', `${tsconfig} not found in ${root}`)
+    throw new EngineError('tsconfig-missing', `${first} not found in ${root}`)
   }
   const projects: Project[] = []
   const seen = new Set<string>()
-  const queue = [entry]
+  const queue = [
+    entry,
+    ...rest.map((tsconfig) => path.resolve(root, tsconfig)).filter((file) => fs.existsSync(file)),
+  ]
+  const entries = new Set(queue)
   while (queue.length > 0) {
     const current = queue.shift() as string
     if (seen.has(current)) continue
@@ -47,9 +56,11 @@ export const loadProjects = (
     if (read.error || !read.config) {
       const reason = read.error ? ts.flattenDiagnosticMessageText(read.error.messageText, '\n') : ''
       if (current === entry) {
-        throw new EngineError('tsconfig-invalid', `${tsconfig} cannot be read: ${reason}`)
+        throw new EngineError('tsconfig-invalid', `${first} cannot be read: ${reason}`)
       }
-      warnings.push(`referenced tsconfig ${toRelative(root, current)} cannot be read`)
+      warnings.push(
+        `${entries.has(current) ? '' : 'referenced '}tsconfig ${toRelative(root, current)} cannot be read`,
+      )
       continue
     }
     const parsed = ts.parseJsonConfigFileContent(

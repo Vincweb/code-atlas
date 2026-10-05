@@ -123,11 +123,12 @@ const engine = (
   imports: [string, string, ('static' | 'type')?][],
 ): EngineResult => ({
   ts: { version: '5', projects: [] },
-  files: files.map((path) => ({ path, feature: '', lines: 10 })),
+  files: files.map((path) => ({ path, feature: '', package: null, lines: 10 })),
   imports: imports.map(([from, to, kind]) => ({ from, to, line: 1, kind: kind ?? 'static' })),
   graph: { layers: [], features: [], edges: [], cycles: [] },
   functions: [],
   stats: { files: files.length, lines: 0, imports: 0, typeImports: 0, features: 0, functions: 0 },
+  packages: [],
   warnings: [],
 })
 

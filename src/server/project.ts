@@ -1,11 +1,25 @@
 import path from 'path'
 import { STATE_DIR } from '../shared/config'
-import type { Analysis, Bucket, Distribution } from '../shared/types'
+import type { ResolvedConfig } from '../shared/config'
+import type {
+  Analysis,
+  Bucket,
+  Distribution,
+  Distributions,
+  EngineResult,
+  EngineStats,
+  FileNode,
+  FunctionMetric,
+  ImportEdge,
+  Workspace,
+} from '../shared/types'
 import { loadConfig } from './config'
 import { projectLabel } from './discover'
 import { analyzeEngine } from './engine'
+import { buildGraph } from './engine/graph'
 import { gitState } from './git'
 import { evaluate } from './rules'
+import type { PackageScores } from './rules'
 import { describeCommand } from './selfCommand'
 import { AI_TOOLS, FINDINGS_SCHEMA, aiInvocation } from './rules/ai'
 
@@ -32,6 +46,81 @@ const distributionOf = (values: number[], edges: number[]): Distribution => {
   }
 }
 
+const distributionsOf = (files: FileNode[], functions: FunctionMetric[]): Distributions => ({
+  complexity: distributionOf(
+    functions.map((fn) => fn.complexity),
+    COMPLEXITY_EDGES,
+  ),
+  fileLines: distributionOf(
+    files.map((file) => file.lines),
+    LINE_EDGES,
+  ),
+})
+
+const statsOf = (
+  files: FileNode[],
+  imports: ImportEdge[],
+  functions: FunctionMetric[],
+): EngineStats => {
+  const typeImports = imports.filter((edge) => edge.kind === 'type').length
+  return {
+    files: files.length,
+    lines: files.reduce((sum, file) => sum + file.lines, 0),
+    imports: imports.length - typeImports,
+    typeImports,
+    features: new Set(files.map((file) => file.feature)).size,
+    functions: functions.length,
+  }
+}
+
+const mostComplex = (functions: FunctionMetric[]) =>
+  [...functions].sort((a, b) => b.complexity - a.complexity).slice(0, MAX_FUNCTIONS)
+
+/**
+ * Each package's figures, and the graph of the packages themselves: one node per package, whose
+ * edges are the imports from one package into another.
+ */
+const workspaceOf = (
+  engine: EngineResult,
+  config: ResolvedConfig,
+  packages: PackageScores[],
+): Workspace | null => {
+  if (!engine.packages.length) return null
+  const packageOfFile = new Map(engine.files.map((file) => [file.path, file.package]))
+  const asPackages = engine.files.map((file) => ({ ...file, feature: file.package ?? '.' }))
+  return {
+    packages: engine.packages.map((pkg) => {
+      const files = engine.files.filter((file) => file.package === pkg.dir)
+      const imports = engine.imports.filter((edge) => packageOfFile.get(edge.from) === pkg.dir)
+      const own = new Set(files.map((file) => file.path))
+      const functions = engine.functions.filter((fn) => own.has(fn.file))
+      return {
+        ...pkg,
+        scores: packages.find((entry) => entry.dir === pkg.dir)?.scores ?? {
+          overall: null,
+          families: [],
+        },
+        stats: statsOf(files, imports, functions),
+        distribution: distributionsOf(files, functions),
+      }
+    }),
+    graph: buildGraph(asPackages, engine.imports, { ...config, layers: [], allow: [] }),
+  }
+}
+
+/** The most complex functions overall, and in a monorepo those of each package as well. */
+const functionsOf = (engine: EngineResult) => {
+  if (!engine.packages.length) return mostComplex(engine.functions)
+  const packageOfFile = new Map(engine.files.map((file) => [file.path, file.package]))
+  const kept = new Set(mostComplex(engine.functions))
+  for (const pkg of engine.packages)
+    for (const fn of mostComplex(
+      engine.functions.filter((candidate) => packageOfFile.get(candidate.file) === pkg.dir),
+    ))
+      kept.add(fn)
+  return [...kept].sort((a, b) => b.complexity - a.complexity)
+}
+
 export type Overrides = {
   root: string | null
   config: string | null
@@ -51,10 +140,7 @@ export const analyzeProject = (root: string, overrides: Overrides): Analysis => 
   const { config, source, configPath, stateDir } = projectContext(root, overrides)
   const engine = analyzeEngine(root, config)
   const git = gitState(root)
-  const { rules, scores, baseline } = evaluate({ root, config, engine, stateDir, git })
-  const functions = [...engine.functions]
-    .sort((a, b) => b.complexity - a.complexity)
-    .slice(0, MAX_FUNCTIONS)
+  const { rules, scores, packages, baseline } = evaluate({ root, config, engine, stateDir, git })
 
   return {
     root,
@@ -70,7 +156,7 @@ export const analyzeProject = (root: string, overrides: Overrides): Analysis => 
     stats: engine.stats,
     graph: engine.graph,
     files: engine.files,
-    functions,
+    functions: functionsOf(engine),
     rules,
     scores,
     baseline,
@@ -83,16 +169,8 @@ export const analyzeProject = (root: string, overrides: Overrides): Analysis => 
         return [{ id: rule.id, model, budgetUsd, prompt, args }]
       }),
     },
-    distribution: {
-      complexity: distributionOf(
-        engine.functions.map((fn) => fn.complexity),
-        COMPLEXITY_EDGES,
-      ),
-      fileLines: distributionOf(
-        engine.files.map((file) => file.lines),
-        LINE_EDGES,
-      ),
-    },
+    distribution: distributionsOf(engine.files, engine.functions),
+    workspace: workspaceOf(engine, config, packages),
     describeCommand: describeCommand(root, overrides),
     warnings: engine.warnings,
   }

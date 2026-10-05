@@ -11,6 +11,7 @@ const config: ResolvedConfig = {
   include: ['src/**'],
   exclude: [],
   tsconfig: 'tsconfig.json',
+  workspaces: [],
   features: ['src/components/*', 'src/lib/*'],
   layers: [
     { name: 'Entry', features: ['src', 'src/pages'] },

@@ -1,5 +1,5 @@
 import { KNOWN_FAMILIES } from '../../shared/config'
-import { ruleScore, WEIGHT } from '../../shared/score'
+import { WEIGHT } from '../../shared/score'
 import type { FamilyScore, RuleResult, Scores } from '../../shared/types'
 
 const familyOrder = (families: string[]) => {
@@ -12,12 +12,12 @@ export const computeScores = (rules: RuleResult[]): Scores => {
   const families: FamilyScore[] = familyOrder([...new Set(rules.map((rule) => rule.family))]).map(
     (family) => {
       const own = rules.filter((rule) => rule.family === family)
-      const scored = own.filter((rule) => rule.status === 'pass' || rule.status === 'fail')
-      const weight = scored.reduce((sum, rule) => sum + WEIGHT[rule.severity], 0)
-      const total = scored.reduce(
-        (sum, rule) => sum + WEIGHT[rule.severity] * ruleScore(rule.severity, rule.count),
-        0,
+      const scored = own.filter(
+        (rule): rule is RuleResult & { score: number } =>
+          (rule.status === 'pass' || rule.status === 'fail') && rule.score !== null,
       )
+      const weight = scored.reduce((sum, rule) => sum + WEIGHT[rule.severity], 0)
+      const total = scored.reduce((sum, rule) => sum + WEIGHT[rule.severity] * rule.score, 0)
       return {
         family,
         score: scored.length ? Math.round(total / weight) : null,

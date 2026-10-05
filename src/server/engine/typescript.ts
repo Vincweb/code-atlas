@@ -5,13 +5,20 @@ import { EngineError } from './errors'
 
 export type TsApi = typeof TS
 
-export const loadTypeScript = (root: string): TsApi => {
+/** The project's own compiler; in a monorepo, the root's or else the first package's that has one. */
+export const loadTypeScript = (root: string, packages: string[] = []): TsApi => {
   let loaded: unknown
-  try {
-    loaded = createRequire(path.join(root, 'package.json'))('typescript')
-  } catch {
-    throw new EngineError('typescript-missing', `typescript is not installed in ${root}`)
+  let found = false
+  for (const dir of [root, ...packages.map((member) => path.join(root, member))]) {
+    try {
+      loaded = createRequire(path.join(dir, 'package.json'))('typescript')
+      found = true
+      break
+    } catch {
+      // not installed here
+    }
   }
+  if (!found) throw new EngineError('typescript-missing', `typescript is not installed in ${root}`)
   const api = ((loaded as { default?: unknown } | null)?.default ?? loaded) as TsApi
   if (typeof api?.createSourceFile !== 'function') {
     throw new EngineError(

@@ -12,6 +12,7 @@ const config: ResolvedConfig = {
   include: [],
   exclude: [],
   tsconfig: 'tsconfig.json',
+  workspaces: [],
   features: [],
   layers: [],
   allow: [],

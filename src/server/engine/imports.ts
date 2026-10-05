@@ -139,7 +139,8 @@ export const resolveImports = (
         }
         continue
       }
-      if (resolvedModule.isExternalLibraryImport) continue
+      // A workspace package is reached through node_modules, so TypeScript calls it external even
+      // though it resolves to one of the analyzed files: the file set decides, not the flag.
       const target = relativeTo(root, resolvedModule.resolvedFileName)
       if (!known.has(target)) continue
       edges.push({ from: file.path, to: target, line: raw.line, kind: raw.kind })

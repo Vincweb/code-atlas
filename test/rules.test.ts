@@ -12,8 +12,8 @@ import { defaultTitle, evaluateStatic } from '../src/server/rules/static'
 const engine: EngineResult = {
   ts: { version: '5', projects: [] },
   files: [
-    { path: 'src/a/big.ts', feature: 'src/a', lines: 412 },
-    { path: 'src/b/small.ts', feature: 'src/b', lines: 20 },
+    { path: 'src/a/big.ts', feature: 'src/a', package: null, lines: 412 },
+    { path: 'src/b/small.ts', feature: 'src/b', package: null, lines: 20 },
   ],
   imports: [
     { from: 'src/a/big.ts', to: 'src/b/small.ts', line: 3, kind: 'static' },
@@ -55,6 +55,7 @@ const engine: EngineResult = {
     { file: 'src/b/small.ts', line: 1, name: 'ok', complexity: 2, params: 1, lines: 3 },
   ],
   stats: { files: 2, lines: 432, imports: 2, typeImports: 1, features: 2, functions: 2 },
+  packages: [],
   warnings: [],
 }
 
@@ -71,6 +72,7 @@ const configOf = (rules: RuleConfig[]): ResolvedConfig => ({
   include: [],
   exclude: [],
   tsconfig: 'tsconfig.json',
+  workspaces: [],
   features: [],
   layers: [],
   allow: [],
@@ -205,6 +207,7 @@ test('evaluate merges stored runs, marks stale, and placeholders', () => {
     title: 't',
     status: 'pass',
     count: 0,
+    score: 100,
     violations: [],
     ranAt: 'x',
     commit: 'old',

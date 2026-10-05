@@ -25,7 +25,14 @@
     },
     "tsconfig": {
       "type": "string",
-      "description": "Path of the tsconfig, relative to the project root."
+      "description": "Path of the tsconfig, relative to the project root, or to each package of a monorepo."
+    },
+    "workspaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Package folders of a monorepo (`apps/*`, `!apps/legacy`), each scored on its own. Read from pnpm-workspace.yaml or package.json workspaces when left out; [] analyzes the root as one project."
     },
     "features": {
       "type": "array",

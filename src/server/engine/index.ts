@@ -1,5 +1,8 @@
+import { basename, join } from 'node:path'
 import type { ResolvedConfig } from '../../shared/config'
-import type { EngineResult, FileNode, FunctionMetric } from '../../shared/types'
+import { packageOf } from '../../shared/packages'
+import type { EngineResult, FileNode, FunctionMetric, PackageRef } from '../../shared/types'
+import { packageName, workspaceMembers } from './workspace'
 import { featureOf } from './glob'
 import { measureFunctions } from './complexity'
 import { buildGraph } from './graph'
@@ -12,10 +15,18 @@ export { EngineError } from './errors'
 
 const MAX_WARNINGS = 20
 
+/** The root counts as a package when it holds files of its own besides its packages'. */
+const ROOT_PACKAGE = '.'
+
 export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResult => {
-  const ts = loadTypeScript(root)
+  const members = workspaceMembers(root, config.workspaces, config.tsconfig)
+  const dirs = members.map((member) => member.dir)
+  const ts = loadTypeScript(root, dirs)
   const warnings: string[] = []
-  const projects = loadProjects(ts, root, config.tsconfig, warnings)
+  const tsconfigs = members.length
+    ? [...dirs.map((dir) => join(dir, config.tsconfig)), config.tsconfig]
+    : [config.tsconfig]
+  const projects = loadProjects(ts, root, tsconfigs, warnings)
   const sources = collectFiles(root, projects, config)
 
   const raws = new Map<string, RawImport[]>()
@@ -35,8 +46,15 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
   const files: FileNode[] = sources.map((source) => ({
     path: source.path,
     feature: featureOf(source.path, config.features),
+    package: members.length ? (packageOf(source.path, dirs) ?? ROOT_PACKAGE) : null,
     lines: source.lines,
   }))
+  const held = new Set(files.map((file) => file.package))
+  const packages: PackageRef[] = members
+    .filter((member) => held.has(member.dir))
+    .map(({ dir, name }) => ({ dir, name }))
+  if (held.has(ROOT_PACKAGE))
+    packages.push({ dir: ROOT_PACKAGE, name: packageName(root, '') || basename(root) })
   const graph = buildGraph(files, imports, config)
   const typeImports = imports.filter((edge) => edge.kind === 'type').length
 
@@ -54,6 +72,7 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
       features: graph.features.length,
       functions: functions.length,
     },
+    packages,
     warnings,
   }
 }

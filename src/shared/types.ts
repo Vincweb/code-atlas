@@ -5,8 +5,12 @@ export type ImportKind = 'static' | 'reexport' | 'dynamic' | 'type'
 export type FileNode = {
   path: string
   feature: string
+  /** The workspace package that holds the file; null outside a monorepo. */
+  package: string | null
   lines: number
 }
+
+export type PackageRef = { dir: string; name: string }
 
 export type ImportEdge = {
   from: string
@@ -72,6 +76,8 @@ export type EngineResult = {
   graph: Graph
   functions: FunctionMetric[]
   stats: EngineStats
+  /** The workspace packages that hold files; empty outside a monorepo. */
+  packages: PackageRef[]
   warnings: string[]
 }
 
@@ -79,6 +85,8 @@ export type Violation = {
   file: string | null
   line: number | null
   message: string
+  /** In a monorepo, the package it counts against; null when no single package owns it. */
+  package?: string | null
 }
 
 export type RuleStatus = 'pass' | 'fail' | 'not-run' | 'error'
@@ -91,6 +99,12 @@ export type RuleResult = {
   title: string
   status: RuleStatus
   count: number
+  /** 0–100, null while the rule has no result. */
+  score: number | null
+  /** In a monorepo, the violations of each package the rule applies to. */
+  packages?: Record<string, number>
+  /** In a monorepo, the violations no single package owns. */
+  unattributed?: number
   violations: Violation[]
   ranAt: string | null
   commit: string | null
@@ -114,6 +128,20 @@ export type Scores = {
 
 export type ConfigSource = 'file' | 'cli' | 'default'
 
+export type Distributions = { complexity: Distribution; fileLines: Distribution }
+
+export type PackageInfo = PackageRef & {
+  scores: Scores
+  stats: EngineStats
+  distribution: Distributions
+}
+
+export type Workspace = {
+  packages: PackageInfo[]
+  /** One node per package, one edge per package that imports another. */
+  graph: Graph
+}
+
 export type Analysis = {
   root: string
   label: string
@@ -133,7 +161,8 @@ export type Analysis = {
   scores: Scores
   baseline: Baseline | null
   audits: AuditsInfo
-  distribution: { complexity: Distribution; fileLines: Distribution }
+  distribution: Distributions
+  workspace: Workspace | null
   describeCommand: string
   warnings: string[]
 }
@@ -156,11 +185,14 @@ export type AuditsInfo = {
   items: AuditPreview[]
 }
 
+export type PackageBaseline = { scores: Scores; violations: Record<string, number> }
+
 export type Baseline = {
   commit: string | null
   savedAt: string
   scores: Scores
   violations: Record<string, number>
+  packages?: Record<string, PackageBaseline>
 }
 
 export type RunEvent =

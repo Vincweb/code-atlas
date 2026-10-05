@@ -3,6 +3,7 @@ import os from 'os'
 import path from 'path'
 import { CONFIG_FILE } from '../shared/config'
 import type { BrowsePayload, FolderEntry, Place } from '../shared/types'
+import { detectWorkspaces } from './engine/workspace'
 
 const SKIP = new Set(['node_modules', 'dist', 'build', 'coverage', '.next', '.turbo'])
 const MAX_ENTRIES = 500
@@ -47,10 +48,11 @@ const isDirectory = (dir: string) => {
   }
 }
 
+/** A folder with a package.json and either a tsconfig.json or workspace packages. */
 export const isProject = (dir: string) =>
   isDirectory(dir) &&
   fs.existsSync(path.join(dir, 'package.json')) &&
-  fs.existsSync(path.join(dir, 'tsconfig.json'))
+  (fs.existsSync(path.join(dir, 'tsconfig.json')) || detectWorkspaces(dir).length > 0)
 
 export const projectLabel = (dir: string) => {
   try {

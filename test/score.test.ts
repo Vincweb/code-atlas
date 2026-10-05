@@ -18,6 +18,7 @@ const rule = (
   title: '',
   status,
   count,
+  score: status === 'pass' || status === 'fail' ? ruleScore(severity, count) : null,
   violations: [],
   ranAt: null,
   commit: null,
