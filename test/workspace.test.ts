@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { packageRules } from '../src/shared/packages'
 import { ruleScore } from '../src/shared/score'
-import { loadConfig } from '../src/server/config'
+import { draftConfig, loadConfig } from '../src/server/config'
 import { analyzeEngine } from '../src/server/engine'
 import { detectWorkspaces, pnpmPackages, workspaceMembers } from '../src/server/engine/workspace'
 import { evaluate, makeBaseline, runCheck } from '../src/server/rules'
@@ -227,4 +227,14 @@ test('the page scopes one analysis to a package, or draws the packages', () => {
   assert.equal(web.rules.find((rule) => rule.id === 'CC-ANY')?.count, 1)
 
   assert.equal(scopeAnalysis(analysis, 'nowhere').graph, analysis.workspace?.graph)
+})
+
+test('a monorepo draft keeps the packages’ features and stacks the packages', () => {
+  const draft = draftConfig(root, engine, config)
+  assert.deepEqual(draft.features, config.features)
+  assert.deepEqual(draft.layers, [
+    { name: 'Layer 1', features: ['apps/web/**'] },
+    { name: 'Layer 2', features: ['packages/math/**'] },
+  ])
+  assert.ok(draft.rules?.some((rule) => rule.kind === 'layers'))
 })

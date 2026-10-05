@@ -92,11 +92,13 @@ export const settle = (
   owners: Owners | null,
 ): RuleResult => {
   const ran = hasResult(result)
+  // A stored run keeps 500 violations but its full count: what was cut belongs to no package.
+  const count = Math.max(result.count, violations.length)
   if (!owners) {
     return {
       ...withoutPackages(result),
-      count: violations.length,
-      score: ran ? ruleScore(result.severity, violations.length) : null,
+      count,
+      score: ran ? ruleScore(result.severity, count) : null,
       violations: violations.slice(0, MAX_VIOLATIONS),
     }
   }
@@ -105,7 +107,7 @@ export const settle = (
   for (const dir of owners.dirs)
     if (!scope || (owners.files.get(dir) ?? []).some((file) => matchGlob(file, scope)))
       packages[dir] = 0
-  let unattributed = 0
+  let unattributed = count - violations.length
   const owned = violations.map((violation) => {
     const owner =
       violation.package !== undefined ? violation.package : owners.ownerOf(violation.file)
@@ -113,7 +115,7 @@ export const settle = (
     else unattributed++
     return { ...violation, package: owner !== null && owner in packages ? owner : null }
   })
-  const settled = { ...result, count: owned.length, packages, unattributed, violations: [] }
+  const settled = { ...result, count, packages, unattributed, violations: [] }
   return {
     ...settled,
     score: ran ? workspaceScore(settled, owners) : null,

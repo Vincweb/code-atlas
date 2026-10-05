@@ -173,7 +173,7 @@ export const serveAtlas = ({
     if (fs.existsSync(file))
       return json(response, { error: `${CONFIG_FILE} already exists in this project` }, 409)
     const { config } = projectContext(root, overrides)
-    const draft = draftConfig(root, analyzeEngine(root, config))
+    const draft = draftConfig(root, analyzeEngine(root, config), config)
     fs.writeFileSync(file, draftText(draft), { flag: 'wx' })
     json(response, { path: file }, 201)
   }
@@ -238,7 +238,7 @@ export const serveAtlas = ({
       API.draft,
       ({ response, root }) => {
         const { config } = projectContext(root, overrides)
-        const draft = draftConfig(root, analyzeEngine(root, config))
+        const draft = draftConfig(root, analyzeEngine(root, config), config)
         json(response, { config: draft, text: draftText(draft) })
       },
     ],
