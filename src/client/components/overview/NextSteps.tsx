@@ -1,4 +1,3 @@
-import { projectPath } from '../../../shared/routes'
 import type { Tab } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { cx } from '../../util/cx'
@@ -7,6 +6,7 @@ import { Link } from '../Link'
 import { CopyButton } from '../ui'
 import { stepsOf } from './model'
 import type { Step } from './model'
+import { scopedPath } from '../../state/router'
 
 const TARGET: Record<Step['id'], Tab | null> = {
   layers: 'config',
@@ -63,7 +63,7 @@ export const NextSteps = ({ analysis, root }: { analysis: Analysis; root: string
                 <span className="text-[12px] text-muted">{step.done ? copy.done : copy.todo}</span>
                 {!step.done && target && 'action' in copy && (
                   <Link
-                    to={projectPath(root, target)}
+                    to={scopedPath(root, target)}
                     className="w-fit text-[12px] text-accent hover:underline"
                   >
                     {copy.action} →

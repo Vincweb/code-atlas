@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { PROJECT_PATH, TABS } from '../../shared/routes'
+import { PROJECT_PATH, TABS, projectPath } from '../../shared/routes'
 import type { Tab } from '../../shared/routes'
 
 export type Route = {
@@ -7,6 +7,8 @@ export type Route = {
   root: string
   tab: Tab
   rule: string | null
+  /** The monorepo package the page is scoped to. */
+  pkg: string | null
 }
 
 const isTab = (value: string | null): value is Tab => TABS.some((tab) => tab === value)
@@ -20,6 +22,7 @@ const parse = (): Route => {
     root: url.searchParams.get('root') ?? '',
     tab: isTab(tab) ? tab : 'overview',
     rule: url.searchParams.get('rule'),
+    pkg: url.searchParams.get('pkg') || null,
   }
 }
 
@@ -42,6 +45,14 @@ const subscribe = (listener: () => void) => {
 }
 
 export const useRoute = () => useSyncExternalStore(subscribe, () => route)
+
+/** The package the page is scoped to. */
+export const usePkg = () => useRoute().pkg
+
+/** A link within the project that keeps the package the page is scoped to; the tabs that read the
+ * project as a whole drop it. */
+export const scopedPath = (root: string, tab: Tab = 'overview', rule?: string | null) =>
+  projectPath(root, tab, rule, tab === 'config' || tab === 'security' ? null : route.pkg)
 
 export const navigate = (to: string, { replace = false }: { replace?: boolean } = {}) => {
   if (replace) window.history.replaceState(null, '', to)

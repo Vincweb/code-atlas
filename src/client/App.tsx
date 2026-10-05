@@ -17,6 +17,7 @@ export const App = () => {
     window.scrollTo(0, 0)
   }, [route.view, route.root])
 
-  if (showProject) return <ProjectPage key={route.root} root={route.root} tab={route.tab} />
+  if (showProject)
+    return <ProjectPage key={route.root} root={route.root} tab={route.tab} pkg={route.pkg} />
   return <Welcome />
 }

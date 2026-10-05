@@ -140,10 +140,37 @@ from the graph — layers by dependency depth — to write into the project and 
   `max-lines`, `complexity`, `max-params`, `pattern`) are computed on every analysis; `command` and
   `ai` rules run on a click or under `--check`.
 
+- **workspaces** — the package folders of a monorepo; read from `pnpm-workspace.yaml` or the
+  `workspaces` of `package.json` when left out, `[]` to analyze the root as one project.
+
 A rule scores `100 × 0.5^(violations / halfLife)`, its weight set by its severity; a family is the
 weighted mean of its rules, the overall score the mean of the families.
 [examples/tidy-shop](examples/tidy-shop) is a small fictitious project with a full config — the one
 in the screenshots.
+
+## Monorepos
+
+Open the root of a pnpm, npm or yarn workspace and code-atlas finds its packages — every folder the
+workspace names that holds a `package.json` and a `tsconfig.json` — and reads them in one pass, each
+file with its own package's tsconfig. An import of `@acme/ui` through `node_modules` becomes an edge
+to the package's sources, so the graph shows which package uses which.
+
+- **A score per package.** Each violation counts against the package of its file, and each package
+  is scored on its own violations, as if analyzed alone. The Overview lists the packages worst
+  first; the package picker scopes every tab — overview, graph, rules, metrics — to one of them.
+- **A score for the repository** — each rule's score is the mean of its packages', weighted by their
+  lines: ten packages with three violations each score like one package with three, not like one
+  with thirty.
+- **The graph of packages.** The whole view draws one node per package, red when two packages
+  import each other; open a package for its own features and layers.
+- **Commands.** A `command` rule runs at the root (`pnpm lint`, through turbo or `pnpm -r`): the
+  paths a task prints are read relative to the package its `<package>:<task>:` prefix names.
+- **`--check`** fails when the repository or any single package has more violations than in the
+  baseline, which records both.
+
+Default `include` and `features` apply inside each package (`apps/*/src/**`, `apps/web/src/*`), and
+feature ids keep the full path, so layers and rules can name one package or all of them:
+`"apps/*/src/views"`.
 
 ## AI rules
 

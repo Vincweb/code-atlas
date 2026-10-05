@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { projectPath } from '../../../shared/routes'
 import type { Analysis, RuleResult } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { useInvalidateAnalysis } from '../../state/queries'
-import { useRoute } from '../../state/router'
+import { scopedPath, useRoute } from '../../state/router'
 import { ruleTitle } from '../../util/ruleTitle'
 import { BAND_TEXT, bandOf } from '../../util/score'
 import { RunDialog } from '../audits/RunDialog'
@@ -71,7 +70,7 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
               <Button onClick={runner.cancelAll}>{t.rules.cancelAll(runner.queue.length)}</Button>
             )}
             <Link
-              to={projectPath(root, 'audits')}
+              to={scopedPath(root, 'audits')}
               className="rounded border border-line bg-panel px-2.5 py-1 hover:bg-hover"
             >
               {t.rules.seeAudits} →

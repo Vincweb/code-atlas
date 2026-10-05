@@ -1,7 +1,7 @@
 import type { FeatureEdge, FeatureNode } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
-import { SectionTitle } from '../ui'
+import { Button, SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'
 import { CHIP, TONE, isRed } from './edges'
 
@@ -11,6 +11,8 @@ type Props = {
   layerName: string | null
   onFocus: (id: string) => void
   onClose: () => void
+  /** In a monorepo's whole view, opens the package the node stands for. */
+  onOpen?: (id: string) => void
 }
 
 const Chips = ({
@@ -44,7 +46,7 @@ const Chips = ({
   )
 }
 
-export const NodePanel = ({ feature, edges, layerName, onFocus, onClose }: Props) => {
+export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen }: Props) => {
   const t = useT()
   const outgoing = edges.filter((edge) => edge.from === feature.id)
   const incoming = edges.filter((edge) => edge.to === feature.id)
@@ -61,7 +63,7 @@ export const NodePanel = ({ feature, edges, layerName, onFocus, onClose }: Props
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="font-mono text-[13px] font-semibold break-all">{feature.id}</h3>
-          <p className="text-muted">{layerName ?? t.common.unlayered}</p>
+          {!onOpen && <p className="text-muted">{layerName ?? t.common.unlayered}</p>}
         </div>
         <button
           type="button"
@@ -82,6 +84,11 @@ export const NodePanel = ({ feature, edges, layerName, onFocus, onClose }: Props
         ))}
       </dl>
       <p className="text-muted">{t.graph.instabilityHelp}</p>
+      {onOpen && (
+        <Button primary onClick={() => onOpen(feature.id)} className="w-fit">
+          {t.packages.open} →
+        </Button>
+      )}
       <section>
         <SectionTitle>{t.graph.dependsOn(outgoing.length)}</SectionTitle>
         <Chips edges={outgoing} side="to" onFocus={onFocus} />

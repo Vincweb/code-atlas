@@ -83,6 +83,7 @@ export const configHelpEn = {
     include: 'Included',
     exclude: 'Excluded',
     tsconfig: 'tsconfig',
+    workspaces: 'Packages',
     files: (n: number) => `${n.toLocaleString('en-GB')} files analysed`,
   },
   features: {
@@ -144,6 +145,11 @@ export const configHelpEn = {
       ['include', 'Patterns of the files to analyse.', 'src/**'],
       ['exclude', 'Patterns to skip (tests, declarations…).', '**/*.test.*, **/*.d.ts…'],
       ['tsconfig', 'The tsconfig used to resolve imports.', 'tsconfig.json'],
+      [
+        'workspaces',
+        'The package folders of a monorepo, each scored on its own.',
+        'read from pnpm or package.json',
+      ],
       ['features', 'Patterns grouping files into features.', 'guessed from the folders'],
       ['layers', 'The layers, top to bottom, with their features.', 'none'],
       ['allow', '[from, to] pairs accepted despite the layers.', 'none'],

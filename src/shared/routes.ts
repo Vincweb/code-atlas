@@ -16,10 +16,16 @@ export type Tab = (typeof TABS)[number]
 
 export const rootQuery = (root: string) => `?root=${encodeURIComponent(root).replace(/%2F/g, '/')}`
 
-export const projectPath = (root: string, tab: Tab = 'overview', rule?: string) =>
+/** A tab of a project, scoped to one package of a monorepo when `pkg` names it. */
+export const projectPath = (
+  root: string,
+  tab: Tab = 'overview',
+  rule?: string | null,
+  pkg?: string | null,
+) =>
   `${PROJECT_PATH}${rootQuery(root)}${tab === 'overview' ? '' : `&tab=${tab}`}${
-    rule ? `&rule=${encodeURIComponent(rule)}` : ''
-  }`
+    pkg ? `&pkg=${encodeURIComponent(pkg).replace(/%2F/g, '/')}` : ''
+  }${rule ? `&rule=${encodeURIComponent(rule)}` : ''}`
 
 export const API = {
   projects: '/api/projects',

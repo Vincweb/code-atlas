@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import type { AiRuleConfig } from '../../../shared/config'
-import { projectPath } from '../../../shared/routes'
 import type { Analysis, AuditPreview, RuleResult } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { formatUsd, relativeTime } from '../../util/format'
 import { BAND_TEXT, bandOf } from '../../util/score'
-import { ruleScore } from '../../../shared/score'
 import { Link } from '../Link'
 import { SeverityBadge, StatusBadge } from '../rules/badges'
 import { Violations } from '../rules/Violations'
@@ -15,13 +13,13 @@ import { AuditProgress } from './AuditProgress'
 import { hasOutput } from '../rules/useRunner'
 import type { RunState } from '../rules/useRunner'
 import { Badge, Button } from '../ui'
+import { scopedPath } from '../../state/router'
 
 const shellQuote = (arg: string) =>
   /^[\w@%+=:,./-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, `'\\''`)}'`
 
 const AuditScore = ({ result }: { result: RuleResult | undefined }) => {
-  const ran = result?.status === 'pass' || result?.status === 'fail'
-  const score = ran ? ruleScore(result.severity, result.count) : null
+  const score = result?.score ?? null
   return (
     <span className={`text-[18px] font-semibold tabular-nums ${BAND_TEXT[bandOf(score)]}`}>
       {score ?? '–'}
@@ -156,7 +154,7 @@ export const AuditCard = ({
         </Button>
         {ran && (
           <Link
-            to={projectPath(root, 'rules', rule.id)}
+            to={scopedPath(root, 'rules', rule.id)}
             className="ml-auto text-accent hover:underline"
           >
             {help.results} →

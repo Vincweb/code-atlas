@@ -3,6 +3,7 @@ import { learnFr } from './learn.fr'
 import { configHelpFr } from './configHelp.fr'
 import { auditsFr } from './audits.fr'
 import { securityFr } from './security.fr'
+import { packagesFr } from './packages.fr'
 
 export const fr: Strings = {
   locale: 'fr-FR',
@@ -173,6 +174,8 @@ export const fr: Strings = {
     warnings: (n: number) => `${n} ${n === 1 ? 'avertissement' : 'avertissements'}`,
   },
 
+  packages: packagesFr,
+
   rules: {
     summary: (total: number) => `${total} règles`,
     failingCount: (n: number) => `${n} en échec`,
@@ -335,6 +338,8 @@ export const fr: Strings = {
     noLayersBanner:
       'Pas de couches configurées : chaque bande est un niveau de dépendance, le niveau 1 regroupe ce dont rien ne dépend. Décrivez vos couches pour voir ce qui remonte.',
     openConfig: 'Ouvrir la config',
+    packagesBanner:
+      'Un nœud par package, une arête par package qui en importe un autre ; en rouge quand deux packages s’importent l’un l’autre. Cliquez un package, puis ouvrez-le pour voir ses propres features et couches.',
     modes: { all: 'Tout', problems: 'Problèmes seuls' },
     minWeight: (n: number) => `Imports min. : ${n}`,
     minWeightHelp:

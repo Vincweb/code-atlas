@@ -5,7 +5,11 @@ code-atlas.json sits at the project root. Plain JSON, no comments. Every key is 
 ## Keys
 - include: string[] — globs of the files to analyse. Default ["src/**"], or ["**"] without a src folder.
 - exclude: string[] — globs to skip. Default tests, *.d.ts, node_modules, dist.
-- tsconfig: string — the tsconfig used to resolve imports; its "references" are followed. Default "tsconfig.json".
+- tsconfig: string — the tsconfig used to resolve imports; its "references" are followed. Default "tsconfig.json". In a monorepo, the name of each package's tsconfig.
+- workspaces: string[] — the package folders of a monorepo: "apps/*", "!apps/legacy". Default: the "packages" of pnpm-workspace.yaml, or the "workspaces" of package.json; [] analyses the root as one project. A folder counts when it holds a package.json and the tsconfig.
+  - Every package is analysed in one pass, each file with its own package's tsconfig; an import of another package through node_modules is an edge to its sources.
+  - Default include and features apply inside each package: "apps/*/src/**", "apps/web/src/*".
+  - Feature ids keep the full path ("apps/web/src/views"), so layers and rules can name one package or all: "apps/*/src/views".
 - features: string[] — ordered patterns grouping files into features.
   - "*" binds exactly one folder and the file must sit deeper: "src/components/*" makes one feature per subfolder of src/components.
   - A pattern without "*" names a file or a folder literally: "src/routes".
@@ -41,6 +45,8 @@ Every rule: { "id": unique string, "family": "architecture" | "clean-code" | "to
 - "ai" { "prompt": string, "files"?: glob, "model"?: string, "budgetUsd"?: number } — Claude reads the code read-only and reports findings for the prompt.
 
 Scoring: a rule scores 100 × 0.5^(violations / half-life), half-life 1, 3, 6, 12 for critical, high, medium, low. A family is the severity-weighted mean of its rules (8, 4, 2, 1).
+
+In a monorepo, a violation counts against the package of its file (an edge: the importing file; a cycle: the package holding all of it, else none). Each package is scored on its own violations, over the rules whose "files" (or "from") match some of its files. A rule's score for the whole repository is the mean of its packages' scores weighted by their lines, times the score of the violations no package owns. --check also fails when one package has more violations than its own baseline.
 
 ## Example
 {

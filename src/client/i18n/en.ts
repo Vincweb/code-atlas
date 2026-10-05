@@ -3,6 +3,7 @@ import { learnEn } from './learn.en'
 import { configHelpEn } from './configHelp.en'
 import { auditsEn } from './audits.en'
 import { securityEn } from './security.en'
+import { packagesEn } from './packages.en'
 
 /**
  * Every word the page shows, in English. The French file mirrors this object key for key, and the
@@ -174,6 +175,8 @@ export const en = {
     warnings: (n: number) => `${n} ${n === 1 ? 'warning' : 'warnings'}`,
   },
 
+  packages: packagesEn,
+
   rules: {
     summary: (total: number) => `${total} rules`,
     failingCount: (n: number) => `${n} failing`,
@@ -334,6 +337,8 @@ export const en = {
     noLayersBanner:
       'No layers configured: each band is a dependency level, and level 1 holds what nothing depends on. Describe your layers to see what climbs back up.',
     openConfig: 'Open the config',
+    packagesBanner:
+      'One node per package, one edge per package that imports another; red when two packages import each other. Click a package, then open it to see its own features and layers.',
     modes: { all: 'All', problems: 'Problems only' },
     minWeight: (n: number) => `Min. imports: ${n}`,
     minWeightHelp: 'Hide the grey links with fewer imports than this. Red and amber stay.',

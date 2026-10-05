@@ -85,6 +85,7 @@ export const configHelpFr: typeof configHelpEn = {
     include: 'Inclus',
     exclude: 'Exclus',
     tsconfig: 'tsconfig',
+    workspaces: 'Packages',
     files: (n: number) => `${n.toLocaleString('fr-FR')} fichiers analysés`,
   },
   features: {
@@ -146,6 +147,11 @@ export const configHelpFr: typeof configHelpEn = {
       ['include', 'Motifs des fichiers à analyser.', 'src/**'],
       ['exclude', 'Motifs à ignorer (tests, déclarations…).', '**/*.test.*, **/*.d.ts…'],
       ['tsconfig', 'Le tsconfig qui sert à résoudre les imports.', 'tsconfig.json'],
+      [
+        'workspaces',
+        'Les dossiers des packages d’un monorepo, chacun noté à part.',
+        'lus dans pnpm ou package.json',
+      ],
       ['features', 'Motifs qui regroupent les fichiers en features.', 'deviné depuis les dossiers'],
       ['layers', 'Les couches, de haut en bas, avec leurs features.', 'aucune'],
       ['allow', 'Paires [de, vers] acceptées malgré les couches.', 'aucune'],

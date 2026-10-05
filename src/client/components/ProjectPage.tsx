@@ -2,14 +2,16 @@ import type { ComponentType } from 'react'
 import type { Tab } from '../../shared/routes'
 import type { Analysis } from '../../shared/types'
 import { useT } from '../i18n'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useAnalysis, useInvalidateAnalysis } from '../state/queries'
 import { rememberProject } from '../state/recent'
+import { scopeAnalysis } from '../util/scope'
 import { AuditsTab } from './audits/AuditsTab'
 import { ConfigTab } from './ConfigTab'
 import { GraphTab } from './graph/GraphTab'
 import { MetricsTab } from './metrics/MetricsTab'
 import { Overview } from './Overview'
+import { PackageBar } from './PackageBar'
 import { ProjectHeader } from './ProjectHeader'
 import { ProjectTabs } from './ProjectTabs'
 import { RulesTab } from './rules/RulesTab'
@@ -18,7 +20,10 @@ import { TabSkeleton } from './skeletons'
 import { ErrorBox, Spinner } from './ui'
 import { ViewerProvider } from './viewer'
 
-type Props = { root: string; tab: Tab }
+type Props = { root: string; tab: Tab; pkg: string | null }
+
+/** The tabs that read the project as a whole, whatever package the page is scoped to. */
+const UNSCOPED: Tab[] = ['config', 'security']
 
 const TAB_VIEWS: Record<Tab, ComponentType<{ analysis: Analysis; root: string }>> = {
   overview: Overview,
@@ -30,11 +35,12 @@ const TAB_VIEWS: Record<Tab, ComponentType<{ analysis: Analysis; root: string }>
   config: ConfigTab,
 }
 
-export const ProjectPage = ({ root, tab }: Props) => {
+export const ProjectPage = ({ root, tab, pkg }: Props) => {
   const t = useT()
   const query = useAnalysis(root)
   const reanalyse = useInvalidateAnalysis(root)
   const analysis = query.data
+  const scoped = useMemo(() => analysis && scopeAnalysis(analysis, pkg), [analysis, pkg])
   const TabView = TAB_VIEWS[tab]
 
   const folder = (analysis?.root ?? root).split('/').filter(Boolean).pop()
@@ -63,7 +69,8 @@ export const ProjectPage = ({ root, tab }: Props) => {
         ) : (
           <ProjectHeader root={root} busy={query.isFetching} onReanalyse={() => void reanalyse()} />
         )}
-        <ProjectTabs root={root} tab={tab} analysis={analysis} busy={query.isFetching} />
+        {analysis && <PackageBar analysis={analysis} root={root} tab={tab} pkg={pkg} />}
+        <ProjectTabs root={root} tab={tab} analysis={scoped} busy={query.isFetching} />
         {query.isPending && (
           <div className="flex flex-col gap-4">
             <p role="status" className="flex items-center gap-2 text-muted">
@@ -75,7 +82,13 @@ export const ProjectPage = ({ root, tab }: Props) => {
         {query.error && (
           <ErrorBox message={query.error.message} onRetry={() => void query.refetch()} />
         )}
-        {analysis && <TabView analysis={analysis} root={root} />}
+        {analysis && scoped && (
+          <TabView
+            key={pkg ?? ''}
+            analysis={UNSCOPED.includes(tab) ? analysis : scoped}
+            root={root}
+          />
+        )}
       </div>
     </ViewerProvider>
   )

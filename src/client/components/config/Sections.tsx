@@ -19,6 +19,9 @@ export const ScopeSection = ({ analysis }: { analysis: Analysis }) => {
       help.tsconfig,
       [config.tsconfig, ...analysis.ts.projects.filter((p) => p !== config.tsconfig)],
     ],
+    ...(config.workspaces.length
+      ? [[help.workspaces, config.workspaces] as [string, string[]]]
+      : []),
   ]
   return (
     <Section

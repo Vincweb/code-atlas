@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { RUN_KINDS } from '../../../shared/config'
-import { ruleScore } from '../../../shared/score'
+import { projectPath } from '../../../shared/routes'
 import type { Analysis, RuleResult } from '../../../shared/types'
 import { useT } from '../../i18n'
+import { useRoute } from '../../state/router'
 import { fixPrompt } from '../../util/claudePrompt'
 import { cx } from '../../util/cx'
 import { formatUsd, relativeTime } from '../../util/format'
@@ -10,6 +11,7 @@ import { ruleSetting } from '../../util/ruleSetting'
 import { BAND_TEXT, bandOf } from '../../util/score'
 import type { Band } from '../../util/score'
 import { ClaudeActions } from '../ClaudeActions'
+import { Link } from '../Link'
 import { ChevronIcon } from '../welcome/icons'
 import { Badge, Button } from '../ui'
 import { SeverityBadge } from './badges'
@@ -77,6 +79,37 @@ const RuleFacts = ({ analysis, rule }: { analysis: Analysis; rule: RuleResult })
   )
 }
 
+/** In a monorepo's whole view, how many violations each package has, each a link to its own. */
+const ByPackage = ({ analysis, rule }: { analysis: Analysis; rule: RuleResult }) => {
+  const t = useT()
+  const { root } = useRoute()
+  const counts = Object.entries(rule.packages ?? {})
+    .filter(([, count]) => count > 0)
+    .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
+  if (!counts.length && !rule.unattributed) return null
+  const nameOf = (dir: string) =>
+    analysis.workspace?.packages.find((pkg) => pkg.dir === dir)?.name ?? dir
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[12px] font-semibold text-muted">{t.packages.breakdown}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {counts.map(([dir, count]) => (
+          <Link
+            key={dir}
+            to={projectPath(root, 'rules', rule.id, dir)}
+            className="rounded border border-line bg-bg px-1.5 font-mono text-[11px] hover:bg-hover"
+          >
+            {nameOf(dir)} · {count}
+          </Link>
+        ))}
+      </div>
+      {!!rule.unattributed && (
+        <span className="text-[12px] text-muted">{t.packages.elsewhere(rule.unattributed)}</span>
+      )}
+    </div>
+  )
+}
+
 /** What the rule means, why and how to fix it, then its error or its violations. */
 const RuleDetails = ({ analysis, rule, title }: Pick<Props, 'analysis' | 'rule' | 'title'>) => {
   const t = useT()
@@ -98,6 +131,7 @@ const RuleDetails = ({ analysis, rule, title }: Pick<Props, 'analysis' | 'rule' 
           {rule.error}
         </p>
       )}
+      {rule.packages && <ByPackage analysis={analysis} rule={rule} />}
       {rule.violations.length > 0 && <Violations rule={rule} />}
       {rule.status === 'fail' && rule.violations.length > 0 && (
         <div className="flex flex-col gap-2 rounded-xl border border-line bg-bg p-3">
@@ -165,7 +199,7 @@ export const RuleCard = (props: Props) => {
               {t.rules.violations(rule.count)}
             </span>
           )}
-          <ScoreMeter score={ran ? ruleScore(rule.severity, rule.count) : null} />
+          <ScoreMeter score={ran ? rule.score : null} />
           {runnable && (
             <Button onClick={onRun} disabled={state?.running || locked}>
               {t.rules.run}

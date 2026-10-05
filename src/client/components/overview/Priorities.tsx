@@ -1,4 +1,3 @@
-import { projectPath } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { Link } from '../Link'
@@ -6,6 +5,7 @@ import { SeverityBadge } from '../rules/badges'
 import { ruleTitle } from '../../util/ruleTitle'
 import { prioritiesOf } from './model'
 import type { Priority } from './model'
+import { scopedPath } from '../../state/router'
 
 const GRAPH_KINDS = new Set(['layers', 'mutual', 'siblings', 'no-cycle'])
 
@@ -34,11 +34,11 @@ const Item = ({ priority, title, root }: { priority: Priority; title: string; ro
         </dl>
       )}
       <footer className="flex flex-wrap gap-4 text-[12px]">
-        <Link to={projectPath(root, 'rules', rule.id)} className="text-accent hover:underline">
+        <Link to={scopedPath(root, 'rules', rule.id)} className="text-accent hover:underline">
           {t.learn.seeCases(rule.count)} →
         </Link>
         {GRAPH_KINDS.has(rule.kind) && (
-          <Link to={projectPath(root, 'graph')} className="text-accent hover:underline">
+          <Link to={scopedPath(root, 'graph')} className="text-accent hover:underline">
             {t.learn.seeGraph} →
           </Link>
         )}

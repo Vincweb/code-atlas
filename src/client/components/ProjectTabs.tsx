@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { TABS, projectPath } from '../../shared/routes'
+import { TABS } from '../../shared/routes'
 import type { Tab } from '../../shared/routes'
 import type { Analysis } from '../../shared/types'
 import { cx } from '../util/cx'
 import { useT } from '../i18n'
+import { scopedPath } from '../state/router'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../util/score'
 import { Link } from './Link'
 import { ProgressBar } from './skeletons'
@@ -150,7 +151,7 @@ export const ProjectTabs = ({
           return (
             <Link
               key={id}
-              to={projectPath(root, id)}
+              to={scopedPath(root, id)}
               aria-current={active ? 'page' : undefined}
               className={cx(
                 'group relative flex shrink-0 items-center gap-2 px-3 py-2.5 whitespace-nowrap',

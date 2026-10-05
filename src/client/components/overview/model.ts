@@ -1,6 +1,5 @@
 import type { Severity } from '../../../shared/config'
 import type { Analysis, FamilyScore, RuleResult } from '../../../shared/types'
-import { ruleScore } from '../../../shared/score'
 
 const WEIGHT: Record<Severity, number> = { critical: 8, high: 4, medium: 2, low: 1 }
 
@@ -15,7 +14,7 @@ export const prioritiesOf = (rules: RuleResult[], limit = 4): Priority[] => {
   return rules
     .filter((rule) => rule.status === 'fail')
     .map((rule) => {
-      const score = ruleScore(rule.severity, rule.count)
+      const score = rule.score ?? 100
       const total = familyWeight.get(rule.family) ?? WEIGHT[rule.severity]
       return { rule, score, gain: Math.round((WEIGHT[rule.severity] * (100 - score)) / total) }
     })

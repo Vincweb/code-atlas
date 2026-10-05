@@ -1,5 +1,4 @@
 import type { RuleResult } from '../../../shared/types'
-import { ruleScore } from '../../../shared/score'
 
 export type StatusFilter = 'all' | 'fail' | 'pass' | 'pending'
 
@@ -7,9 +6,7 @@ const ORDER: Record<RuleResult['status'], number> = { fail: 0, error: 1, 'not-ru
 
 export const sortRules = (rules: RuleResult[]) =>
   [...rules].sort(
-    (a, b) =>
-      ORDER[a.status] - ORDER[b.status] ||
-      ruleScore(a.severity, a.count) - ruleScore(b.severity, b.count),
+    (a, b) => ORDER[a.status] - ORDER[b.status] || (a.score ?? 100) - (b.score ?? 100),
   )
 
 export const matchesStatus = (rule: RuleResult, filter: StatusFilter) => {

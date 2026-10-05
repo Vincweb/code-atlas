@@ -51,7 +51,17 @@ const SEVERITY_ROWS = [
   ['low', 12, 1],
 ] as const
 
-export const Summary = ({ analysis }: { analysis: Analysis }) => {
+export const Summary = ({
+  analysis,
+  packages,
+  scope,
+}: {
+  analysis: Analysis
+  /** In a monorepo's whole view, how many packages the score averages. */
+  packages?: number | undefined
+  /** In a package's view, its name. */
+  scope?: string | undefined
+}) => {
   const t = useT()
   const { scores, baseline, rules } = analysis
   const band = bandOf(scores.overall)
@@ -72,7 +82,7 @@ export const Summary = ({ analysis }: { analysis: Analysis }) => {
             BAND_TEXT[band],
           )}
         >
-          {t.overview.overall} · {t.learn.bands[band]}
+          {scope ? t.packages.score(scope) : t.overview.overall} · {t.learn.bands[band]}
         </span>
         <h2 className="text-[20px] font-semibold tracking-tight">{t.learn.verdict[band]}</h2>
         <p className="text-[14px] leading-relaxed text-muted">
@@ -86,6 +96,7 @@ export const Summary = ({ analysis }: { analysis: Analysis }) => {
           {scores.overall !== null && before !== null && (
             <> {t.learn.sinceBaseline(scores.overall - before)}</>
           )}
+          {packages !== undefined && <> {t.packages.weighted(packages)}</>}
         </p>
         <details className="group mt-1">
           <summary className="w-fit cursor-pointer text-accent hover:underline">

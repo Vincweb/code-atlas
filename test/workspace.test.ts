@@ -13,6 +13,8 @@ import { evaluate, makeBaseline, runCheck } from '../src/server/rules'
 import { parseCommandOutput } from '../src/server/rules/command'
 import { writeBaseline } from '../src/server/rules/state'
 import { isProject } from '../src/server/discover'
+import { analyzeProject } from '../src/server/project'
+import { scopeAnalysis } from '../src/client/util/scope'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'workspace')
 
@@ -204,4 +206,25 @@ test('--check fails when one package gets worse, even if the total does not', as
   assert.deepEqual(second.regressions, [
     { id: 'ANY', package: 'apps/web', before: web - 1, after: web },
   ])
+})
+
+test('the page scopes one analysis to a package, or draws the packages', () => {
+  const analysis = analyzeProject(root, { root: null, config: null, state: stateDir() })
+  assert.deepEqual(
+    analysis.workspace?.graph.edges.map((edge) => [edge.from, edge.to, edge.weight]),
+    [['apps/web', 'packages/math', 1]],
+  )
+  const whole = scopeAnalysis(analysis, null)
+  assert.equal(whole.graph, analysis.workspace?.graph)
+  assert.equal(whole.rules, analysis.rules)
+
+  const web = scopeAnalysis(analysis, 'apps/web')
+  assert.ok(web.files.every((file) => file.package === 'apps/web'))
+  assert.ok(web.graph.features.every((feature) => feature.id.startsWith('apps/web/')))
+  assert.ok(web.graph.edges.every((edge) => edge.to.startsWith('apps/web/')))
+  assert.equal(web.scores, analysis.workspace?.packages[0]?.scores)
+  assert.equal(web.stats.files, 2)
+  assert.equal(web.rules.find((rule) => rule.id === 'CC-ANY')?.count, 1)
+
+  assert.equal(scopeAnalysis(analysis, 'nowhere').graph, analysis.workspace?.graph)
 })

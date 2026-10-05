@@ -1,14 +1,13 @@
 import type { RuleConfig } from '../../../shared/config'
-import { projectPath } from '../../../shared/routes'
 import type { Analysis, FamilyScore, RuleResult } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../../util/score'
-import { ruleScore } from '../../../shared/score'
 import type { Band } from '../../util/score'
 import { Link } from '../Link'
 import { ruleTitle } from '../../util/ruleTitle'
 import { hasRun } from './model'
+import { scopedPath } from '../../state/router'
 
 const BAR: Record<Band, string> = {
   good: 'bg-good',
@@ -18,12 +17,12 @@ const BAR: Record<Band, string> = {
 }
 
 const RuleBar = ({ rule, title, root }: { rule: RuleResult; title: string; root: string }) => {
-  const score = hasRun(rule) ? ruleScore(rule.severity, rule.count) : null
+  const score = hasRun(rule) ? rule.score : null
   const band = bandOf(score)
   return (
     <li>
       <Link
-        to={projectPath(root, 'rules', rule.id)}
+        to={scopedPath(root, 'rules', rule.id)}
         className="grid grid-cols-[minmax(0,1fr)_5rem_2rem] items-center gap-2 rounded px-1 py-0.5 hover:bg-hover"
       >
         <span className="truncate text-[12px]" title={title}>
@@ -97,7 +96,7 @@ const FamilyCard = ({
         <span className={diff === null ? '' : diff >= 0 ? 'text-good' : 'text-bad'}>
           {diff !== null && t.learn.sinceBaseline(diff)}
         </span>
-        <Link to={projectPath(root, 'rules')} className="text-accent hover:underline">
+        <Link to={scopedPath(root, 'rules')} className="text-accent hover:underline">
           {t.learn.seeRules} →
         </Link>
       </footer>

@@ -39,6 +39,41 @@ port) ships no compiler API — such a project is refused with a named error.
 Without a config, defaults apply and the page offers a generated draft — layers from the longest
 path in the condensed feature graph — to copy and correct.
 
+## Monorepos: one pass, scored per package
+
+- **One engine pass, not one per package.** Every package's tsconfig is loaded into one list of
+  projects, each file resolved with its own package's options (its `paths`), into one file set with
+  root-relative paths and one graph. Then everything is partitioned by package. N analyses would
+  lose the edges between packages, which are the point of a monorepo's graph.
+- **Packages are what the package manager says**: `pnpm-workspace.yaml`'s `packages`, read by hand
+  (no YAML dependency), else `package.json`'s `workspaces`; `!pattern` takes folders out. A folder
+  counts when it holds a `package.json` and the tsconfig: config packages without code
+  (`eslint-config`, `typescript-config`) drop out. The root counts as a package of its own (`.`) when
+  its tsconfig holds files no package does.
+- **Imports through node_modules.** A workspace package is linked into `node_modules`, so
+  TypeScript resolves `@acme/ui` to its real source and still flags it `isExternalLibraryImport`.
+  The analyzed file set decides whether an import is an edge, not that flag.
+- **Ownership.** A violation counts against the package of its file; an edge, against the importing
+  file's; a cycle, against the package holding all of it, else none. A rule narrowed by `files`
+  (or `from`) applies to the packages with a matching file, so a frontend-only rule does not lift
+  every backend package to 100. Violations are kept up to 500 per package, so a package's page shows
+  its own and not the remains of the whole list.
+- **Scores.** A package is scored on its own violations with the usual formula. The repository's
+  score of a rule is the mean of its packages' scores weighted by their lines, times the score of
+  the violations no package owns. The half-lives were set for one project: summed over ten apps,
+  every monorepo would score near zero whatever its health. Outside a monorepo nothing changes.
+  The server sends each rule's score, so the page never recomputes it from a count.
+- **The page scopes, the server does not.** One analysis carries every package's scores, figures
+  and distributions; the page derives a package's view from it (`?pkg=apps/web`), so switching
+  package is instant and every tab works unchanged. Config and Security stay project-wide.
+- **`--check`** keeps the repository's ratchet and adds one per package, recorded in the baseline's
+  `packages`: fixing two violations in one package does not pay for adding one in another. A
+  baseline recorded before packages existed is only checked as a whole.
+- **Commands** run once at the root. turbo prefixes a task's lines with `<package>:<task>:` and
+  `pnpm -r` with `<folder> <script>:`, and the paths after the prefix are relative to that package:
+  they are mapped back before the file is checked to exist. ESLint's stylish format, a file on its
+  own line and its messages under it, is read too.
+
 ## Two kinds of rules
 
 - **Static** (`layers`, `siblings`, `no-cycle`, `forbid-import`, `max-lines`, `complexity`,

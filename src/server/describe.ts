@@ -10,6 +10,7 @@ import { projectContext } from './project'
 import type { Overrides } from './project'
 import { CONFIG_REFERENCE } from './reference'
 import { evaluate } from './rules'
+import type { PackageScores } from './rules'
 
 const MAX_EDGES = 40
 const MAX_IMPORTS = 3
@@ -49,6 +50,37 @@ const rulesSection = (rules: RuleResult[]) =>
     return `- ${rule.id} (${rule.kind}, ${rule.severity}): ${state}`
   })
 
+const MAX_PACKAGES_PER_RULE = 5
+
+/** Each package's scores, and where the failing rules' violations sit. */
+const packagesSection = (engine: EngineResult, rules: RuleResult[], packages: PackageScores[]) => {
+  if (!packages.length) return []
+  const nameOf = (dir: string) => engine.packages.find((pkg) => pkg.dir === dir)?.name ?? dir
+  const filesOf = (dir: string) => engine.files.filter((file) => file.package === dir).length
+  const spread = rules.flatMap((rule) => {
+    const counts = Object.entries(rule.packages ?? {})
+      .filter(([, count]) => count > 0)
+      .sort(([, a], [, b]) => b - a)
+    if (!counts.length) return []
+    const shown = counts.slice(0, MAX_PACKAGES_PER_RULE).map(([dir, n]) => `${dir} ${n}`)
+    const more = counts.length > MAX_PACKAGES_PER_RULE ? ', …' : ''
+    return [`- ${rule.id}: ${shown.join(', ')}${more}`]
+  })
+  return [
+    `## Packages: ${packages.length} — each scored on its own violations; the repository's scores are their line-weighted mean`,
+    ...[...packages]
+      .sort((a, b) => (a.scores.overall ?? 101) - (b.scores.overall ?? 101))
+      .map(
+        ({ dir, scores }) =>
+          `- ${nameOf(dir)} (${dir}, ${filesOf(dir)} files): ${scoresLine(scores)}`,
+      ),
+    '',
+    '## Violations by package',
+    ...(spread.length ? spread : ['- none']),
+    '',
+  ]
+}
+
 const scoresLine = (scores: Scores) =>
   [
     ...scores.families.map((family) => `${family.family} ${family.score ?? '—'}`),
@@ -60,7 +92,13 @@ const stateOf = (
   { config, source, configPath, stateDir }: ReturnType<typeof projectContext>,
 ) => {
   const engine = analyzeEngine(root, config)
-  const { rules, scores } = evaluate({ root, config, engine, stateDir, git: gitState(root) })
+  const { rules, scores, packages } = evaluate({
+    root,
+    config,
+    engine,
+    stateDir,
+    git: gitState(root),
+  })
   const red = engine.graph.edges
     .filter((edge) => edge.class === 'up' || edge.class === 'mutual')
     .sort((a, b) => b.weight - a.weight)
@@ -89,6 +127,7 @@ const stateOf = (
     '## Rules',
     ...rulesSection(rules),
     '',
+    ...packagesSection(engine, rules, packages),
     `## Scores: ${scoresLine(scores)}`,
   ].join('\n')
 }

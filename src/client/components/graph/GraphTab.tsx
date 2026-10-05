@@ -4,7 +4,8 @@ import { projectPath } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
-import { navigate } from '../../state/router'
+import { navigate, usePkg } from '../../state/router'
+import { isWholeWorkspace } from '../../util/scope'
 import { Button } from '../ui'
 import { ChevronIcon, SearchIcon } from '../welcome/icons'
 import { GraphHelp, Legend } from './GraphHelp'
@@ -57,9 +58,36 @@ const usePanelOpen = () => {
   return [open, update] as const
 }
 
+/** What the bands mean when they are not the configured layers. */
+const Banner = ({
+  packages,
+  byDepth,
+  root,
+}: {
+  packages: boolean
+  byDepth: boolean
+  root: string
+}) => {
+  const t = useT()
+  if (packages)
+    return (
+      <div className="rounded-xl border border-line bg-panel px-4 py-2.5 text-muted">
+        {t.graph.packagesBanner}
+      </div>
+    )
+  if (!byDepth) return null
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel px-4 py-2.5">
+      <span className="flex-1 text-muted">{t.graph.noLayersBanner}</span>
+      <Button onClick={() => navigate(projectPath(root, 'config'))}>{t.graph.openConfig}</Button>
+    </div>
+  )
+}
+
 export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string }) => {
   const t = useT()
   const { graph } = analysis
+  const pkg = usePkg()
   const [focus, setFocus] = useState<string | null>(null)
   const [hover, setHover] = useState<string | null>(null)
   const [mode, setMode] = useState<Mode>('all')
@@ -106,6 +134,9 @@ export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string 
     if (event.key === 'Escape') setQuery('')
   }
 
+  // A monorepo's whole view draws its packages: each node opens that package's own graph.
+  const packagesView = isWholeWorkspace(analysis, pkg)
+  const openPackage = (id: string) => navigate(projectPath(root, 'graph', null, id))
   const redCount = graph.edges.filter((edge) => isRed(edge.class)).length
   const selected = graph.features.find((feature) => feature.id === focus)
   const layerName =
@@ -113,14 +144,7 @@ export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string 
 
   return (
     <div className="flex flex-col gap-3">
-      {layout.byDepth && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel px-4 py-2.5">
-          <span className="flex-1 text-muted">{t.graph.noLayersBanner}</span>
-          <Button onClick={() => navigate(projectPath(root, 'config'))}>
-            {t.graph.openConfig}
-          </Button>
-        </div>
-      )}
+      <Banner packages={packagesView} byDepth={layout.byDepth} root={root} />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-lg border border-line bg-panel p-0.5">
@@ -219,6 +243,7 @@ export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string 
                 layerName={layerName}
                 onFocus={focusOn}
                 onClose={() => setFocus(null)}
+                {...(packagesView ? { onOpen: openPackage } : {})}
               />
             ) : (
               <OverviewPanel graph={graph} onFocus={focusOn} />
