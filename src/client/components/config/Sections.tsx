@@ -1,7 +1,6 @@
 import { projectPath } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { formatUsd } from '../../util/format'
 import { ruleSetting } from '../../util/ruleSetting'
 import { Link } from '../Link'
 import { SeverityBadge } from '../rules/badges'
@@ -201,7 +200,6 @@ export const AiSection = ({ analysis, root }: { analysis: Analysis; root: string
   const help = t.configHelp
   const rows: [string, string][] = [
     [help.ai.model, analysis.config.ai.model],
-    [help.ai.budget, formatUsd(analysis.config.ai.budgetUsd)],
     [help.ai.language, analysis.config.ai.language],
   ]
   return (

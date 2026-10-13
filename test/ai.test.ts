@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import type { AiRuleConfig, ResolvedConfig } from '../src/shared/config'
 import type { RunEvent } from '../src/shared/types'
-import { buildAiPrompt, parseStreamLine, runAi } from '../src/server/rules/ai'
+import { aiInvocation, buildAiPrompt, parseStreamLine, runAi } from '../src/server/rules/ai'
 
 const root = '/proj'
 const config: ResolvedConfig = {
@@ -17,7 +17,7 @@ const config: ResolvedConfig = {
   layers: [],
   allow: [],
   rules: [],
-  ai: { model: 'sonnet', budgetUsd: 1, language: 'French' },
+  ai: { model: 'sonnet', language: 'French' },
   database: { config: null, features: null, layers: [], allow: [], junctions: [] },
 }
 const rule: AiRuleConfig = {
@@ -117,6 +117,13 @@ test('result lines', () => {
     costUsd: 0.31,
     error: 'Reached maximum budget ($0.1)',
   })
+})
+
+test('the invocation sets the model and no spending cap', () => {
+  const { args, model } = aiInvocation(rule, config)
+  assert.equal(model, 'sonnet')
+  assert.ok(args.includes('--model'))
+  assert.equal(args.includes('--max-budget-usd'), false)
 })
 
 test('prompt carries the guardrails', () => {

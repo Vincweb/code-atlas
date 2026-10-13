@@ -122,9 +122,8 @@ export const configHelpFr: typeof configHelpEn = {
   },
   ai: {
     title: 'Audits IA',
-    text: 'Les réglages par défaut des règles IA : le modèle Claude, le budget maximum par audit et la langue des constats.',
+    text: 'Les réglages par défaut des règles IA : le modèle Claude et la langue des constats.',
     model: 'Modèle',
-    budget: 'Plafond par audit',
     language: 'Langue',
   },
   database: {
@@ -174,7 +173,7 @@ export const configHelpFr: typeof configHelpEn = {
       ['layers', 'Les couches, de haut en bas, avec leurs features.', 'aucune'],
       ['allow', 'Paires [de, vers] acceptées malgré les couches.', 'aucune'],
       ['rules', 'Les règles à vérifier.', 'jeu par défaut'],
-      ['ai', 'Modèle, plafond et langue des audits IA.', 'sonnet · 1 $ · English'],
+      ['ai', 'Modèle et langue des audits IA.', 'sonnet · English'],
       [
         'database',
         'La config Drizzle à lire, les tables de chaque feature, leurs couches (bêta).',
@@ -202,6 +201,5 @@ export const configHelpFr: typeof configHelpEn = {
     maxLines: (n: number) => `${n} lignes max.`,
     complexity: (n: number) => `complexité ${n} max.`,
     maxParams: (n: number) => `${n} paramètres max.`,
-    budget: (usd: string) => `plafond ${usd}`,
   },
 }

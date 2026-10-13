@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { useT } from '../../i18n'
+import { MCP_INSTALL } from '../../util/claudePrompt'
+import { CopyButton } from '../ui'
 
 const Icon = ({ children }: { children: ReactNode }) => (
   <svg
@@ -81,6 +83,36 @@ export const Steps = () => {
           </li>
         ))}
       </ol>
+    </section>
+  )
+}
+
+export const ClaudeCode = () => {
+  const t = useT()
+  const words = t.landing.mcp
+  return (
+    <section className="flex flex-col gap-4 py-8">
+      <h2 className="text-[20px] font-semibold tracking-tight">{words.title}</h2>
+      <div className="grid grid-cols-1 gap-4 rounded-xl border border-line bg-panel p-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="flex flex-col gap-3">
+          <p className="leading-relaxed text-muted">{words.text}</p>
+          <span className="flex items-center gap-2">
+            <code className="min-w-0 flex-1 rounded bg-code-bg px-3 py-2 font-mono text-[12px] break-all">
+              {MCP_INSTALL}
+            </code>
+            <CopyButton text={MCP_INSTALL} />
+          </span>
+          <p className="text-[12px] leading-relaxed text-muted">{words.note}</p>
+        </div>
+        <ul className="flex flex-col gap-1.5 text-[12px] leading-relaxed text-muted">
+          {words.tools.map(([name, what]) => (
+            <li key={name} className="flex gap-2">
+              <code className="shrink-0 font-mono text-text">{name}</code>
+              <span>{what}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   )
 }

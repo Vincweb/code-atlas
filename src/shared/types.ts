@@ -1,5 +1,6 @@
 import type { Graph as MigrationGraph } from 'drizzle-graph'
 import type { DatabaseResult } from './database'
+import type { HistoryEntry } from './report'
 import type { AtlasConfig, ResolvedConfig, RuleKind, Severity } from './config'
 
 export type ImportKind = 'static' | 'reexport' | 'dynamic' | 'type'
@@ -172,6 +173,8 @@ export type Analysis = {
   workspace: Workspace | null
   describeCommand: string
   warnings: string[]
+  /** The recorded analyses of the project, oldest first. */
+  history: HistoryEntry[]
 }
 
 export type Bucket = { min: number; max: number | null; count: number }
@@ -181,7 +184,6 @@ export type Distribution = { buckets: Bucket[]; average: number; max: number; to
 export type AuditPreview = {
   id: string
   model: string
-  budgetUsd: number
   prompt: string
   args: string[]
 }
@@ -386,3 +388,5 @@ export type {
 export type MigrationsPayload = { dir: string; graph: MigrationGraph }
 
 export type MigrationSqlPayload = { folder: string; sql: string }
+
+export type { CheckReport, HistoryEntry, Regression } from './report'

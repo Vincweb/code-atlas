@@ -23,7 +23,7 @@ jobs:
       - run: pnpm build
       # The command rules are the lint, type and test steps above.
       - name: Audit code-atlas with itself
-        run: node dist/cli.js --check --skip-commands
+        run: node dist/cli.js --check --skip-commands --format github
       - name: Smoke-test the built CLI on the fixture
         run: |
           STATE="$RUNNER_TEMP/atlas"

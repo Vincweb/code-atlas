@@ -68,9 +68,9 @@ to Claude when you run one.
 <img src="docs/media/graph.png" alt="The graph tab: features in five layer bands from Screens to Foundation, two red edges between cart and checkout, one red edge climbing from lib/api to the shared UI, and the panel listing the most coupled features and the red edges with the import behind each" width="960">
 </div>
 
-- **Overview** — the overall score, a score per family (architecture, clean code, tooling,
-  database, AI audits), the failing rules that weigh most, the packages of a monorepo worst first,
-  and the next steps.
+- **Overview** — the overall score and its curve over the last commits, a score per family
+  (architecture, clean code, tooling, database, AI audits), the failing rules that weigh most, the
+  packages of a monorepo worst first, and the next steps.
 - **Graph** — one band per layer, top to bottom. Red for a dependency that climbs a layer or goes
   both ways, amber for coupling between sibling features. Click a feature for its files, its
   coupling, and the import statements behind each red edge.
@@ -216,11 +216,11 @@ migration with its `snapshot.json`.
 ## AI rules
 
 An `ai` rule runs Claude Code headless (`claude -p`) in the project, read-only (`Read`, `Grep`,
-`Glob`), with a spending cap (`budgetUsd`, checked between turns, so a run can end a little over
-it), and gets its findings back as structured data. It uses your own Claude Code login, or
-`ANTHROPIC_API_KEY` when it is set: code-atlas never handles a key. Results are kept per rule and
-marked stale when the commit moves. They never gate `--check`: two runs on the same commit can
-disagree.
+`Glob`), until Claude is done, and gets its findings back as structured data. It uses your own
+Claude Code login, or `ANTHROPIC_API_KEY` when it is set: code-atlas never handles a key, and sets
+no spending cap — it is your login and your plan. Results are kept per rule, with what the run
+cost, and marked stale when the commit moves. They never gate `--check`: two runs on the same
+commit can disagree.
 
 ## Security tests
 
@@ -249,10 +249,50 @@ npx @vincweb/code-atlas describe
 ```
 
 prints the config format and the project's current state — features, layers, red edges with the
-imports behind them, rules, scores — written for an AI assistant. The page's "Open in Claude Code"
-buttons open a new session in the Code tab of the Claude desktop app, on the project, with a prompt
-that runs it before editing `code-atlas.json` or fixing a rule, and again to check the result; the
-prompt is filled in, never sent. "Copy the prompt" does the same for any other assistant.
+imports behind them, rules, scores, the recent history — written for an AI assistant. The page's
+"Open in Claude Code" buttons open a new session in the Code tab of the Claude desktop app, on the
+project, with a prompt that runs it before editing `code-atlas.json` or fixing a rule, and again to
+check the result; the prompt is filled in, never sent. "Copy the prompt" does the same for any
+other assistant.
+
+### As an MCP server
+
+```sh
+claude mcp add -s project code-atlas -- npx -y @vincweb/code-atlas mcp
+```
+
+writes `.mcp.json` at the project root — commit it, and every Claude Code session on the project
+gets the tools below. `npx -y @vincweb/code-atlas` runs the version the project installed when it
+has one. The file is the generic form, for any MCP client that starts servers over stdio:
+
+```json
+{
+  "mcpServers": {
+    "code-atlas": { "command": "npx", "args": ["-y", "@vincweb/code-atlas", "mcp"] }
+  }
+}
+```
+
+For yourself, on every project, `-s user` instead of `-s project`. Without `-s`, Claude Code
+keeps it for you and this folder only. The server starts where Claude Code runs, so start Claude
+Code at the project root; `--root` names another project, and each tool also takes a `root`.
+`claude mcp list` tells whether it connects.
+
+`code-atlas mcp` speaks the Model Context Protocol on stdio — no dependency, the protocol is a few
+JSON lines. The tools:
+
+| Tool         | What it answers                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `overview`   | the scores per family, every rule with its count, the packages of a monorepo, the recent history                                     |
+| `violations` | the violations at `file:line`, filtered by rule or file glob, capped with the total                                                  |
+| `edges`      | the dependencies between features with the imports behind each — the red ones by default — or the foreign keys of the database graph |
+| `feature`    | one feature: its layer, files, coupling, edges in and out                                                                            |
+| `check`      | the ratchet against the baseline, as `--check` does; `commands: true` runs the command rules too                                     |
+| `config`     | the format of `code-atlas.json` and the effective config, to read before editing it                                                  |
+| `describe`   | what `code-atlas describe` prints                                                                                                    |
+
+Every tool analyses the project afresh, so a call takes what an analysis takes: a few seconds on
+a large project. In a monorepo, `package` scopes `overview`, `violations` and `edges` to one package.
 
 ## CI
 
@@ -263,6 +303,42 @@ npx @vincweb/code-atlas --check             # fails when any rule has more viola
 
 The baseline lives in `.code-atlas/baseline.json` — commit it. Runs land in `.code-atlas/runs/`:
 ignore that folder.
+
+`--format` picks what `--check` prints, for the machine reading it:
+
+| Format   | What it prints                                                                                                                                                             |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`   | the report above, the default                                                                                                                                              |
+| `json`   | one document on stdout — scores, rules with their violations, packages, regressions — the report on stderr                                                                 |
+| `github` | the report, plus one error annotation per regressed rule and one on each of its violations (ten at most, the runner's limit), and a table of the scores in the job summary |
+| `sarif`  | SARIF 2.1.0 on stdout, every violation of every rule that ran, for code scanning                                                                                           |
+
+```yaml
+- run: npx @vincweb/code-atlas --check --format github
+```
+
+shows a regression inline in the pull request, on the lines of its new violations. For every
+violation — new or old — as a code scanning alert, with the new ones flagged on the pull request by
+GitHub itself, upload the SARIF:
+
+```yaml
+- run: npx @vincweb/code-atlas --check --format sarif > code-atlas.sarif
+  continue-on-error: true
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: code-atlas.sarif
+```
+
+Paths in both are relative to `GITHUB_WORKSPACE`, so `--root apps/web` still lands on the right
+file.
+
+### History
+
+Every analysis the page makes, and every `--check`, records the scores of the commit in
+`.code-atlas/runs/history.jsonl` — one line per commit, the latest state of it. The Overview draws
+the curve of the overall score over the last commits, `describe` prints it, and the `overview` MCP
+tool returns it. The file lives under `runs/`, so it stays per machine: in CI it is written and
+forgotten, on your machine it is the history of your work on the project.
 
 ## Security
 

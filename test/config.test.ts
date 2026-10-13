@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import type { EngineResult } from '../src/shared/types'
-import { ConfigError, defaultRules, draftConfig, draftText, loadConfig } from '../src/server/config'
+import { ConfigError, loadConfig } from '../src/server/config'
+import { defaultRules } from '../src/server/rules/defaults'
+import { draftConfig, draftText } from '../src/server/rules/draft'
 
 const project = (files: Record<string, string> = {}, dirs: string[] = []) => {
   const root = mkdtempSync(join(tmpdir(), 'atlas-config-'))
@@ -32,7 +34,7 @@ test('defaults without a file', () => {
   assert.deepEqual(config.include, ['src/**'])
   assert.deepEqual(config.features, ['src/*'])
   assert.equal(config.tsconfig, 'tsconfig.json')
-  assert.deepEqual(config.ai, { model: 'sonnet', budgetUsd: 1, language: 'English' })
+  assert.deepEqual(config.ai, { model: 'sonnet', language: 'English' })
   assert.ok(config.rules.some((rule) => rule.id === 'CC-ANY'))
 })
 
@@ -60,8 +62,21 @@ test('file and cli sources', () => {
   })
   const file = loadConfig(root)
   assert.equal(file.source, 'file')
-  assert.deepEqual(file.config.ai, { model: 'sonnet', budgetUsd: 1, language: 'French' })
+  assert.deepEqual(file.config.ai, { model: 'sonnet', language: 'French' })
   assert.equal(loadConfig(root, join(root, 'other.json')).source, 'cli')
+})
+
+test('the dropped spending cap is accepted in an older config and left out of the resolved one', () => {
+  const root = project({
+    'code-atlas.json': JSON.stringify({
+      ai: { budgetUsd: 2 },
+      rules: [{ id: 'A', family: 'ai', severity: 'low', kind: 'ai', prompt: 'p', budgetUsd: 1 }],
+    }),
+  })
+  const { config, source } = loadConfig(root)
+  assert.equal(source, 'file')
+  assert.deepEqual(config.ai, { model: 'sonnet', language: 'English' })
+  assert.equal('budgetUsd' in (config.rules[0] ?? {}), false)
 })
 
 test('collects every issue', () => {

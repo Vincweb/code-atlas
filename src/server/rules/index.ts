@@ -9,6 +9,7 @@ import type {
   Baseline,
   EngineResult,
   PackageBaseline,
+  Regression,
   RuleResult,
   RunEvent,
   Scores,
@@ -122,8 +123,6 @@ export const makeBaseline = (
     : {}),
 })
 
-type Regression = { id: string; package?: string; before: number; after: number }
-
 /** Every count above the baseline's: the whole repository's, then each package's it recorded. */
 const regressionsOf = (
   rules: RuleResult[],
@@ -162,6 +161,7 @@ export const runCheck = async (opts: {
   scores: Scores
   packages: PackageScores[]
   regressions: Regression[]
+  baseline: Baseline | null
 }> => {
   const { root, config, engine, stateDir, git, skipCommands, recording = false, log } = opts
   const owners = ownersOf(engine)
@@ -207,7 +207,7 @@ export const runCheck = async (opts: {
         ? '✓ No regression'
         : `✗ ${regressions.length} regression(s)${errored ? ', a command could not run' : ''}`,
     )
-  return { ok, rules, scores, packages, regressions }
+  return { ok, rules, scores, packages, regressions, baseline }
 }
 
 const reportPackages = (

@@ -7,9 +7,21 @@ import { describeProject } from './server/describe'
 import { isProject } from './server/discover'
 import { analyzeEngine, EngineError } from './server/engine'
 import { gitState } from './server/git'
+import { serveMcp } from './server/mcp'
 import { projectContext } from './server/project'
 import type { Overrides } from './server/project'
+import {
+  FORMATS,
+  checkReport,
+  githubAnnotations,
+  isFormat,
+  sarifReport,
+  summaryMarkdown,
+} from './server/report'
+import type { Format } from './server/report'
+import type { CheckReport } from './shared/types'
 import { makeBaseline, runCheck } from './server/rules'
+import { historyEntry, recordHistory } from './server/rules/history'
 import { writeBaseline } from './server/rules/state'
 import { serveAtlas } from './server/server'
 
@@ -21,6 +33,7 @@ const USAGE = `code-atlas — map and audit a TypeScript codebase
 Usage
   code-atlas [options]
   code-atlas describe [--root <path>] [--config <file>]
+  code-atlas mcp [--root <path>] [--config <file>] [--state <dir>]
 
 Options
   -r, --root <path>       project to open (default: the current folder, when it is one)
@@ -33,6 +46,8 @@ Options
                           exit 1 on any regression
       --skip-commands     with --check or --update-baseline: static rules only
       --update-baseline   run the same rules and save the result as the baseline
+      --format <name>     with the two above: text (default), json, github (annotations and
+                          a job summary for GitHub Actions) or sarif (for code scanning)
   -h, --help              show this message
   -v, --version           show the version
 
@@ -40,6 +55,8 @@ Commands
   describe                the config format and the project's current state, written for an AI
                           assistant: features, layers, red edges with their imports, rules,
                           scores. Exits 2 when the config is invalid.
+  mcp                     serve the same as MCP tools over stdio, for Claude Code or any MCP
+                          client: claude mcp add -s project code-atlas -- npx -y @vincweb/code-atlas mcp
 
 Examples
   code-atlas                          open the page on the current project
@@ -72,7 +89,30 @@ const describe = (error: unknown) => {
   return `✗ ${error instanceof Error ? error.message : String(error)}`
 }
 
-const gate = async (root: string, overrides: Overrides, argv: string[]) => {
+/** What a format prints besides the text report; `json` and `sarif` own stdout entirely. */
+const emit = (format: Format, report: CheckReport) => {
+  switch (format) {
+    case 'text':
+      return
+    case 'json':
+      console.log(JSON.stringify(report, null, 2))
+      return
+    case 'sarif':
+      console.log(JSON.stringify(sarifReport(report, readVersion()), null, 2))
+      return
+    case 'github': {
+      for (const line of githubAnnotations(report)) console.log(line)
+      const summary = process.env.GITHUB_STEP_SUMMARY
+      if (summary) fs.appendFileSync(summary, summaryMarkdown(report))
+      return
+    }
+  }
+}
+
+const gate = async (root: string, overrides: Overrides, argv: string[], format: Format) => {
+  const quiet = format === 'json' || format === 'sarif'
+  const log = (line: string) => (quiet ? console.error(line) : console.log(line))
+  const recording = has(argv, '--update-baseline')
   const { config, stateDir } = projectContext(root, overrides)
   const engine = analyzeEngine(root, config)
   const git = gitState(root)
@@ -83,15 +123,16 @@ const gate = async (root: string, overrides: Overrides, argv: string[]) => {
     stateDir,
     git,
     skipCommands: has(argv, '--skip-commands'),
-    recording: has(argv, '--update-baseline'),
-    log: (line) => console.log(line),
+    recording,
+    log,
   })
-  if (has(argv, '--update-baseline')) {
+  recordHistory(stateDir, historyEntry(result.scores, result.rules, result.packages, git))
+  if (recording) {
     writeBaseline(stateDir, makeBaseline(result.rules, result.scores, git.commit, result.packages))
-    console.log(`Baseline saved to ${path.join(stateDir, 'baseline.json')}`)
-    return 0
+    log(`Baseline saved to ${path.join(stateDir, 'baseline.json')}`)
   }
-  return result.ok ? 0 : 1
+  emit(format, checkReport({ root, engine, git, recording, result }))
+  return recording || result.ok ? 0 : 1
 }
 
 const overridesFrom = (argv: string[], root: string | null): Overrides => {
@@ -111,10 +152,10 @@ const runDescribe = (root: string, overrides: Overrides) => {
 }
 
 /** The commands that need a project, each exiting 2 when the config or the engine fails. */
-const projectCommand = (argv: string[]) => {
+const projectCommand = (argv: string[], format: Format) => {
   if (argv[0] === 'describe') return runDescribe
   if (has(argv, '-c', '--check', '--update-baseline'))
-    return (root: string, overrides: Overrides) => gate(root, overrides, argv)
+    return (root: string, overrides: Overrides) => gate(root, overrides, argv, format)
   return null
 }
 
@@ -145,6 +186,12 @@ export const run = async (argv = process.argv.slice(2)): Promise<number | null> 
     return 0
   }
 
+  const format = valueOf(argv, '--format') ?? 'text'
+  if (!isFormat(format)) {
+    console.error(`✗ unknown format: ${format} — one of ${FORMATS.join(', ')}`)
+    return 1
+  }
+
   const asked = valueOf(argv, '-r', '--root')
   const root = path.resolve(asked ?? '.')
   const found = isProject(root)
@@ -156,7 +203,11 @@ export const run = async (argv = process.argv.slice(2)): Promise<number | null> 
   }
   const overrides = overridesFrom(argv, found ? root : null)
 
-  const command = projectCommand(argv)
+  if (argv[0] === 'mcp') {
+    serveMcp({ overrides, cwd: process.cwd(), version: readVersion() })
+    return null
+  }
+  const command = projectCommand(argv, format)
   if (!command) return serve(argv, overrides)
   if (!found) {
     console.error(`✗ no project at ${root} — pass --root <path>`)

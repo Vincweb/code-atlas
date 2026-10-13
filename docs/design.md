@@ -89,9 +89,15 @@ path in the condensed feature graph — to copy and correct.
 
 `claude -p` with `--output-format stream-json --verbose`, `--json-schema` (the findings land in the
 `result` event's `structured_output`), `--tools Read,Grep,Glob`, `--strict-mcp-config`,
-`--disable-slash-commands`, `--no-session-persistence`, `--model` and `--max-budget-usd`. It uses
-the user's own Claude Code login; the tool handles no key. The child's environment drops
-`CLAUDECODE` and `CLAUDE_*`, which mark a nested session.
+`--disable-slash-commands`, `--no-session-persistence` and `--model`. It uses the user's own
+Claude Code login; the tool handles no key. The child's environment drops `CLAUDECODE` and
+`CLAUDE_*`, which mark a nested session.
+
+No spending cap. The first versions passed `--max-budget-usd` and asked the user to confirm a
+number per audit; it is their own login and their own plan, and nobody tuned the knob — it only
+cut audits short. The cost of a run is still read from Claude's result and shown, as a fact. A
+`budgetUsd` in an older config is accepted and ignored, so the config keeps loading; the schema no
+longer offers it, since the schema says what to write and the loader forgives what was written.
 
 ## Score
 
@@ -183,9 +189,72 @@ two runs on one commit find different things, so it has its own tab and stays ou
 - Paths in findings are relative to Strix's workspace (`<name>/src/a.ts`, `/workspace/<name>/…`);
   they are mapped back to the project and checked to exist before the page links them.
 
+## `--format`: the report for the machine reading it
+
+`--check` prints a text report for a human in the log. `--format json` prints one document on
+stdout and sends the text report to stderr, so `> report.json` works without parsing around
+progress lines. `--format github` keeps the text on stdout and adds GitHub Actions workflow
+commands — one `::error` per regressed rule and one per violation of those rules with a file, ten
+at most since the runner drops the rest — and a Markdown table of the scores appended to
+`$GITHUB_STEP_SUMMARY`. `--format sarif` prints SARIF 2.1.0 with every violation of every rule that
+ran, not only the regressions: code scanning keeps the alerts and tells new from old itself, which
+the count-only baseline cannot. Severity maps to level — critical and high `error`, medium
+`warning`, low `note` — and a violation without a line (a cycle, a file over the limit) gets a
+location without a region, since `startLine` may not be 0. Paths are made relative to
+`GITHUB_WORKSPACE` (else the working directory), because `--root apps/web` makes the violations'
+paths relative to the package, and an annotation on `src/a.ts` would point nowhere. No automatic
+detection of the CI from the environment: a format is asked for, like everything else.
+
+## History: one point per commit
+
+The README promised to show what degrades, and a single number cannot: the page recorded one
+analysis, the baseline one snapshot. Now `.code-atlas/runs/history.jsonl` keeps the scores of each
+analysis — overall, per family, the counts per rule, per package in a monorepo — as JSON lines,
+capped at 500. Written by the page's `/api/analysis` and by `--check` and `--update-baseline`, never
+by `describe` or by the MCP read tools, which only read it (`check` writes, like the CLI). One
+entry per commit: an analysis on the same commit as the last entry replaces it, so a day of
+re-analyses is one point, the latest state of that commit. Under `runs/` because that folder is
+already ignored (`git status --porcelain` lists untracked files, and a new file under
+`.code-atlas/` would have marked every analysis dirty): the history is per machine, like a run.
+A project that has not ignored the folder yet would still turn dirty on its second analysis, so
+`gitState` leaves `.code-atlas/` out of what it counts as a change: the tool's own state never
+dirties the project it measures. And since `/api/analysis` now writes, it refuses other origins
+like every route that does. In
+CI it is written and lost with the checkout; on a developer's machine it is their own history of
+the project, which is the one they look at. The Overview draws a sparkline of the overall score,
+scaled around the scores shown (never narrower than 20 points) because on a 0–100 axis a drop
+from 79 to 72 is a flat line; a package's view reads each entry's `packages[dir]`.
+
+## MCP server, by hand
+
+`code-atlas mcp` serves the project to Claude Code and any MCP client over stdio: newline-delimited
+JSON-RPC 2.0, `initialize`, `ping`, `tools/list`, `tools/call`, nothing else of the protocol. Written
+by hand — the official SDK brings zod and a dozen packages, and the package has no runtime
+dependency. stdout carries nothing but responses; the startup line and any log go to stderr. A
+message without an id is a notification and gets no answer. Messages are answered in the order
+they arrive, including parse errors, so a client reading a pipe sees a predictable stream.
+
+The tools return JSON as text, each capped (50 violations, 40 edges, 10 imports behind an edge, 20
+violations per rule in `check`) with the total alongside, so an answer never floods a context. They
+reuse `analyzeProject`, `describeProject` and `runCheck`, so what Claude reads is what the page
+shows; `package` scopes an answer through the same `scopeAnalysis` the page uses, which moved to
+`shared/` for that. Every call analyses afresh — the design keeps no project in memory, and a cache
+keyed on the working tree would need the walk the analysis makes anyway. A tool error (no such
+feature, an invalid config) is a result with `isError`, listing what exists, so the model can
+correct its call; a protocol error (unknown method, bad params) is a JSON-RPC error. The server
+starts without a project, since a user-level config may serve several: then every tool needs its
+`root`.
+
+The install the README and the page lead with is `claude mcp add -s project`: the tool is a
+devDependency of the project, so the server belongs to the project too — `.mcp.json` at the root,
+committed, and every Claude Code session on the project gets the tools. The default scope would
+have kept it in one user's `~/.claude.json`, for that folder only. The repository carries its own
+`.mcp.json` on `pnpm exec tsx src/cli.ts mcp`, to run the server from source on itself.
+
 ## Context for an AI assistant
 
-`code-atlas describe` prints the config reference and the project's state as plain text. The
+`code-atlas describe` prints the config reference and the project's state as plain text, the
+recorded history included — the direction in one line. The
 prompts the page hands to Claude Code cite it — with the CLI's own path, since the package may not
 be installed where Claude runs — before and after editing, and carry a short summary of the state so
 they still work if Claude does not run it. The page trims the summary to keep the whole prompt

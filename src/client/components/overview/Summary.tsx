@@ -4,6 +4,7 @@ import { useT } from '../../i18n'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../../util/score'
 import type { Band } from '../../util/score'
 import { extremesOf } from './model'
+import { Trend } from './Trend'
 
 const RING: Record<Band, string> = {
   good: 'stroke-good',
@@ -72,7 +73,7 @@ export const Summary = ({
   const before = baseline?.scores.overall ?? null
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5 sm:flex-row sm:items-center sm:gap-6">
+    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5 sm:flex-row sm:items-start sm:gap-6">
       <ScoreRing score={scores.overall} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <span
@@ -130,6 +131,7 @@ export const Summary = ({
           </div>
         </details>
       </div>
+      <Trend history={analysis.history} />
     </section>
   )
 }

@@ -2,7 +2,7 @@ import { projectPath } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { navigate, usePkg } from '../../state/router'
-import { isWholeWorkspace } from '../../util/scope'
+import { isWholeWorkspace } from '../../../shared/scope'
 import { FeatureGraph, NoLayersBanner } from './FeatureGraph'
 
 export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string }) => {

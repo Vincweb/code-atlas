@@ -21,7 +21,7 @@ code-atlas.json sits at the project root. Plain JSON, no comments. Every key is 
   - "siblings": true means the features of that layer must not depend on each other.
 - allow: [from, to][] — pairs of feature-id globs accepted despite the layers (drawn dashed, never a violation).
 - rules: Rule[] — when present, replaces the default rule set entirely.
-- ai: { "model"?: string, "budgetUsd"?: number, "language"?: string } — defaults for "ai" rules: "sonnet", 1, "English".
+- ai: { "model"?: string, "language"?: string } — defaults for "ai" rules: "sonnet", "English".
 - database (beta): the Drizzle schema, read as source from the first drizzle.config.* found under the project (or its workspace).
   - "config": path of the Drizzle config to read, relative to the project root, when several exist.
   - "features": { "name": string, "tables": string[] }[] — ordered globs over table names ("customer_*", "backoffice.*"); the first match wins. A table no pattern matches is grouped by the first word of its name.
@@ -50,7 +50,7 @@ Every rule: { "id": unique string, "family": "architecture" | "clean-code" | "to
 - "pattern" { "pattern": regex, "flags"?: string, "files"?: glob, "exclude"?: glob } — code that must not appear; one violation per match.
 - "db-layers", "db-mutual", "db-siblings" — the same three over the database feature graph, where an edge is a foreign key from a table of one feature to a table of another. Beta: scored in their family, never in the overall score, never in --check.
 - "command" { "run": string, "timeoutSec"?: number } — a shell command run in the project; fails on a non-zero exit (lint, type check, tests).
-- "ai" { "prompt": string, "files"?: glob, "model"?: string, "budgetUsd"?: number } — Claude reads the code read-only and reports findings for the prompt.
+- "ai" { "prompt": string, "files"?: glob, "model"?: string } — Claude reads the code read-only and reports findings for the prompt.
 
 Scoring: a rule scores 100 × 0.5^(violations / half-life), half-life 1, 3, 6, 12 for critical, high, medium, low. A family is the severity-weighted mean of its rules (8, 4, 2, 1).
 

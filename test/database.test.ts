@@ -5,7 +5,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import type { ResolvedConfig, ResolvedDatabaseConfig, RuleConfig } from '../src/shared/config'
-import { draftConfig, loadConfig } from '../src/server/config'
+import { loadConfig } from '../src/server/config'
+import { draftConfig } from '../src/server/rules/draft'
 import { analyzeEngine } from '../src/server/engine'
 import { findDrizzleConfigs, readDrizzleConfig } from '../src/server/engine/database/discover'
 import { prefixOf } from '../src/server/engine/database/features'
@@ -39,7 +40,7 @@ const configOf = (database: ResolvedDatabaseConfig, rules: RuleConfig[] = []): R
   layers: [],
   allow: [],
   rules,
-  ai: { model: 'sonnet', budgetUsd: 1, language: 'English' },
+  ai: { model: 'sonnet', language: 'English' },
   database,
 })
 

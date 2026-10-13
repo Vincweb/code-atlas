@@ -468,11 +468,6 @@
               "model": {
                 "type": "string",
                 "description": "Model alias or name."
-              },
-              "budgetUsd": {
-                "type": "number",
-                "minimum": 0,
-                "description": "Spending cap for this run."
               }
             },
             "required": ["id", "family", "severity", "kind", "prompt"],
@@ -573,11 +568,6 @@
         "model": {
           "type": "string",
           "description": "Model alias (sonnet)."
-        },
-        "budgetUsd": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Spending cap per rule, in USD (1)."
         },
         "language": {
           "type": "string",

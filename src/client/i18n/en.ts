@@ -1,4 +1,5 @@
 import type { EdgeClass } from '../../shared/types'
+import { landingEn } from './landing.en'
 import { learnEn } from './learn.en'
 import { configHelpEn } from './configHelp.en'
 import { auditsEn } from './audits.en'
@@ -65,58 +66,7 @@ export const en = {
     hint: '↑ ↓ to move · Enter to go in · ⌘/Ctrl + Enter to open · ⌫ to go up',
   },
 
-  landing: {
-    eyebrow: 'Architecture · Clean code · AI audits',
-    title: 'See the shape of your code.',
-    titleAccent: 'And where it is slipping.',
-    lead: 'code-atlas reads your TypeScript project with its own compiler, groups files into features, places them in your layers and flags every dependency that climbs back up or goes round in circles. Scripted rules, your project’s commands and AI audits add up to one score per family.',
-    cta: 'Open a project',
-    copyCommand: 'Copy the command',
-    copied: 'Copied',
-    art: 'A feature graph in three layers: one dependency climbs back up, in red; two sibling features depend on each other, in amber.',
-    scores: { architecture: 'Architecture', cleanCode: 'Clean code', tooling: 'Tooling' },
-    featuresTitle: 'What it shows you',
-    features: [
-      {
-        title: 'The feature graph',
-        text: 'Folders become features, sorted into your layers. In red: what climbs back up a layer or loops between two features.',
-      },
-      {
-        title: 'Rules that measure',
-        text: 'Layers, cycles, complexity, size, forbidden patterns — computed on every analysis, down to the file and the line.',
-      },
-      {
-        title: 'Your commands, and Claude',
-        text: 'Lint, types, tests: your scripts become rules. AI audits read the code through Claude Code — read-only, with a spending cap.',
-      },
-      {
-        title: 'A score and a guard',
-        text: 'One score per family, a baseline you commit, and a CI check that fails only when things get worse.',
-      },
-    ],
-    stepsTitle: 'Up and running in three steps',
-    steps: [
-      { title: 'Run it', command: 'npx @vincweb/code-atlas', text: 'in your project’s folder.' },
-      {
-        title: 'Describe your layers',
-        command: 'code-atlas.json',
-        text: 'or start from the draft generated from your graph.',
-      },
-      {
-        title: 'Lock it in',
-        command: 'npx @vincweb/code-atlas --check',
-        text: 'in CI, against the baseline you saved.',
-      },
-    ],
-    trust: [
-      '100% local',
-      'Zero dependencies',
-      'Your project’s own TypeScript',
-      'AI through your Claude Code',
-    ],
-    openTitle: 'Open a project',
-    openText: 'Pick up where you left off, or browse to any TypeScript project on this machine.',
-  },
+  landing: landingEn,
 
   project: {
     back: 'Projects',

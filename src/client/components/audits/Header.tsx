@@ -2,6 +2,7 @@ import type { Analysis } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { useClaudeStatus } from '../../state/queries'
+import { MCP_INSTALL } from '../../util/claudePrompt'
 import { formatUsd } from '../../util/format'
 import { BAND_TEXT, bandOf } from '../../util/score'
 import { Button, CopyButton, Spinner } from '../ui'
@@ -42,6 +43,13 @@ export const Connection = () => {
         {words.check}
         <code className="rounded bg-code-bg px-1.5 py-0.5 font-mono text-text">{CHECK}</code>
         <CopyButton text={CHECK} />
+      </span>
+      <span className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
+        {words.mcp}
+        <code className="rounded bg-code-bg px-1.5 py-0.5 font-mono text-text break-all">
+          {MCP_INSTALL}
+        </code>
+        <CopyButton text={MCP_INSTALL} />
       </span>
     </div>
   )

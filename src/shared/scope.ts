@@ -1,5 +1,5 @@
-import { packageRules } from '../../shared/packages'
-import type { Analysis, Baseline, PackageInfo } from '../../shared/types'
+import { packageRules } from './packages'
+import type { Analysis, Baseline, HistoryEntry, PackageInfo } from './types'
 
 export const packageIn = (analysis: Analysis, pkg: string | null): PackageInfo | null =>
   (pkg && analysis.workspace?.packages.find((info) => info.dir === pkg)) || null
@@ -7,6 +7,10 @@ export const packageIn = (analysis: Analysis, pkg: string | null): PackageInfo |
 /** Whether the page shows a monorepo as a whole, one node per package. */
 export const isWholeWorkspace = (analysis: Analysis, pkg: string | null) =>
   !!analysis.workspace && !packageIn(analysis, pkg)
+
+/** The history as one package lived it: its own overall score at each recorded analysis. */
+export const historyOf = (history: HistoryEntry[], dir: string): HistoryEntry[] =>
+  history.map((entry) => ({ ...entry, overall: entry.packages?.[dir] ?? null, families: {} }))
 
 const baselineOf = (baseline: Baseline | null, dir: string): Baseline | null => {
   if (!baseline) return null
@@ -43,5 +47,6 @@ export const scopeAnalysis = (analysis: Analysis, pkg: string | null): Analysis 
     stats: info.stats,
     distribution: info.distribution,
     baseline: baselineOf(analysis.baseline, info.dir),
+    history: historyOf(analysis.history, info.dir),
   }
 }

@@ -7,7 +7,6 @@ const example = {
   prompt:
     'Review error handling: empty catch blocks, swallowed errors, messages without context. Do not report the catch blocks left empty on purpose around an optional storage.',
   files: 'src/**/*.{ts,tsx}',
-  budgetUsd: 0.5,
 }
 
 export const auditsEn = {
@@ -18,12 +17,10 @@ export const auditsEn = {
   confirm: {
     titleOne: 'Run this AI audit?',
     titleAll: (n: number) => `Run ${n} AI audits?`,
-    budget: 'Maximum cost',
-    budgetAll: 'Maximum cost, in total',
     model: (model: string) => `model ${model}`,
-    text: 'It runs through your Claude Code login: your subscription, or ANTHROPIC_API_KEY when billed by usage. Claude stops when the budget is reached.',
+    text: 'It runs through your Claude Code login — your subscription, or ANTHROPIC_API_KEY when billed by usage — until Claude is done. You can cancel it at any time.',
     textAll:
-      'They run one after the other through your Claude Code login, and each stops at its own budget. You can cancel the run at any time.',
+      'They run one after the other through your Claude Code login, each until Claude is done. You can cancel the run at any time.',
     readOnly: (tools: string) => `Read-only: Claude only uses ${tools} and changes no file.`,
     action: 'Run the audit',
     actionAll: (n: number) => `Run the ${n} audits`,
@@ -36,6 +33,7 @@ export const auditsEn = {
     text: 'Audits go through your Claude Code: your subscription, or ANTHROPIC_API_KEY if you pay per use. No key to set up here.',
     missingText: 'Install Claude Code and sign in (run claude, then /login), then reload the page.',
     check: 'To check from a terminal:',
+    mcp: 'To give Claude Code the map as well, from the project folder:',
   },
   howTitle: 'How an AI audit works',
   findingsTitle: 'Findings',
@@ -171,7 +169,7 @@ export const auditsEn = {
     ],
     [
       'Tools and limits',
-      'Read, Grep and Glob only; no MCP server, no slash command, no saved session; a spending cap per audit.',
+      'Read, Grep and Glob only; no MCP server, no slash command, no saved session.',
     ],
   ] as [string, string][],
   frame: 'The frame code-atlas adds to every prompt',
@@ -190,15 +188,13 @@ export const auditsEn = {
   lastRun: (when: string) => `Last run ${when}`,
   neverRun: 'Never run',
   model: 'Model',
-  cap: 'Cap',
   settingsTitle: 'Settings',
   settingsText:
-    'Defaults for every audit, under the “ai” key of code-atlas.json. Each rule can set its own model and cap.',
+    'Defaults for every audit, under the “ai” key of code-atlas.json. Each rule can set its own model.',
   costTitle: 'Cost and safety',
   cost: [
     'An audit uses your own Claude Code login: code-atlas handles no key.',
-    'The cap is checked between two of Claude’s steps, so an audit can end slightly above it.',
-    'Nothing starts on its own: an audit runs on a click, after confirming its budget.',
+    'Nothing starts on its own: an audit runs on a click, after confirmation, and can be cancelled.',
   ],
   createTitle: 'Write your own audit',
   createText:

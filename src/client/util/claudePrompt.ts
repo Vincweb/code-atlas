@@ -1,3 +1,6 @@
+/** Installs code-atlas as an MCP server of the project, for every Claude Code session on it. */
+export const MCP_INSTALL = 'claude mcp add -s project code-atlas -- npx -y @vincweb/code-atlas mcp'
+
 import { CONFIG_FILE } from '../../shared/config'
 import type { Analysis, RuleResult } from '../../shared/types'
 import type { Strings } from '../i18n'

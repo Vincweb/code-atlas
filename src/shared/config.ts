@@ -40,7 +40,6 @@ export type AiRuleConfig = RuleBase & {
   prompt: string
   files?: string
   model?: string
-  budgetUsd?: number
 }
 
 export type RuleConfig = StaticRuleConfig | CommandRuleConfig | AiRuleConfig
@@ -75,7 +74,7 @@ export type AtlasConfig = {
   layers?: LayerConfig[]
   allow?: [string, string][]
   rules?: RuleConfig[]
-  ai?: { model?: string; budgetUsd?: number; language?: string }
+  ai?: { model?: string; language?: string }
   database?: DatabaseConfig
 }
 
@@ -89,7 +88,7 @@ export type ResolvedDatabaseConfig = {
 }
 
 export type ResolvedConfig = Required<Omit<AtlasConfig, 'ai' | 'database'>> & {
-  ai: { model: string; budgetUsd: number; language: string }
+  ai: { model: string; language: string }
   database: ResolvedDatabaseConfig
 }
 

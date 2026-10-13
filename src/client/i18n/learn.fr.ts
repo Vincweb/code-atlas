@@ -21,6 +21,20 @@ export const learnFr: typeof learnEn = {
       ? 'Identique à la référence.'
       : `${diff > 0 ? '+' : ''}${diff} points depuis la référence.`,
 
+  trend: {
+    noneYet:
+      'L’historique commence ici : la page enregistre un point à chaque analyse, --check à chaque lancement, un par commit. La courbe apparaît au prochain commit.',
+    label: (n: number, min: number, max: number) =>
+      `Score global sur les ${plural(n, 'dernier commit enregistré', 'derniers commits enregistrés')}, de ${min} à ${max}`,
+    points: (n: number) => plural(n, 'commit', 'commits'),
+    point: (entry: { at: string; commit: string | null; dirty: boolean }, score: number) =>
+      `${entry.at.slice(0, 10)} · ${entry.commit?.slice(0, 7) ?? 'sans commit'}${
+        entry.dirty ? ' (modifications non commitées)' : ''
+      } · ${score}`,
+    sincePrevious: (diff: number, commit: string | null) =>
+      `${diff === 0 ? '±0' : `${diff > 0 ? '+' : ''}${diff}`} depuis ${commit?.slice(0, 7) ?? 'l’analyse précédente'}`,
+  },
+
   howTitle: 'Comment ce score est-il calculé ?',
   how: [
     'Chaque règle part de 100 et perd la moitié de sa note à chaque palier de problèmes : 1 pour une règle critique, 3 pour une haute, 6 pour une moyenne, 12 pour une basse. Une note n’atteint jamais zéro : chaque correction se voit.',
@@ -154,7 +168,7 @@ export const learnFr: typeof learnEn = {
     ai: {
       title: 'Essayer un audit IA',
       done: 'Un audit IA a déjà tourné.',
-      todo: 'Claude relit le code sous un angle précis, avec un budget plafonné.',
+      todo: 'Claude relit le code sous un angle précis et rapporte ce qu’il a trouvé.',
       action: 'Aller aux règles',
     },
     baseline: {

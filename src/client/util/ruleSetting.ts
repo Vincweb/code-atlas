@@ -1,7 +1,6 @@
 import type { RuleConfig } from '../../shared/config'
 import type { ResolvedConfig } from '../../shared/config'
 import type { Strings } from '../i18n'
-import { formatUsd } from './format'
 
 export const ruleSetting = (rule: RuleConfig, config: ResolvedConfig, t: Strings) => {
   const params = t.configHelp.params
@@ -19,9 +18,7 @@ export const ruleSetting = (rule: RuleConfig, config: ResolvedConfig, t: Strings
     case 'command':
       return rule.run
     case 'ai':
-      return `${rule.model ?? config.ai.model} · ${params.budget(
-        formatUsd(rule.budgetUsd ?? config.ai.budgetUsd),
-      )}`
+      return rule.model ?? config.ai.model
     default:
       return null
   }

@@ -4,13 +4,11 @@ import type { AtlasConfig, LayerConfig, ResolvedConfig, RuleKind } from '../shar
 import type { ConfigSource } from '../shared/types'
 import { CONFIG_FILE, SEVERITIES } from '../shared/config'
 import { matchGlob } from './engine/glob'
-import type { ResolvedDatabaseConfig } from '../shared/config'
+import type { ResolvedDatabaseConfig, RuleConfig } from '../shared/config'
 import { drizzleConfigs } from './engine/database'
 import { defaultRules } from './rules/defaults'
 import { detectWorkspaces, workspaceMembers } from './engine/workspace'
 import type { WorkspaceMember } from './engine/workspace'
-
-export { defaultRules } from './rules/defaults'
 
 export class ConfigError extends Error {
   issues: string[]
@@ -169,10 +167,9 @@ const checkAi = (value: unknown, issues: string[]) => {
   }
   if (value.model !== undefined && typeof value.model !== 'string')
     issues.push('ai.model must be a string')
-  if (value.budgetUsd !== undefined && typeof value.budgetUsd !== 'number')
-    issues.push('ai.budgetUsd must be a number')
   if (value.language !== undefined && typeof value.language !== 'string')
     issues.push('ai.language must be a string')
+  // budgetUsd is accepted and ignored: the spending cap was dropped, an older config still loads.
   for (const key of Object.keys(value))
     if (!['model', 'budgetUsd', 'language'].includes(key)) issues.push(`ai: unknown field ${key}`)
 }
@@ -349,12 +346,13 @@ const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
   const members = workspaceMembers(root, workspaces, tsconfig)
   const rootSrc = hasSrc && existsSync(join(root, tsconfig))
   const database = resolveDatabase(raw.database)
-  const rules =
+  const rules = (
     raw.rules ??
     defaultRules(root, layers, {
       found: drizzleConfigs(root, database).configs.some((config) => config.chosen),
       layers: database.layers,
     })
+  ).map(withoutCap)
   return {
     include:
       raw.include ??
@@ -372,9 +370,17 @@ const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
     layers,
     allow: raw.allow ?? [],
     rules,
-    ai: { model: 'sonnet', budgetUsd: 1, language: 'English', ...raw.ai },
+    ai: { model: raw.ai?.model ?? 'sonnet', language: raw.ai?.language ?? 'English' },
     database,
   }
+}
+
+/** The spending cap an older config may still carry: accepted, ignored, left out of the result. */
+const withoutCap = (rule: RuleConfig): RuleConfig => {
+  if (rule.kind !== 'ai' || !('budgetUsd' in rule)) return rule
+  const kept: RuleConfig & { budgetUsd?: unknown } = { ...rule }
+  delete kept.budgetUsd
+  return kept
 }
 
 export const loadConfig = (
@@ -388,5 +394,3 @@ export const loadConfig = (
   const raw = path ? readConfigFile(path) : {}
   return { config: resolveConfig(root, raw), source, path }
 }
-
-export { draftConfig, draftText } from './rules/draft'

@@ -20,6 +20,7 @@ import { buildGraph } from './engine/graph'
 import { gitState } from './git'
 import { evaluate } from './rules'
 import type { PackageScores } from './rules'
+import { historyEntry, readHistory, recordHistory } from './rules/history'
 import { describeCommand } from './selfCommand'
 import { AI_TOOLS, FINDINGS_SCHEMA, aiInvocation } from './rules/ai'
 
@@ -135,12 +136,20 @@ export const projectContext = (root: string, overrides: Overrides) => {
   return { config, source, configPath, stateDir }
 }
 
-export const analyzeProject = (root: string, overrides: Overrides): Analysis => {
+export const analyzeProject = (
+  root: string,
+  overrides: Overrides,
+  /** Whether to add this analysis to the project's history: the page does, `describe` does not. */
+  { record = false } = {},
+): Analysis => {
   const started = performance.now()
   const { config, source, configPath, stateDir } = projectContext(root, overrides)
   const engine = analyzeEngine(root, config)
   const git = gitState(root)
   const { rules, scores, packages, baseline } = evaluate({ root, config, engine, stateDir, git })
+  const history = record
+    ? recordHistory(stateDir, historyEntry(scores, rules, packages, git))
+    : readHistory(stateDir)
 
   return {
     root,
@@ -166,13 +175,14 @@ export const analyzeProject = (root: string, overrides: Overrides): Analysis => 
       tools: AI_TOOLS,
       items: config.rules.flatMap((rule) => {
         if (rule.kind !== 'ai') return []
-        const { model, budgetUsd, prompt, args } = aiInvocation(rule, config)
-        return [{ id: rule.id, model, budgetUsd, prompt, args }]
+        const { model, prompt, args } = aiInvocation(rule, config)
+        return [{ id: rule.id, model, prompt, args }]
       }),
     },
     distribution: distributionsOf(engine.files, engine.functions),
     workspace: workspaceOf(engine, config, packages),
     describeCommand: describeCommand(root, overrides),
     warnings: engine.warnings,
+    history,
   }
 }

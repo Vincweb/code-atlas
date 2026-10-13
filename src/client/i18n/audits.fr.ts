@@ -9,7 +9,6 @@ const example = {
   prompt:
     'Relis la gestion des erreurs : catch vides, erreurs avalées, messages sans contexte. Ne signale pas les catch laissés vides volontairement autour d’un stockage optionnel.',
   files: 'src/**/*.{ts,tsx}',
-  budgetUsd: 0.5,
 }
 
 export const auditsFr: typeof auditsEn = {
@@ -21,12 +20,10 @@ export const auditsFr: typeof auditsEn = {
   confirm: {
     titleOne: 'Lancer cet audit IA ?',
     titleAll: (n: number) => `Lancer ${n} audits IA ?`,
-    budget: 'Coût maximum',
-    budgetAll: 'Coût maximum, au total',
     model: (model: string) => `modèle ${model}`,
-    text: 'Il passe par votre connexion Claude Code : votre abonnement, ou ANTHROPIC_API_KEY si vous êtes facturé à l’usage. Claude s’arrête une fois le budget atteint.',
+    text: 'Il passe par votre connexion Claude Code — votre abonnement, ou ANTHROPIC_API_KEY si vous êtes facturé à l’usage — jusqu’à ce que Claude ait fini. Vous pouvez l’annuler à tout moment.',
     textAll:
-      'Ils passent l’un après l’autre par votre connexion Claude Code, et chacun s’arrête à son propre budget. Vous pouvez annuler à tout moment.',
+      'Ils passent l’un après l’autre par votre connexion Claude Code, chacun jusqu’à ce que Claude ait fini. Vous pouvez annuler à tout moment.',
     readOnly: (tools: string) =>
       `Lecture seule : Claude n’utilise que ${tools} et ne modifie aucun fichier.`,
     action: 'Lancer l’audit',
@@ -41,6 +38,7 @@ export const auditsFr: typeof auditsEn = {
     missingText:
       'Installez Claude Code et connectez-vous (lancez claude puis /login), puis rechargez la page.',
     check: 'Pour vérifier dans un terminal :',
+    mcp: 'Pour donner aussi la carte à Claude Code, depuis le dossier du projet :',
   },
   howTitle: 'Comment fonctionne un audit IA',
   findingsTitle: 'Constats',
@@ -174,7 +172,7 @@ export const auditsFr: typeof auditsEn = {
     ],
     [
       'Les outils et les limites',
-      'Read, Grep et Glob uniquement ; aucun serveur MCP, aucune commande slash, aucune session sauvegardée ; un plafond de dépense par audit.',
+      'Read, Grep et Glob uniquement ; aucun serveur MCP, aucune commande slash, aucune session sauvegardée.',
     ],
   ],
   frame: 'Le cadre que code-atlas ajoute à chaque prompt',
@@ -194,15 +192,13 @@ export const auditsFr: typeof auditsEn = {
   lastRun: (when: string) => `Dernier passage ${when}`,
   neverRun: 'Jamais lancé',
   model: 'Modèle',
-  cap: 'Plafond',
   settingsTitle: 'Réglages',
   settingsText:
-    'Les valeurs par défaut de tous les audits, dans la clé « ai » de code-atlas.json. Chaque règle peut fixer son propre modèle et son propre plafond.',
+    'Les valeurs par défaut de tous les audits, dans la clé « ai » de code-atlas.json. Chaque règle peut fixer son propre modèle.',
   costTitle: 'Coût et sécurité',
   cost: [
     'Un audit utilise votre propre connexion Claude Code : code-atlas ne gère aucune clé.',
-    'Le plafond est vérifié entre deux étapes de Claude : un audit peut finir un peu au-dessus.',
-    'Rien ne part tout seul : un audit se lance sur un clic, après confirmation de son budget.',
+    'Rien ne part tout seul : un audit se lance sur un clic, après confirmation, et s’annule à tout moment.',
   ],
   createTitle: 'Écrire votre propre audit',
   createText:

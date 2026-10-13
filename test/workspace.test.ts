@@ -6,7 +6,8 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { packageRules } from '../src/shared/packages'
 import { ruleScore } from '../src/shared/score'
-import { draftConfig, loadConfig } from '../src/server/config'
+import { loadConfig } from '../src/server/config'
+import { draftConfig } from '../src/server/rules/draft'
 import { analyzeEngine } from '../src/server/engine'
 import { detectWorkspaces, pnpmPackages, workspaceMembers } from '../src/server/engine/workspace'
 import { evaluate, makeBaseline, runCheck } from '../src/server/rules'
@@ -14,7 +15,7 @@ import { parseCommandOutput } from '../src/server/rules/command'
 import { writeBaseline } from '../src/server/rules/state'
 import { isProject } from '../src/server/discover'
 import { analyzeProject } from '../src/server/project'
-import { scopeAnalysis } from '../src/client/util/scope'
+import { scopeAnalysis } from '../src/shared/scope'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'workspace')
 
@@ -227,6 +228,22 @@ test('the page scopes one analysis to a package, or draws the packages', () => {
   assert.equal(web.rules.find((rule) => rule.id === 'CC-ANY')?.count, 1)
 
   assert.equal(scopeAnalysis(analysis, 'nowhere').graph, analysis.workspace?.graph)
+
+  // A package's view reads the history through its own score.
+  const history = [
+    {
+      at: '2026-01-01T00:00:00.000Z',
+      commit: 'one',
+      dirty: false,
+      overall: 70,
+      families: {},
+      violations: {},
+      packages: { 'apps/web': 40 },
+    },
+  ]
+  const remembered = { ...analysis, history }
+  assert.equal(scopeAnalysis(remembered, null).history, history)
+  assert.equal(scopeAnalysis(remembered, 'apps/web').history[0]?.overall, 40)
 })
 
 test('a monorepo draft keeps the packages’ features and stacks the packages', () => {

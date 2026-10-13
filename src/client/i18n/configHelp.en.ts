@@ -120,9 +120,8 @@ export const configHelpEn = {
   },
   ai: {
     title: 'AI audits',
-    text: 'Defaults for the AI rules: the Claude model, the spending cap per audit and the language of the findings.',
+    text: 'Defaults for the AI rules: the Claude model and the language of the findings.',
     model: 'Model',
-    budget: 'Cap per audit',
     language: 'Language',
   },
   database: {
@@ -172,7 +171,7 @@ export const configHelpEn = {
       ['layers', 'The layers, top to bottom, with their features.', 'none'],
       ['allow', '[from, to] pairs accepted despite the layers.', 'none'],
       ['rules', 'The rules to check.', 'default set'],
-      ['ai', 'Model, cap and language of the AI audits.', 'sonnet · $1 · English'],
+      ['ai', 'Model and language of the AI audits.', 'sonnet · English'],
       [
         'database',
         'The Drizzle config to read, the tables of each feature, their layers (beta).',
@@ -200,6 +199,5 @@ export const configHelpEn = {
     maxLines: (n: number) => `${n} lines max`,
     complexity: (n: number) => `complexity ${n} max`,
     maxParams: (n: number) => `${n} parameters max`,
-    budget: (usd: string) => `cap ${usd}`,
   },
 }

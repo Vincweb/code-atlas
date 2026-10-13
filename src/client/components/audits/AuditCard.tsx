@@ -40,7 +40,7 @@ type Props = {
   onCancel: () => void
 }
 
-/** The model, the spending cap, the last run and its cost. */
+/** The model, the last run and what it cost. */
 const AuditFacts = ({
   preview,
   result,
@@ -55,9 +55,6 @@ const AuditFacts = ({
     <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
       <span>
         {help.model} · <span className="font-mono text-text">{preview.model}</span>
-      </span>
-      <span>
-        {help.cap} · <span className="text-text">{formatUsd(preview.budgetUsd)}</span>
       </span>
       <span>
         {result?.ranAt ? help.lastRun(relativeTime(result.ranAt, t.locale)) : help.neverRun}

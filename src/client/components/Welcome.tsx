@@ -3,7 +3,7 @@ import { useProjects } from '../state/queries'
 import { Prefs } from './Prefs'
 import { Hero } from './welcome/Hero'
 import { Mark } from './welcome/Mark'
-import { Features, Steps, Trust } from './welcome/Pitch'
+import { ClaudeCode, Features, Steps, Trust } from './welcome/Pitch'
 import { ProjectPicker } from './welcome/ProjectPicker'
 
 export const Welcome = () => {
@@ -33,6 +33,7 @@ export const Welcome = () => {
       />
       <Features />
       <Steps />
+      <ClaudeCode />
       <Trust />
 
       <footer className="mt-auto flex flex-col items-center gap-2 border-t border-line py-8 text-center text-muted">

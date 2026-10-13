@@ -1,6 +1,6 @@
 import type { Analysis } from '../../shared/types'
 import { usePkg } from '../state/router'
-import { isWholeWorkspace, packageIn } from '../util/scope'
+import { isWholeWorkspace, packageIn } from '../../shared/scope'
 import { Families } from './overview/Families'
 import { Figures, Glossary, Warnings } from './overview/Figures'
 import { NextSteps } from './overview/NextSteps'

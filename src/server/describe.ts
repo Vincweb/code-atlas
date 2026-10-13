@@ -1,7 +1,14 @@
 import path from 'path'
 import { CONFIG_FILE } from '../shared/config'
 import type { ResolvedConfig } from '../shared/config'
-import type { DatabaseResult, EngineResult, FeatureEdge, RuleResult, Scores } from '../shared/types'
+import type {
+  DatabaseResult,
+  EngineResult,
+  FeatureEdge,
+  HistoryEntry,
+  RuleResult,
+  Scores,
+} from '../shared/types'
 import { ConfigError } from './config'
 import { projectLabel } from './discover'
 import { analyzeEngine } from './engine'
@@ -11,6 +18,7 @@ import type { Overrides } from './project'
 import { CONFIG_REFERENCE } from './reference'
 import { evaluate } from './rules'
 import type { PackageScores } from './rules'
+import { readHistory } from './rules/history'
 
 const MAX_EDGES = 40
 const MAX_IMPORTS = 3
@@ -110,6 +118,24 @@ const packagesSection = (engine: EngineResult, rules: RuleResult[], packages: Pa
   ]
 }
 
+const MAX_HISTORY = 8
+
+/** The overall score of the last recorded analyses, oldest first: the direction, in one line. */
+const historySection = (history: HistoryEntry[]) => {
+  if (history.length < 2)
+    return ['## History: not enough yet — the page and --check record one point per commit']
+  const recent = history.slice(-MAX_HISTORY)
+  return [
+    `## History (overall score of the last ${recent.length} recorded commits, oldest first): ${recent
+      .map((entry) => entry.overall ?? '—')
+      .join(' → ')}`,
+    ...recent.map(
+      (entry) =>
+        `- ${entry.at.slice(0, 10)} ${entry.commit?.slice(0, 7) ?? 'no commit'}${entry.dirty ? ' (dirty)' : ''}: ${entry.overall ?? '—'}`,
+    ),
+  ]
+}
+
 const scoresLine = (scores: Scores) =>
   [
     ...scores.families.map((family) => `${family.family} ${family.score ?? '—'}`),
@@ -160,6 +186,8 @@ const stateOf = (
     '',
     ...packagesSection(engine, rules, packages),
     `## Scores: ${scoresLine(scores)}`,
+    '',
+    ...historySection(readHistory(stateDir)),
   ].join('\n')
 }
 

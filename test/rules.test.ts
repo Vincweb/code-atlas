@@ -78,7 +78,7 @@ const configOf = (rules: RuleConfig[]): ResolvedConfig => ({
   layers: [],
   allow: [],
   rules,
-  ai: { model: 'sonnet', budgetUsd: 1, language: 'English' },
+  ai: { model: 'sonnet', language: 'English' },
   database: { config: null, features: null, layers: [], allow: [], junctions: [] },
 })
 

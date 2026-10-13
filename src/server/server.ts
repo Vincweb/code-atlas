@@ -6,7 +6,8 @@ import { CONFIG_FILE, RUN_KINDS } from '../shared/config'
 import type { AiRuleConfig, CommandRuleConfig } from '../shared/config'
 import { API, claudeLink, projectPath } from '../shared/routes'
 import type { RunEvent } from '../shared/types'
-import { ConfigError, draftConfig, draftText } from './config'
+import { ConfigError } from './config'
+import { draftConfig, draftText } from './rules/draft'
 import { browseDirectories, canonicalDir, expandHome, isProject, places } from './discover'
 import { analyzeEngine, EngineError } from './engine'
 import { drizzleConfigs, migrationsDirOf } from './engine/database'
@@ -31,6 +32,7 @@ const isForeign = (request: http.IncomingMessage) => {
 }
 
 const GUARDED_ROUTES: string[] = [
+  API.analysis,
   API.createConfig,
   API.claudeOpen,
   API.file,
@@ -245,7 +247,10 @@ export const serveAtlas = ({
   ])
 
   const projectRoutes = new Map<string, (call: ProjectCall) => void>([
-    [API.analysis, ({ response, root }) => json(response, analyzeProject(root, overrides))],
+    [
+      API.analysis,
+      ({ response, root }) => json(response, analyzeProject(root, overrides, { record: true })),
+    ],
     [
       API.draft,
       ({ response, root }) => {

@@ -19,6 +19,20 @@ export const learnEn = {
       ? 'Same as the baseline.'
       : `${diff > 0 ? '+' : ''}${diff} points since the baseline.`,
 
+  trend: {
+    noneYet:
+      'The history starts here: the page records a point at each analysis, --check at each run, one per commit. The curve appears with the next commit.',
+    label: (n: number, min: number, max: number) =>
+      `Overall score over the last ${plural(n, 'recorded commit', 'recorded commits')}, from ${min} to ${max}`,
+    points: (n: number) => plural(n, 'commit', 'commits'),
+    point: (entry: { at: string; commit: string | null; dirty: boolean }, score: number) =>
+      `${entry.at.slice(0, 10)} · ${entry.commit?.slice(0, 7) ?? 'no commit'}${
+        entry.dirty ? ' (uncommitted changes)' : ''
+      } · ${score}`,
+    sincePrevious: (diff: number, commit: string | null) =>
+      `${diff === 0 ? '±0' : `${diff > 0 ? '+' : ''}${diff}`} since ${commit?.slice(0, 7) ?? 'the previous analysis'}`,
+  },
+
   howTitle: 'How is this score computed?',
   how: [
     'Every rule starts at 100 and loses half its score with each step of problems: 1 for a critical rule, 3 for a high one, 6 for a medium one, 12 for a low one. A score never reaches zero, so every fix shows.',
@@ -146,7 +160,7 @@ export const learnEn = {
     ai: {
       title: 'Try an AI audit',
       done: 'An AI audit has run.',
-      todo: 'Claude reads the code from one angle, with a spending cap.',
+      todo: 'Claude reads the code from one angle and reports what it found.',
       action: 'Go to the rules',
     },
     baseline: {

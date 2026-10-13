@@ -125,7 +125,6 @@ export const AI_TOOLS = ['Read', 'Grep', 'Glob']
 
 export const aiInvocation = (rule: AiRuleConfig, config: ResolvedConfig) => {
   const model = rule.model ?? config.ai.model
-  const budgetUsd = rule.budgetUsd ?? config.ai.budgetUsd
   const prompt = buildAiPrompt(rule, config)
   const args = [
     '-p',
@@ -142,10 +141,8 @@ export const aiInvocation = (rule: AiRuleConfig, config: ResolvedConfig) => {
     '--no-session-persistence',
     '--model',
     model,
-    '--max-budget-usd',
-    String(budgetUsd),
   ]
-  return { model, budgetUsd, prompt, args }
+  return { model, prompt, args }
 }
 
 export const runAi = (
