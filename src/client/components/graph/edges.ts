@@ -10,6 +10,7 @@ export const TONE: Record<EdgeClass, Tone> = {
   lateral: 'grey',
   allowed: 'grey',
   unlayered: 'light',
+  junction: 'light',
 }
 
 export const DASHED: Record<EdgeClass, boolean> = {
@@ -20,6 +21,7 @@ export const DASHED: Record<EdgeClass, boolean> = {
   lateral: false,
   allowed: true,
   unlayered: true,
+  junction: true,
 }
 
 export const isProblem = (edgeClass: EdgeClass) =>

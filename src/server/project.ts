@@ -157,6 +157,7 @@ export const analyzeProject = (root: string, overrides: Overrides): Analysis => 
     graph: engine.graph,
     files: engine.files,
     functions: functionsOf(engine),
+    database: engine.database,
     rules,
     scores,
     baseline,

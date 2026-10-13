@@ -42,7 +42,25 @@ const toolingRules = (root: string): RuleConfig[] => {
   return rules
 }
 
-export const defaultRules = (root: string, layers: LayerConfig[]): RuleConfig[] => {
+/** The database rules apply only to a project with a Drizzle config; they are in beta. */
+const databaseRules = (database: DatabaseDefaults): RuleConfig[] => {
+  if (!database.found) return []
+  const rules: RuleConfig[] = []
+  if (database.layers.length)
+    rules.push({ id: 'DB-LAYERS', family: 'database', severity: 'high', kind: 'db-layers' })
+  rules.push({ id: 'DB-MUTUAL', family: 'database', severity: 'medium', kind: 'db-mutual' })
+  if (database.layers.some((layer) => layer.siblings))
+    rules.push({ id: 'DB-SIBLINGS', family: 'database', severity: 'low', kind: 'db-siblings' })
+  return rules
+}
+
+export type DatabaseDefaults = { found: boolean; layers: LayerConfig[] }
+
+export const defaultRules = (
+  root: string,
+  layers: LayerConfig[],
+  database: DatabaseDefaults = { found: false, layers: [] },
+): RuleConfig[] => {
   const rules: RuleConfig[] = []
   if (layers.length)
     rules.push({ id: 'ARCH-LAYERS', family: 'architecture', severity: 'high', kind: 'layers' })
@@ -63,6 +81,7 @@ export const defaultRules = (root: string, layers: LayerConfig[]): RuleConfig[] 
       files: '**/*.{ts,tsx}',
     },
     ...toolingRules(root),
+    ...databaseRules(database),
     {
       id: 'AI-ARCH',
       family: 'ai',

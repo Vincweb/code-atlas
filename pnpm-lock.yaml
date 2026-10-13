@@ -187,6 +187,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15))
+      drizzle-graph:
+        specifier: ^0.2.0
+        version: 0.2.0
       eslint:
         specifier: ^9.39.0
         version: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
@@ -1238,6 +1241,11 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  drizzle-graph@0.2.0:
+    resolution: {integrity: sha512-g1ZisPfOhYzuveHUFsU6r8f3GCc3dquSB6h3E9F1KanIWF00Vb0tmTXvuKQhrj47RIMPyXevcqENiohRnxUOPQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   electron-to-chromium@1.5.444:
     resolution: {integrity: sha512-5ss/uJfoDYDHT0lfJzT6FbcskIzROIOPf0BbbFkGcvDzoJU7i//9GDrwwIHQVmIsrAGiF3ihpADBRIsrEFt1rQ==}
@@ -2714,6 +2722,8 @@ snapshots:
   deep-is@0.1.4: {}
 
   detect-libc@2.1.2: {}
+
+  drizzle-graph@0.2.0: {}
 
   electron-to-chromium@1.5.444: {}
 

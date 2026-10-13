@@ -8,6 +8,7 @@ import { rememberProject } from '../state/recent'
 import { scopeAnalysis } from '../util/scope'
 import { AuditsTab } from './audits/AuditsTab'
 import { ConfigTab } from './ConfigTab'
+import { DatabaseTab } from './database/DatabaseTab'
 import { GraphTab } from './graph/GraphTab'
 import { MetricsTab } from './metrics/MetricsTab'
 import { Overview } from './Overview'
@@ -23,7 +24,7 @@ import { ViewerProvider } from './viewer'
 type Props = { root: string; tab: Tab; pkg: string | null }
 
 /** The tabs that read the project as a whole, whatever package the page is scoped to. */
-const UNSCOPED: Tab[] = ['config', 'security']
+const UNSCOPED: Tab[] = ['config', 'security', 'database']
 
 const TAB_VIEWS: Record<Tab, ComponentType<{ analysis: Analysis; root: string }>> = {
   overview: Overview,
@@ -32,6 +33,7 @@ const TAB_VIEWS: Record<Tab, ComponentType<{ analysis: Analysis; root: string }>
   audits: AuditsTab,
   security: SecurityTab,
   metrics: MetricsTab,
+  database: DatabaseTab,
   config: ConfigTab,
 }
 

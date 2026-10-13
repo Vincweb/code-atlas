@@ -80,6 +80,10 @@ to Claude when you run one.
   a copy of the project and shows its findings, and checks whether Strix is wired into the CI.
 - **Metrics** — complexity and file-size distributions, each feature's size and instability, the
   most complex functions and the largest files.
+- **Database** (beta) — when the project has a `drizzle.config.*`: the schema as a diagram, one
+  feature at a time; the feature graph of the database, where an edge is a foreign key and a
+  junction table is the accepted way for two features to meet; and the migration DAG, drawn by
+  [drizzle-graph](https://github.com/Vincweb/drizzle-graph).
 - **Config** — the effective config explained section by section, or a draft to start from.
 
 <div align="center">
@@ -137,8 +141,8 @@ from the graph — layers by dependency depth — to write into the project and 
 - **features** — ordered patterns; `*` binds one directory, first match wins.
 - **layers** — top to bottom. A dependency may only go down; `siblings` forbids coupling inside one.
 - **rules** — static kinds (`layers`, `mutual`, `siblings`, `no-cycle`, `forbid-import`,
-  `max-lines`, `complexity`, `max-params`, `pattern`) are computed on every analysis; `command` and
-  `ai` rules run on a click or under `--check`.
+  `max-lines`, `complexity`, `max-params`, `pattern`, `db-layers`, `db-mutual`, `db-siblings`) are
+  computed on every analysis; `command` and `ai` rules run on a click or under `--check`.
 
 - **workspaces** — the package folders of a monorepo; read from `pnpm-workspace.yaml` or the
   `workspaces` of `package.json` when left out, `[]` to analyze the root as one project.
@@ -171,6 +175,39 @@ to the package's sources, so the graph shows which package uses which.
 Default `include` and `features` apply inside each package (`apps/*/src/**`, `apps/web/src/*`), and
 feature ids keep the full path, so layers and rules can name one package or all of them:
 `"apps/*/src/views"`.
+
+## Database (beta)
+
+With a `drizzle.config.*` under the project — or under its workspace, for a package that uses a
+sibling's schema — code-atlas reads the schema the config names, as source: the config is never
+executed and nothing connects to a database. Tables group into features by the first word of
+their name (`customers`, `customer_calls` and `customers_projects` land together), or as
+`database.features` says; `database.layers` works like `layers`. The three `db-*` rules mirror
+`layers`, `mutual` and `siblings` over foreign keys, with one exception: a foreign key held by a
+junction table — two keys to distinct tables under one composite primary key — never nests two
+features. A 1:N key from a feature to the layer below is normal; a direct key between siblings,
+or in both directions, is not.
+
+```json
+{
+  "database": {
+    "config": "packages/db/drizzle.config.ts",
+    "features": [
+      { "name": "customer", "tables": ["customer_*", "customers", "customers_*"] },
+      { "name": "catalog", "tables": ["products", "backoffice.*"] }
+    ],
+    "layers": [
+      { "name": "Features", "siblings": true, "features": ["customer", "sell_in"] },
+      { "name": "Reference", "features": ["catalog", "users"] }
+    ],
+    "junctions": ["customer_product_prices"]
+  }
+}
+```
+
+The database family scores on the page but counts neither in the overall score nor in `--check`
+while the tab is in beta. The migrations view needs the Drizzle Kit v1 layout, one folder per
+migration with its `snapshot.json`.
 
 ## AI rules
 
@@ -239,7 +276,9 @@ pnpm check                        # lint, types, tests, build
 node scripts/readme-images.mjs    # regenerate docs/media from examples/tidy-shop (needs Chrome)
 ```
 
-[docs/design.md](docs/design.md) records the decisions and the alternatives they beat.
+[docs/design.md](docs/design.md) records the decisions and the alternatives they beat. The only
+bundled package is [drizzle-graph](https://github.com/Vincweb/drizzle-graph), a dev dependency
+tsup inlines, so the published package still has no runtime dependency.
 
 ## License
 

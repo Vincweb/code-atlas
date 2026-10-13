@@ -12,11 +12,13 @@ import { findCycles } from './cycles'
 
 const round = (value: number) => Math.round(value * 100) / 100
 
+export const layerIndex = (feature: string, layers: Layering['layers']) => {
+  const index = layers.findIndex((layer) => matchAny(feature, layer.features))
+  return index === -1 ? null : index
+}
+
 const featureNodes = (files: FileNode[], config: ResolvedConfig) => {
-  const layerOf = (feature: string) => {
-    const index = config.layers.findIndex((layer) => matchAny(feature, layer.features))
-    return index === -1 ? null : index
-  }
+  const layerOf = (feature: string) => layerIndex(feature, config.layers)
   const nodes = new Map<string, FeatureNode>()
   for (const file of files) {
     const node = nodes.get(file.feature) ?? {
@@ -55,7 +57,7 @@ const featureEdges = (files: FileNode[], imports: ImportEdge[]) => {
   return { edges: [...edges.values()], fileEdges }
 }
 
-const neighbours = (edges: FeatureEdge[], end: 'from' | 'to') => {
+export const neighbours = (edges: FeatureEdge[], end: 'from' | 'to') => {
   const map = new Map<string, Set<string>>()
   for (const edge of edges) {
     const [own, other] = end === 'from' ? [edge.from, edge.to] : [edge.to, edge.from]
@@ -64,10 +66,16 @@ const neighbours = (edges: FeatureEdge[], end: 'from' | 'to') => {
   return map
 }
 
-const classify = (
+export type Layering = Pick<ResolvedConfig, 'layers' | 'allow'>
+
+/**
+ * The class of an edge from where its two ends sit: `outgoing` says whether the reverse edge
+ * exists. Shared with the database graph, whose features and edges are tables and foreign keys.
+ */
+export const classify = (
   edge: FeatureEdge,
-  config: ResolvedConfig,
-  nodes: Map<string, FeatureNode>,
+  config: Layering,
+  nodes: Map<string, { layer: number | null }>,
   outgoing: Map<string, Set<string>>,
 ): EdgeClass => {
   if (config.allow.some(([from, to]) => matchGlob(edge.from, from) && matchGlob(edge.to, to))) {

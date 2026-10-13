@@ -22,6 +22,12 @@ code-atlas.json sits at the project root. Plain JSON, no comments. Every key is 
 - allow: [from, to][] — pairs of feature-id globs accepted despite the layers (drawn dashed, never a violation).
 - rules: Rule[] — when present, replaces the default rule set entirely.
 - ai: { "model"?: string, "budgetUsd"?: number, "language"?: string } — defaults for "ai" rules: "sonnet", 1, "English".
+- database (beta): the Drizzle schema, read as source from the first drizzle.config.* found under the project (or its workspace).
+  - "config": path of the Drizzle config to read, relative to the project root, when several exist.
+  - "features": { "name": string, "tables": string[] }[] — ordered globs over table names ("customer_*", "backoffice.*"); the first match wins. A table no pattern matches is grouped by the first word of its name.
+  - "layers": same shape as the top-level layers, over database feature names.
+  - "allow": [from, to][] pairs of database feature globs.
+  - "junctions": string[] — table names (globs) to treat as junction tables, beyond those detected (two foreign keys to distinct tables under one composite primary key or unique constraint).
 
 ## Edges between features (type-only imports are ignored)
 - down: to a lower layer — normal.
@@ -29,6 +35,7 @@ code-atlas.json sits at the project root. Plain JSON, no comments. Every key is 
 - mutual: both directions exist (unless the two features sit in different layers, where one direction is "up") — reported by "mutual". Without any layer, every pair importing both ways is mutual.
 - sibling: inside a "siblings" layer — reported by "siblings".
 - lateral: inside a normal layer. allowed: listed in "allow". unlayered: one end has no layer.
+- junction (database only): every foreign key behind the edge belongs to a junction table — the accepted way for two features to meet.
 
 ## Rules
 Every rule: { "id": unique string, "family": "architecture" | "clean-code" | "tooling" | "ai" (or any name), "severity": "critical" | "high" | "medium" | "low", "kind": one of the kinds below, "title"?: string }, plus the fields of its kind:
@@ -41,6 +48,7 @@ Every rule: { "id": unique string, "family": "architecture" | "clean-code" | "to
 - "complexity" { "max": number, "files"?: glob } — functions whose cyclomatic complexity exceeds max.
 - "max-params" { "max": number, "files"?: glob } — functions with more parameters than max.
 - "pattern" { "pattern": regex, "flags"?: string, "files"?: glob, "exclude"?: glob } — code that must not appear; one violation per match.
+- "db-layers", "db-mutual", "db-siblings" — the same three over the database feature graph, where an edge is a foreign key from a table of one feature to a table of another. Beta: scored in their family, never in the overall score, never in --check.
 - "command" { "run": string, "timeoutSec"?: number } — a shell command run in the project; fails on a non-zero exit (lint, type check, tests).
 - "ai" { "prompt": string, "files"?: glob, "model"?: string, "budgetUsd"?: number } — Claude reads the code read-only and reports findings for the prompt.
 

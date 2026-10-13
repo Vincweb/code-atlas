@@ -5,6 +5,7 @@ import { useT } from '../../i18n'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../../util/score'
 import type { Band } from '../../util/score'
 import { Link } from '../Link'
+import { Badge } from '../ui'
 import { ruleTitle } from '../../util/ruleTitle'
 import { hasRun } from './model'
 import { scopedPath } from '../../state/router'
@@ -64,8 +65,13 @@ const FamilyCard = ({
     <article className="flex flex-col gap-3 rounded-xl border border-line bg-panel p-4">
       <header className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-semibold">
+          <h3 className="flex items-center gap-2 text-[15px] font-semibold">
             {t.families[family.family] ?? family.family}
+            {family.beta && (
+              <Badge className="border-accent/40 text-[10px] tracking-wide text-accent uppercase">
+                {t.database.beta}
+              </Badge>
+            )}
           </h3>
           <p className="text-[12px] leading-relaxed text-muted">
             {t.learn.familyText[family.family] ?? ''}

@@ -1,7 +1,7 @@
 import path from 'path'
 import { CONFIG_FILE } from '../shared/config'
 import type { ResolvedConfig } from '../shared/config'
-import type { EngineResult, FeatureEdge, RuleResult, Scores } from '../shared/types'
+import type { DatabaseResult, EngineResult, FeatureEdge, RuleResult, Scores } from '../shared/types'
 import { ConfigError } from './config'
 import { projectLabel } from './discover'
 import { analyzeEngine } from './engine'
@@ -15,9 +15,9 @@ import type { PackageScores } from './rules'
 const MAX_EDGES = 40
 const MAX_IMPORTS = 3
 
-const edgeLine = (edge: FeatureEdge) =>
+const edgeLine = (edge: FeatureEdge, noun = 'import') =>
   [
-    `- ${edge.from} → ${edge.to} (${edge.class}, ${edge.weight} import${edge.weight === 1 ? '' : 's'})`,
+    `- ${edge.from} → ${edge.to} (${edge.class}, ${edge.weight} ${noun}${edge.weight === 1 ? '' : 's'})`,
     ...edge.imports
       .slice(0, MAX_IMPORTS)
       .map((item) => `    ${item.file}:${item.line} → ${item.target}`),
@@ -39,6 +39,35 @@ const layersSection = (config: ResolvedConfig, engine: EngineResult) => {
   })
   const unlayered = features.filter((f) => f.layer === null).map((f) => f.id)
   return [...lines, `Unlayered: ${unlayered.join(', ') || 'none'}`]
+}
+
+const databaseSection = (database: DatabaseResult | null) => {
+  if (!database) return ['## Database: no Drizzle config found']
+  const chosen = database.configs.find((config) => config.chosen)
+  const red = database.graph.edges.filter((edge) => edge.class === 'up' || edge.class === 'mutual')
+  const siblings = database.graph.edges.filter((edge) => edge.class === 'sibling')
+  const { stats } = database
+  return [
+    `## Database: ${stats.tables} tables in ${stats.features} features, ${stats.junctions} junction tables, ${stats.foreignKeys} foreign keys`,
+    `Drizzle config: ${chosen?.path ?? '—'} (schema: ${chosen?.schema.join(', ') || '—'}; migrations: ${database.migrations ? `${database.migrations.count}, Drizzle Kit ${database.migrations.layout}` : 'none'})`,
+    `Features grouped by: ${database.featuresSource === 'config' ? 'database.features in the config' : 'the first word of each table name (set database.features to correct)'}`,
+    ...database.graph.features.map(
+      (feature) =>
+        `- ${feature.id} (${feature.files} tables)${
+          feature.layer === null ? '' : `, layer ${feature.layer + 1}`
+        }`,
+    ),
+    `Red foreign-key edges (up and mutual): ${red.length}`,
+    ...red.slice(0, MAX_EDGES).map((edge) => edgeLine(edge, 'foreign key')),
+    `Sibling foreign-key edges: ${siblings.length}`,
+    ...siblings.map((edge) => `- ${edge.from} → ${edge.to} (${edge.weight})`),
+    `Junction tables: ${
+      database.tables
+        .filter((table) => table.junction)
+        .map((table) => table.id)
+        .join(', ') || 'none'
+    }`,
+  ]
 }
 
 const rulesSection = (rules: RuleResult[]) =>
@@ -115,7 +144,7 @@ const stateOf = (
     ...layersSection(config, engine),
     '',
     `## Red edges (up and mutual): ${red.length}`,
-    ...red.slice(0, MAX_EDGES).map(edgeLine),
+    ...red.slice(0, MAX_EDGES).map((edge) => edgeLine(edge)),
     ...(red.length > MAX_EDGES ? [`… ${red.length - MAX_EDGES} more`] : []),
     '',
     `## Sibling edges: ${siblings.length}`,
@@ -123,6 +152,8 @@ const stateOf = (
     '',
     `## File cycles: ${graph.cycles.length}`,
     ...graph.cycles.map((cycle) => `- ${[...cycle, cycle[0]].join(' → ')}`),
+    '',
+    ...databaseSection(engine.database),
     '',
     '## Rules',
     ...rulesSection(rules),

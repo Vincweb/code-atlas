@@ -9,6 +9,8 @@ import type { RunEvent } from '../shared/types'
 import { ConfigError, draftConfig, draftText } from './config'
 import { browseDirectories, canonicalDir, expandHome, isProject, places } from './discover'
 import { analyzeEngine, EngineError } from './engine'
+import { drizzleConfigs, migrationsDirOf } from './engine/database'
+import { buildMigrationGraph, migrationsInfo, readMigrationSql } from './engine/database/migrations'
 import { claudeStatus } from './claudeStatus'
 import { gitState } from './git'
 import { openBrowser, openUrl } from './open'
@@ -36,6 +38,8 @@ const GUARDED_ROUTES: string[] = [
   API.security,
   API.securityScan,
   API.securityCancel,
+  API.migrations,
+  API.migrationSql,
 ]
 const FOREIGN = 'this route only answers the page it belongs to'
 
@@ -196,6 +200,14 @@ export const serveAtlas = ({
     )
   }
 
+  /** The v1 migrations folder of the project's Drizzle config — the only folder the routes read. */
+  const migrationsDir = (root: string) => {
+    const { config } = projectContext(root, overrides)
+    const chosen = drizzleConfigs(root, config.database).configs.find((info) => info.chosen)
+    const dir = chosen ? migrationsDirOf(chosen) : null
+    return dir && migrationsInfo(dir)?.layout === 'v1' ? dir : null
+  }
+
   const globalRoutes = new Map<string, (call: ApiCall) => void>([
     [
       API.projects,
@@ -258,6 +270,24 @@ export const serveAtlas = ({
       ({ response, url, root }) => streamRun(response, root, url.searchParams.get('rule') ?? ''),
     ],
     ...securityRoutes(overrides, scans),
+    [
+      API.migrations,
+      ({ response, root }) => {
+        const dir = migrationsDir(root)
+        if (!dir) return json(response, { error: 'no Drizzle Kit v1 migrations folder' }, 404)
+        json(response, { dir, graph: buildMigrationGraph(dir) })
+      },
+    ],
+    [
+      API.migrationSql,
+      ({ response, url, root }) => {
+        const dir = migrationsDir(root)
+        const folder = url.searchParams.get('folder') ?? ''
+        const sql = dir ? readMigrationSql(dir, folder) : null
+        if (sql === null) return json(response, { error: `no migration ${folder}` }, 404)
+        json(response, { folder, sql })
+      },
+    ],
   ])
 
   const handleApi = (call: ApiCall) => {

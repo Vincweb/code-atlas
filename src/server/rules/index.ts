@@ -14,6 +14,7 @@ import type {
   Scores,
 } from '../../shared/types'
 import { workspaceMembers } from '../engine/workspace'
+import { isDbKind } from '../../shared/config'
 import { runAi } from './ai'
 import { runCommand } from './command'
 import { ownersOf, settle } from './packages'
@@ -94,7 +95,8 @@ export const runRule = async (opts: {
 const countsOf = (rules: RuleResult[]) =>
   Object.fromEntries(
     rules
-      .filter((rule) => rule.kind !== 'ai' && (rule.status === 'pass' || rule.status === 'fail'))
+      .filter((rule) => rule.kind !== 'ai' && !isDbKind(rule.kind))
+      .filter((rule) => rule.status === 'pass' || rule.status === 'fail')
       .map((rule) => [rule.id, rule.count]),
   )
 
@@ -166,7 +168,8 @@ export const runCheck = async (opts: {
   const statics = new Map(evaluateStatic(root, config, engine, git.commit).map((r) => [r.id, r]))
   const rules: RuleResult[] = []
   for (const rule of config.rules) {
-    if (rule.kind === 'ai') continue
+    // AI runs disagree between two runs; database rules are in beta. Neither gates.
+    if (rule.kind === 'ai' || isDbKind(rule.kind)) continue
     if (rule.kind !== 'command') {
       rules.push(statics.get(rule.id) as RuleResult)
       continue

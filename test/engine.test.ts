@@ -21,6 +21,7 @@ const config: ResolvedConfig = {
   allow: [],
   rules: [],
   ai: { model: 'sonnet', budgetUsd: 1, language: 'English' },
+  database: { config: null, features: null, layers: [], allow: [], junctions: [] },
 }
 
 const result = analyzeEngine(root, config)

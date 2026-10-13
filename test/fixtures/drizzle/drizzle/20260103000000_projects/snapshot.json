@@ -1,0 +1,7 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "cccc-projects",
+  "prevIds": ["aaaa-init"],
+  "ddl": []
+}

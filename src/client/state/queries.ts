@@ -9,6 +9,8 @@ import {
   fetchClaudeStatus,
   fetchDraft,
   fetchFile,
+  fetchMigrationSql,
+  fetchMigrations,
   fetchProjects,
   fetchSecurity,
   fetchStrixTools,
@@ -40,7 +42,11 @@ export const useAnalysis = (root: string) =>
 export const useInvalidateAnalysis = (root: string) => {
   const client = useQueryClient()
   return useCallback(
-    () => client.invalidateQueries({ queryKey: analysisKey(root) }),
+    () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: analysisKey(root) }),
+        client.invalidateQueries({ queryKey: ['migrations', root] }),
+      ]),
     [client, root],
   )
 }
@@ -54,6 +60,21 @@ export const useCreateConfig = (root: string) => {
     onSuccess: () => client.invalidateQueries({ queryKey: analysisKey(root) }),
   })
 }
+
+export const useMigrations = (root: string, enabled: boolean) =>
+  useQuery({
+    queryKey: ['migrations', root],
+    queryFn: () => fetchMigrations(root),
+    enabled,
+    staleTime: Infinity,
+  })
+
+export const useMigrationSql = (root: string, folder: string) =>
+  useQuery({
+    queryKey: ['migration', root, folder],
+    queryFn: () => fetchMigrationSql(root, folder),
+    staleTime: Infinity,
+  })
 
 export const useFile = (root: string, path: string) =>
   useQuery({

@@ -1,3 +1,5 @@
+import type { Graph as MigrationGraph } from 'drizzle-graph'
+import type { DatabaseResult } from './database'
 import type { AtlasConfig, ResolvedConfig, RuleKind, Severity } from './config'
 
 export type ImportKind = 'static' | 'reexport' | 'dynamic' | 'type'
@@ -19,7 +21,8 @@ export type ImportEdge = {
   kind: ImportKind
 }
 
-export type EdgeClass = 'down' | 'up' | 'mutual' | 'sibling' | 'lateral' | 'allowed' | 'unlayered'
+export type EdgeClass =
+  'down' | 'up' | 'mutual' | 'sibling' | 'lateral' | 'allowed' | 'unlayered' | 'junction'
 
 export type FeatureNode = {
   id: string
@@ -78,6 +81,7 @@ export type EngineResult = {
   stats: EngineStats
   /** The workspace packages that hold files; empty outside a monorepo. */
   packages: PackageRef[]
+  database: DatabaseResult | null
   warnings: string[]
 }
 
@@ -119,6 +123,8 @@ export type FamilyScore = {
   rules: number
   failing: number
   pending: number
+  /** Every rule of the family is in beta: the family is scored but left out of the overall score. */
+  beta: boolean
 }
 
 export type Scores = {
@@ -157,6 +163,7 @@ export type Analysis = {
   graph: Graph
   files: FileNode[]
   functions: FunctionMetric[]
+  database: DatabaseResult | null
   rules: RuleResult[]
   scores: Scores
   baseline: Baseline | null
@@ -364,3 +371,18 @@ export type SecurityPayload = {
 }
 
 export type StrixScanRequest = { mode: StrixMode; budgetUsd: number; instruction: string }
+export type {
+  DatabaseResult,
+  DbColumn,
+  DbEnum,
+  DbForeignKey,
+  DbMigrationsInfo,
+  DbRef,
+  DbStats,
+  DbTable,
+  DrizzleConfigInfo,
+} from './database'
+
+export type MigrationsPayload = { dir: string; graph: MigrationGraph }
+
+export type MigrationSqlPayload = { folder: string; sql: string }

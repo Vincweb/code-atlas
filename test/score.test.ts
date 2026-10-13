@@ -57,7 +57,7 @@ test('families are weighted and ordered', () => {
 test('pending rules do not score', () => {
   const scores = computeScores([rule('ai', 'medium', 'not-run', 0), rule('ai', 'low', 'error', 0)])
   assert.deepEqual(scores.families, [
-    { family: 'ai', score: null, rules: 2, failing: 0, pending: 2 },
+    { family: 'ai', score: null, rules: 2, failing: 0, pending: 2, beta: false },
   ])
   assert.equal(scores.overall, null)
   assert.equal(computeScores([]).overall, null)

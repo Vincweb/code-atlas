@@ -78,6 +78,8 @@ export const configHelpFr: typeof configHelpEn = {
     red: (n: number, list: string) => `- Arêtes rouges (${n}) : ${list}`,
     noRed: '- Aucune arête rouge.',
     scores: (line: string) => `- Scores : ${line}`,
+    database: (tables: number, features: number, red: number) =>
+      `- Base de données : ${tables} tables dans ${features} features, ${red} arêtes rouges de clés étrangères`,
   },
   scope: {
     title: 'Périmètre',
@@ -125,6 +127,22 @@ export const configHelpFr: typeof configHelpEn = {
     budget: 'Plafond par audit',
     language: 'Langue',
   },
+  database: {
+    title: 'Base de données (bêta)',
+    text: 'Comment le schéma Drizzle est lu : quelle config, comment les tables se regroupent en features, dans quelles couches elles se rangent. Les règles de base de données notent leur propre famille, jamais le score global, et ne bloquent jamais --check.',
+    config: 'Config lue',
+    none: 'Aucune config Drizzle trouvée sous le projet ni son workspace. Si elle est ailleurs, nommez-la avec "database": { "config": "…" }.',
+    features: 'Features',
+    featuresPrefix: 'regroupées par le premier mot du nom de chaque table',
+    featuresConfig: 'd’après database.features',
+    tables: (n: number) => `${n} ${n === 1 ? 'table' : 'tables'}`,
+    layers: 'Couches de base',
+    noLayers:
+      'Pas de couches de base : la vue Features montre des niveaux de dépendance et la règle des clés remontantes ne s’applique pas. Décrivez-les sous "database": { "layers": [...] }.',
+    junctions: 'Tables de jonction',
+    noJunctions: 'Aucune détectée.',
+    seeTab: 'Ouvrir l’onglet Base de données',
+  },
   aiAudits: {
     title: 'Réglages des audits IA',
     what: 'Un audit IA est une règle vérifiée par Claude plutôt que par un script : Claude relit le code sous l’angle donné par le prompt de la règle et renvoie ses constats (fichier, ligne, message). Il se lance à la demande depuis l’onglet Règles et compte dans la famille « Audits IA ».',
@@ -157,6 +175,11 @@ export const configHelpFr: typeof configHelpEn = {
       ['allow', 'Paires [de, vers] acceptées malgré les couches.', 'aucune'],
       ['rules', 'Les règles à vérifier.', 'jeu par défaut'],
       ['ai', 'Modèle, plafond et langue des audits IA.', 'sonnet · 1 $ · English'],
+      [
+        'database',
+        'La config Drizzle à lire, les tables de chaque feature, leurs couches (bêta).',
+        'première drizzle.config.* trouvée',
+      ],
     ],
   },
   kinds: {
@@ -171,6 +194,9 @@ export const configHelpFr: typeof configHelpEn = {
     pattern: 'Motif',
     command: 'Commande',
     ai: 'Audit IA',
+    'db-layers': 'Couches de base',
+    'db-mutual': 'Allers-retours en base',
+    'db-siblings': 'Features sœurs en base',
   },
   params: {
     maxLines: (n: number) => `${n} lignes max.`,

@@ -1,7 +1,13 @@
 import { existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import type { AtlasConfig, LayerConfig, ResolvedConfig } from '../../shared/config'
-import type { EngineResult } from '../../shared/types'
+import type {
+  AtlasConfig,
+  DatabaseConfig,
+  DbFeatureConfig,
+  LayerConfig,
+  ResolvedConfig,
+} from '../../shared/config'
+import type { DatabaseResult, EngineResult } from '../../shared/types'
 import { condensedDepths } from '../../shared/graph'
 import { featureOf } from '../engine/glob'
 import { defaultRules } from './defaults'
@@ -63,6 +69,39 @@ const edgesBetween = (engine: EngineResult, groupOf: (file: string) => string | 
   return edges
 }
 
+/** `customer_calls` becomes `customer_*`, `customers` stays itself: the patterns of one feature. */
+const tablePatterns = (names: string[]) =>
+  [...new Set(names.map((name) => (name.includes('_') ? `${name.split('_')[0]}_*` : name)))].sort()
+
+/** The database as the analysis grouped it, written out so the names can be corrected. */
+const databaseDraft = (database: DatabaseResult): DatabaseConfig => {
+  const byFeature = new Map<string, string[]>()
+  for (const table of database.tables)
+    byFeature.set(table.feature, [...(byFeature.get(table.feature) ?? []), table.name])
+  const features: DbFeatureConfig[] = [...byFeature.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, tables]) => ({ name, tables: tablePatterns(tables) }))
+  const edges = new Map<string, Set<string>>()
+  for (const edge of database.graph.edges)
+    if (edge.class !== 'junction')
+      edges.set(edge.from, (edges.get(edge.from) ?? new Set()).add(edge.to))
+  const nodes = [...byFeature.keys()].sort()
+  return { features, layers: layersByDepth(nodes, edges, (node) => [node], true) }
+}
+
+/** The draft's tail: the database section when the project has one, and the rules that follow. */
+const withDatabase = (
+  root: string,
+  engine: EngineResult,
+  layers: LayerConfig[],
+): Pick<AtlasConfig, 'database' | 'rules'> => {
+  const database = engine.database ? databaseDraft(engine.database) : null
+  return {
+    ...(database ? { database } : {}),
+    rules: defaultRules(root, layers, { found: database !== null, layers: database?.layers ?? [] }),
+  }
+}
+
 /**
  * A monorepo's draft keeps the features of each package and stacks the packages themselves by
  * dependency depth, so the first thing it reports is a package importing one above it. Layers
@@ -76,7 +115,7 @@ const workspaceDraft = (root: string, engine: EngineResult, config: ResolvedConf
     return dir === '.' ? null : dir
   })
   const layers = layersByDepth(dirs, edges, (dir) => [`${dir}/**`], false)
-  return { features: config.features, layers, allow: [], rules: defaultRules(root, layers) }
+  return { features: config.features, layers, allow: [], ...withDatabase(root, engine, layers) }
 }
 
 export const draftConfig = (
@@ -89,12 +128,7 @@ export const draftConfig = (
   const nodes = [...new Set(engine.files.map((file) => featureOf(file.path, features)))].sort()
   const edges = edgesBetween(engine, (file) => featureOf(file, features))
   const layers = layersByDepth(nodes, edges, (node) => [node], true)
-  return {
-    features,
-    layers,
-    allow: [],
-    rules: defaultRules(root, layers),
-  }
+  return { features, layers, allow: [], ...withDatabase(root, engine, layers) }
 }
 
 export const draftText = (config: AtlasConfig) =>

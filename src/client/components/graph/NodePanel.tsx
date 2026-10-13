@@ -4,6 +4,7 @@ import { useT } from '../../i18n'
 import { Button, SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'
 import { CHIP, TONE, isRed } from './edges'
+import { useGraphWords } from './words'
 
 type Props = {
   feature: FeatureNode
@@ -48,12 +49,13 @@ const Chips = ({
 
 export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen }: Props) => {
   const t = useT()
+  const words = useGraphWords()
   const outgoing = edges.filter((edge) => edge.from === feature.id)
   const incoming = edges.filter((edge) => edge.to === feature.id)
   const red = [...outgoing, ...incoming].filter((edge) => isRed(edge.class))
   const stats: [string, string][] = [
-    [t.metrics.files, String(feature.files)],
-    [t.metrics.lines, feature.lines.toLocaleString(t.locale)],
+    [words.unitLabel, String(feature.files)],
+    [words.sizeLabel, feature.lines.toLocaleString(t.locale)],
     ['Ca', String(feature.ca)],
     ['Ce', String(feature.ce)],
     [t.metrics.instability, feature.instability.toFixed(2)],
@@ -68,8 +70,8 @@ export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen 
         <button
           type="button"
           onClick={onClose}
-          aria-label={t.graph.close}
-          title={t.graph.close}
+          aria-label={words.close}
+          title={words.close}
           className="flex size-6 items-center justify-center rounded-md text-muted hover:bg-hover hover:text-text"
         >
           ×
@@ -83,23 +85,23 @@ export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen 
           </div>
         ))}
       </dl>
-      <p className="text-muted">{t.graph.instabilityHelp}</p>
+      <p className="text-muted">{words.instabilityHelp}</p>
       {onOpen && (
         <Button primary onClick={() => onOpen(feature.id)} className="w-fit">
           {t.packages.open} →
         </Button>
       )}
       <section>
-        <SectionTitle>{t.graph.dependsOn(outgoing.length)}</SectionTitle>
+        <SectionTitle>{words.dependsOn(outgoing.length)}</SectionTitle>
         <Chips edges={outgoing} side="to" onFocus={onFocus} />
       </section>
       <section>
-        <SectionTitle>{t.graph.usedBy(incoming.length)}</SectionTitle>
+        <SectionTitle>{words.usedBy(incoming.length)}</SectionTitle>
         <Chips edges={incoming} side="from" onFocus={onFocus} />
       </section>
       {red.length > 0 && (
         <section>
-          <SectionTitle>{t.graph.problemImports}</SectionTitle>
+          <SectionTitle>{words.problemImports}</SectionTitle>
           <ul className="flex flex-col gap-2">
             {red.map((edge) => (
               <EdgeImports key={`${edge.from}→${edge.to}`} edge={edge} />

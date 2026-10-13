@@ -64,6 +64,12 @@ const ICONS: Record<Tab, ReactNode> = {
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
     </Svg>
   ),
+  database: (
+    <Svg>
+      <ellipse cx="12" cy="6" rx="7.5" ry="2.8" />
+      <path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8" />
+    </Svg>
+  ),
   config: (
     <Svg>
       <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" />
@@ -112,6 +118,12 @@ const badgeOf = (tab: Tab, analysis: Analysis | undefined): ReactNode => {
   if (tab === 'audits') {
     const audits = analysis.audits.items.length
     return audits ? <Count value={audits} tone="neutral" /> : null
+  }
+  if (tab === 'database' && analysis.database) {
+    const red = analysis.database.graph.edges.filter(
+      (e) => e.class === 'up' || e.class === 'mutual',
+    ).length
+    return red ? <Count value={red} tone="bad" /> : null
   }
   if (tab === 'config' && analysis.configSource === 'default')
     return <span className="size-2 rounded-full bg-warn" aria-hidden="true" />
@@ -166,6 +178,11 @@ export const ProjectTabs = ({
               >
                 <span className={active ? 'text-accent' : ''}>{ICONS[id]}</span>
                 {t.tabs[id]}
+                {id === 'database' && (
+                  <span className="rounded border border-accent/40 px-1 text-[10px] leading-4 font-semibold tracking-wide text-accent uppercase">
+                    {t.database.beta}
+                  </span>
+                )}
                 {badgeOf(id, analysis)}
               </span>
               {active && (

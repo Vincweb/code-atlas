@@ -4,6 +4,7 @@ import { configHelpEn } from './configHelp.en'
 import { auditsEn } from './audits.en'
 import { securityEn } from './security.en'
 import { packagesEn } from './packages.en'
+import { databaseEn } from './database.en'
 
 /**
  * Every word the page shows, in English. The French file mirrors this object key for key, and the
@@ -133,6 +134,7 @@ export const en = {
     audits: 'AI audits',
     security: 'Security',
     metrics: 'Metrics',
+    database: 'Database',
     config: 'Config',
   },
 
@@ -140,6 +142,7 @@ export const en = {
     architecture: 'Architecture',
     'clean-code': 'Clean code',
     tooling: 'Tooling',
+    database: 'Database',
     ai: 'AI audits',
   } as Record<string, string>,
 
@@ -290,6 +293,7 @@ export const en = {
   audits: auditsEn,
 
   security: securityEn,
+  database: databaseEn,
 
   configHelp: configHelpEn,
 
@@ -313,6 +317,7 @@ export const en = {
     lateral: 'lateral',
     allowed: 'allowed',
     unlayered: 'unlayered',
+    junction: 'via a junction table',
   } satisfies Record<EdgeClass, string>,
 
   graph: {
@@ -321,6 +326,8 @@ export const en = {
     edgeTitle: (from: string, to: string, weight: number) =>
       `${from} → ${to} · ${weight} ${weight === 1 ? 'import' : 'imports'}`,
     files: (n: number) => `${n} ${n === 1 ? 'file' : 'files'}`,
+    unitLabel: 'Files',
+    sizeLabel: 'Lines',
     instabilityHelp:
       'Instability = Ce / (Ca + Ce): 0 when everything depends on it, 1 when it depends on everything.',
     dependsOn: (n: number) => `Depends on (${n})`,

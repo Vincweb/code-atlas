@@ -35,6 +35,8 @@ export const learnEn = {
     'clean-code':
       'How readable the code is: file size, function complexity and signatures, banned patterns.',
     tooling: 'Your project’s own commands — lint, types, tests — run as rules.',
+    database:
+      'Whether the schema holds: foreign keys climbing back up a layer, two features nested in each other, siblings linked directly instead of through a junction table.',
     ai: 'Reviews by Claude, on demand, of what a rule cannot measure.',
   } as Record<string, string>,
   familyIdle: {
@@ -109,6 +111,21 @@ export const learnEn = {
       why: 'It covers what an automatic rule cannot measure: naming, responsibilities, intent.',
       fix: 'Read each finding: they are leads to weigh, not verdicts.',
     },
+    'db-layers': {
+      what: 'A foreign key from a table of a lower database layer to a table of a higher one.',
+      why: 'Reference tables should know nothing of the features built on them, or dropping a feature breaks the foundation.',
+      fix: 'Move the key to the feature that depends on the other, or meet through a junction table.',
+    },
+    'db-mutual': {
+      what: 'Two features whose tables reference each other directly, in both directions.',
+      why: 'Neither can be loaded, migrated or removed without the other: they are one feature in two names.',
+      fix: 'Keep a single direction, or link them through a junction table — which never counts as nesting.',
+    },
+    'db-siblings': {
+      what: 'A direct foreign key between two tables of sibling features, which should stay independent.',
+      why: 'A 1:N key nests one feature inside the other; the next key makes them harder still to separate.',
+      fix: 'Replace the key with a junction table holding both keys under one composite primary key.',
+    },
   } as Record<string, { what: string; why: string; fix: string }>,
 
   stepsTitle: 'Next steps',
@@ -170,5 +187,9 @@ export const learnEn = {
     ],
     ['Complexity', 'The number of execution paths through a function.'],
     ['Baseline', 'A committed snapshot of violations that --check compares against.'],
+    [
+      'Junction table',
+      'A table whose composite key holds foreign keys to tables of two features: the accepted way for them to meet in the database.',
+    ],
   ] as [string, string][],
 }

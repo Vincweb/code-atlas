@@ -1,19 +1,21 @@
 import type { FeatureEdge, Graph } from '../../../shared/types'
-import { useT } from '../../i18n'
 import { SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'
 import { isRed } from './edges'
+import { useGraphWords } from './words'
 
 const MOST_COUPLED = 6
 
 export const OverviewPanel = ({
   graph,
+  showCycles,
   onFocus,
 }: {
   graph: Graph
+  showCycles: boolean
   onFocus: (id: string) => void
 }) => {
-  const t = useT()
+  const words = useGraphWords()
   const red: FeatureEdge[] = graph.edges.filter((edge) => isRed(edge.class))
   const coupled = [...graph.features]
     .sort((a, b) => b.ca + b.ce - (a.ca + a.ce))
@@ -22,10 +24,10 @@ export const OverviewPanel = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-muted">{t.graph.clickHint}</p>
+      <p className="text-muted">{words.clickHint}</p>
 
       <section>
-        <SectionTitle>{t.graph.mostCoupled}</SectionTitle>
+        <SectionTitle>{words.mostCoupled}</SectionTitle>
         <ul className="flex flex-col gap-1">
           {coupled.map((feature) => (
             <li key={feature.id}>
@@ -37,7 +39,7 @@ export const OverviewPanel = ({
                 <span className="min-w-0">
                   <span className="block truncate font-mono text-[12px]">{feature.id}</span>
                   <span className="block text-[11px] text-muted">
-                    {t.graph.coupling(feature.ca, feature.ce)}
+                    {words.coupling(feature.ca, feature.ce)}
                   </span>
                 </span>
                 <span className="flex h-1.5 overflow-hidden rounded-full bg-line">
@@ -54,9 +56,9 @@ export const OverviewPanel = ({
       </section>
 
       <section>
-        <SectionTitle>{t.graph.redEdges(red.length)}</SectionTitle>
+        <SectionTitle>{words.redEdges(red.length)}</SectionTitle>
         {red.length === 0 ? (
-          <p className="text-good">{t.graph.noRedEdges}</p>
+          <p className="text-good">{words.noRedEdges}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {red.map((edge) => (
@@ -66,20 +68,22 @@ export const OverviewPanel = ({
         )}
       </section>
 
-      <section>
-        <SectionTitle>{t.graph.cycles(graph.cycles.length)}</SectionTitle>
-        {graph.cycles.length === 0 ? (
-          <p className="text-good">{t.graph.noCycles}</p>
-        ) : (
-          <ul className="flex flex-col gap-1.5">
-            {graph.cycles.map((cycle, index) => (
-              <li key={index} className="font-mono text-[12px] break-all">
-                {[...cycle, cycle[0]].join(' → ')}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {showCycles && (
+        <section>
+          <SectionTitle>{words.cycles(graph.cycles.length)}</SectionTitle>
+          {graph.cycles.length === 0 ? (
+            <p className="text-good">{words.noCycles}</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {graph.cycles.map((cycle, index) => (
+                <li key={index} className="font-mono text-[12px] break-all">
+                  {[...cycle, cycle[0]].join(' → ')}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   )
 }

@@ -4,6 +4,8 @@ import type { AtlasConfig, LayerConfig, ResolvedConfig, RuleKind } from '../shar
 import type { ConfigSource } from '../shared/types'
 import { CONFIG_FILE, SEVERITIES } from '../shared/config'
 import { matchGlob } from './engine/glob'
+import type { ResolvedDatabaseConfig } from '../shared/config'
+import { drizzleConfigs } from './engine/database'
 import { defaultRules } from './rules/defaults'
 import { detectWorkspaces, workspaceMembers } from './engine/workspace'
 import type { WorkspaceMember } from './engine/workspace'
@@ -31,6 +33,7 @@ const TOP_KEYS = [
   'allow',
   'rules',
   'ai',
+  'database',
 ]
 
 const KIND_FIELDS: Record<RuleKind, { required: string[]; optional: string[] }> = {
@@ -45,6 +48,9 @@ const KIND_FIELDS: Record<RuleKind, { required: string[]; optional: string[] }> 
   pattern: { required: ['pattern'], optional: ['flags', 'files', 'exclude'] },
   command: { required: ['run'], optional: ['timeoutSec'] },
   ai: { required: ['prompt'], optional: ['files', 'model', 'budgetUsd'] },
+  'db-layers': { required: [], optional: [] },
+  'db-mutual': { required: [], optional: [] },
+  'db-siblings': { required: [], optional: [] },
 }
 
 const FIELD_TYPES: Record<string, 'string' | 'number' | 'boolean'> = {
@@ -135,13 +141,13 @@ const checkRule = (raw: unknown, index: number, seen: Set<string>, issues: strin
   if (raw.kind === 'pattern') checkPattern(raw, label, issues)
 }
 
-const checkLayers = (value: unknown, issues: string[]) => {
+const checkLayers = (value: unknown, issues: string[], key = 'layers') => {
   if (!Array.isArray(value)) {
-    issues.push('layers must be an array')
+    issues.push(`${key} must be an array`)
     return
   }
   value.forEach((layer, index) => {
-    const at = `layers[${index}]`
+    const at = `${key}[${index}]`
     if (!isRecord(layer)) {
       issues.push(`${at} must be an object`)
       return
@@ -171,7 +177,7 @@ const checkAi = (value: unknown, issues: string[]) => {
     if (!['model', 'budgetUsd', 'language'].includes(key)) issues.push(`ai: unknown field ${key}`)
 }
 
-const checkAllow = (value: unknown, issues: string[]) => {
+const checkAllow = (value: unknown, issues: string[], key = 'allow') => {
   const valid =
     Array.isArray(value) &&
     value.every(
@@ -181,7 +187,44 @@ const checkAllow = (value: unknown, issues: string[]) => {
         typeof pair[0] === 'string' &&
         typeof pair[1] === 'string',
     )
-  if (!valid) issues.push('allow must be an array of [string, string] pairs')
+  if (!valid) issues.push(`${key} must be an array of [string, string] pairs`)
+}
+
+const DATABASE_KEYS = ['config', 'features', 'layers', 'allow', 'junctions']
+
+const checkDatabaseFeatures = (value: unknown, issues: string[]) => {
+  if (!Array.isArray(value)) {
+    issues.push('database.features must be an array')
+    return
+  }
+  value.forEach((feature, index) => {
+    const at = `database.features[${index}]`
+    if (!isRecord(feature)) {
+      issues.push(`${at} must be an object`)
+      return
+    }
+    if (typeof feature.name !== 'string' || !feature.name)
+      issues.push(`${at}.name must be a string`)
+    if (!isStringArray(feature.tables)) issues.push(`${at}.tables must be an array of strings`)
+    for (const key of Object.keys(feature))
+      if (!['name', 'tables'].includes(key)) issues.push(`${at}: unknown field ${key}`)
+  })
+}
+
+const checkDatabase = (value: unknown, issues: string[]) => {
+  if (!isRecord(value)) {
+    issues.push('database must be an object')
+    return
+  }
+  for (const key of Object.keys(value))
+    if (!DATABASE_KEYS.includes(key)) issues.push(`database: unknown field ${key}`)
+  if (value.config !== undefined && typeof value.config !== 'string')
+    issues.push('database.config must be a string')
+  if (value.features !== undefined) checkDatabaseFeatures(value.features, issues)
+  if (value.layers !== undefined) checkLayers(value.layers, issues, 'database.layers')
+  if (value.allow !== undefined) checkAllow(value.allow, issues, 'database.allow')
+  if (value.junctions !== undefined && !isStringArray(value.junctions))
+    issues.push('database.junctions must be an array of strings')
 }
 
 const checkRules = (value: unknown, issues: string[]) => {
@@ -206,6 +249,7 @@ const validate = (raw: unknown): string[] => {
   if (raw.allow !== undefined) checkAllow(raw.allow, issues)
   if (raw.rules !== undefined) checkRules(raw.rules, issues)
   if (raw.ai !== undefined) checkAi(raw.ai, issues)
+  if (raw.database !== undefined) checkDatabase(raw.database, issues)
   return issues
 }
 
@@ -288,6 +332,14 @@ const readConfigFile = (path: string): AtlasConfig => {
   return parsed as AtlasConfig
 }
 
+const resolveDatabase = (raw: AtlasConfig['database']): ResolvedDatabaseConfig => ({
+  config: raw?.config ?? null,
+  features: raw?.features ?? null,
+  layers: raw?.layers ?? [],
+  allow: raw?.allow ?? [],
+  junctions: raw?.junctions ?? [],
+})
+
 /** Fills every key the file leaves out with its default. */
 const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
   const hasSrc = isDirectory(join(root, 'src'))
@@ -296,6 +348,13 @@ const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
   const workspaces = raw.workspaces ?? detectWorkspaces(root)
   const members = workspaceMembers(root, workspaces, tsconfig)
   const rootSrc = hasSrc && existsSync(join(root, tsconfig))
+  const database = resolveDatabase(raw.database)
+  const rules =
+    raw.rules ??
+    defaultRules(root, layers, {
+      found: drizzleConfigs(root, database).configs.some((config) => config.chosen),
+      layers: database.layers,
+    })
   return {
     include:
       raw.include ??
@@ -312,8 +371,9 @@ const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
       (members.length ? workspaceFeatures(root, members, rootSrc) : defaultFeatures(root, hasSrc)),
     layers,
     allow: raw.allow ?? [],
-    rules: raw.rules ?? defaultRules(root, layers),
+    rules,
     ai: { model: 'sonnet', budgetUsd: 1, language: 'English', ...raw.ai },
+    database,
   }
 }
 
