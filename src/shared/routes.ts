@@ -9,6 +9,7 @@ export const TABS = [
   'audits',
   'security',
   'metrics',
+  'database',
   'config',
 ] as const
 
@@ -41,6 +42,8 @@ export const API = {
   securityTools: '/api/security/tools',
   securityScan: '/api/security/scan',
   securityCancel: '/api/security/cancel',
+  migrations: '/api/migrations',
+  migrationSql: '/api/migration',
 } as const
 
 const CLAUDE_PROMPT_LIMIT = 14000

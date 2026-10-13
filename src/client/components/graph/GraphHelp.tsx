@@ -1,4 +1,4 @@
-import { useT } from '../../i18n'
+import { useGraphWords } from './words'
 
 const Sample = ({ className, dashed = false }: { className: string; dashed?: boolean }) => (
   <svg width="26" height="8" aria-hidden="true">
@@ -15,12 +15,12 @@ const Sample = ({ className, dashed = false }: { className: string; dashed?: boo
 )
 
 export const Legend = () => {
-  const t = useT()
+  const words = useGraphWords()
   const items: [string, boolean, string][] = [
-    ['stroke-edge-red', false, t.graph.legend.red],
-    ['stroke-edge-amber', false, t.graph.legend.amber],
-    ['stroke-edge-grey', false, t.graph.legend.grey],
-    ['stroke-edge-grey', true, t.graph.legend.light],
+    ['stroke-edge-red', false, words.legend.red],
+    ['stroke-edge-amber', false, words.legend.amber],
+    ['stroke-edge-grey', false, words.legend.grey],
+    ['stroke-edge-grey', true, words.legend.light],
   ]
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-muted">
@@ -32,17 +32,17 @@ export const Legend = () => {
       ))}
       <span className="flex items-center gap-1.5">
         <span className="size-2.5 rounded-full bg-edge-red" aria-hidden="true" />
-        {t.graph.legend.flagged}
+        {words.legend.flagged}
       </span>
     </div>
   )
 }
 
 export const GraphHelp = ({ byDepth }: { byDepth: boolean }) => {
-  const t = useT()
+  const words = useGraphWords()
   return (
     <section className="grid grid-cols-1 gap-x-8 gap-y-3 rounded-xl border border-line bg-panel p-4 text-[13px] leading-relaxed sm:grid-cols-2">
-      {[...t.graph.help, byDepth ? t.graph.helpDepth : t.graph.helpLayers].map(([title, text]) => (
+      {[...words.help, byDepth ? words.helpDepth : words.helpLayers].map(([title, text]) => (
         <div key={title}>
           <h3 className="font-semibold">{title}</h3>
           <p className="text-muted">{text}</p>

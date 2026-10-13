@@ -1,4 +1,4 @@
-import { KNOWN_FAMILIES } from '../../shared/config'
+import { KNOWN_FAMILIES, isDbKind } from '../../shared/config'
 import { WEIGHT } from '../../shared/score'
 import type { FamilyScore, RuleResult, Scores } from '../../shared/types'
 
@@ -24,10 +24,14 @@ export const computeScores = (rules: RuleResult[]): Scores => {
         rules: own.length,
         failing: own.filter((rule) => rule.status === 'fail').length,
         pending: own.filter((rule) => rule.status === 'not-run' || rule.status === 'error').length,
+        beta: own.every((rule) => isDbKind(rule.kind)),
       }
     },
   )
-  const values = families.flatMap((family) => (family.score === null ? [] : [family.score]))
+  // A family in beta is scored for the page, never for the overall number.
+  const values = families.flatMap((family) =>
+    family.score === null || family.beta ? [] : [family.score],
+  )
   return {
     overall: values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null,
     families,

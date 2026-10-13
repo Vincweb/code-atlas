@@ -4,6 +4,7 @@ import { configHelpFr } from './configHelp.fr'
 import { auditsFr } from './audits.fr'
 import { securityFr } from './security.fr'
 import { packagesFr } from './packages.fr'
+import { databaseFr } from './database.fr'
 
 export const fr: Strings = {
   locale: 'fr-FR',
@@ -132,6 +133,7 @@ export const fr: Strings = {
     audits: 'Audits IA',
     security: 'Sécurité',
     metrics: 'Métriques',
+    database: 'Base de données',
     config: 'Config',
   },
 
@@ -139,6 +141,7 @@ export const fr: Strings = {
     architecture: 'Architecture',
     'clean-code': 'Code propre',
     tooling: 'Outillage',
+    database: 'Base de données',
     ai: 'Audits IA',
   },
 
@@ -290,6 +293,7 @@ export const fr: Strings = {
   audits: auditsFr,
 
   security: securityFr,
+  database: databaseFr,
 
   configHelp: configHelpFr,
 
@@ -314,6 +318,7 @@ export const fr: Strings = {
     lateral: 'latérale',
     allowed: 'autorisée',
     unlayered: 'hors couche',
+    junction: 'via une table de jonction',
   },
 
   graph: {
@@ -322,6 +327,8 @@ export const fr: Strings = {
     edgeTitle: (from: string, to: string, weight: number) =>
       `${from} → ${to} · ${weight} ${weight === 1 ? 'import' : 'imports'}`,
     files: (n: number) => `${n} ${n === 1 ? 'fichier' : 'fichiers'}`,
+    unitLabel: 'Fichiers',
+    sizeLabel: 'Lignes',
     instabilityHelp:
       'Instabilité = Ce / (Ca + Ce) : 0 si tout en dépend, 1 si elle dépend de tout.',
     dependsOn: (n: number) => `Dépend de (${n})`,

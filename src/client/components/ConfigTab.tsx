@@ -1,6 +1,7 @@
 import type { Analysis } from '../../shared/types'
 import { useT } from '../i18n'
 import { useDraft } from '../state/queries'
+import { DatabaseSection } from './config/Database'
 import { DraftSection, FileSection, ReferenceSection } from './config/Files'
 import { Intro } from './config/Intro'
 import {
@@ -22,6 +23,7 @@ export const ConfigTab = ({ analysis, root }: { analysis: Analysis; root: string
     ['features', help.features.title],
     ['layers', help.layers.title],
     ['allow', help.allow.title],
+    ['database', help.database.title],
     ['rules', help.rules.title],
     ['ai', help.aiAudits.title],
     ['file', help.file.title],
@@ -73,6 +75,7 @@ export const ConfigTab = ({ analysis, root }: { analysis: Analysis; root: string
           <FeaturesSection analysis={analysis} />
           <LayersSection analysis={analysis} />
           <AllowSection analysis={analysis} />
+          <DatabaseSection analysis={analysis} root={root} />
           <RulesSection analysis={analysis} root={root} />
           <AiSection analysis={analysis} root={root} />
           <FileSection analysis={analysis} />

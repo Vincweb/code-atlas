@@ -29,10 +29,20 @@ const contextOf = (analysis: Analysis, t: Strings, redCount: number) => {
   const scoreLine = [
     ...scores.families.map((f) => `${t.families[f.family] ?? f.family} ${f.score ?? '–'}`),
   ].join(' · ')
+  const database = analysis.database
   return [
     words.features(graph.features.length, layers),
     ...(unlayered.length ? [words.unlayered(unlayered.join(', '))] : []),
     red.length ? words.red(red.length, redList) : words.noRed,
+    ...(database
+      ? [
+          words.database(
+            database.stats.tables,
+            database.stats.features,
+            database.graph.edges.filter((e) => e.class === 'up' || e.class === 'mutual').length,
+          ),
+        ]
+      : []),
     words.scores(scoreLine),
   ].join('\n')
 }

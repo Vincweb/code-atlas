@@ -3,6 +3,7 @@ import type { ResolvedConfig } from '../../shared/config'
 import { packageOf } from '../../shared/packages'
 import type { EngineResult, FileNode, FunctionMetric, PackageRef } from '../../shared/types'
 import { packageName, workspaceMembers } from './workspace'
+import { analyzeDatabase } from './database'
 import { featureOf } from './glob'
 import { measureFunctions } from './complexity'
 import { buildGraph } from './graph'
@@ -58,6 +59,15 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
   const graph = buildGraph(files, imports, config)
   const typeImports = imports.filter((edge) => edge.kind === 'type').length
 
+  let database = null
+  try {
+    database = analyzeDatabase(root, config, ts)
+  } catch (error) {
+    warnings.push(
+      `database schema not read: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+
   return {
     ts: { version: ts.version, projects: projects.map((project) => project.tsconfig) },
     files,
@@ -73,6 +83,7 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
       functions: functions.length,
     },
     packages,
+    database,
     warnings,
   }
 }

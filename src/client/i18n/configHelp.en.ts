@@ -76,6 +76,8 @@ export const configHelpEn = {
     red: (n: number, list: string) => `- Red edges (${n}): ${list}`,
     noRed: '- No red edge.',
     scores: (line: string) => `- Scores: ${line}`,
+    database: (tables: number, features: number, red: number) =>
+      `- Database: ${tables} tables in ${features} features, ${red} red foreign-key edges`,
   },
   scope: {
     title: 'Scope',
@@ -123,6 +125,22 @@ export const configHelpEn = {
     budget: 'Cap per audit',
     language: 'Language',
   },
+  database: {
+    title: 'Database (beta)',
+    text: 'How the Drizzle schema is read: which config, how tables group into features, which layers they sit in. The database rules score their own family, never the overall score, and never gate --check.',
+    config: 'Config read',
+    none: 'No Drizzle config found under the project or its workspace. When it sits elsewhere, name it with "database": { "config": "…" }.',
+    features: 'Features',
+    featuresPrefix: 'grouped by the first word of each table name',
+    featuresConfig: 'from database.features',
+    tables: (n: number) => `${n} ${n === 1 ? 'table' : 'tables'}`,
+    layers: 'Database layers',
+    noLayers:
+      'No database layers: the Features view shows dependency levels and the upward-keys rule does not apply. Describe them under "database": { "layers": [...] }.',
+    junctions: 'Junction tables',
+    noJunctions: 'None detected.',
+    seeTab: 'Open the Database tab',
+  },
   aiAudits: {
     title: 'AI audit settings',
     what: 'An AI audit is a rule checked by Claude instead of a script: Claude reads the code from the angle given by the rule’s prompt and returns its findings (file, line, message). It runs on demand from the Rules tab and counts in the “AI audits” family.',
@@ -155,6 +173,11 @@ export const configHelpEn = {
       ['allow', '[from, to] pairs accepted despite the layers.', 'none'],
       ['rules', 'The rules to check.', 'default set'],
       ['ai', 'Model, cap and language of the AI audits.', 'sonnet · $1 · English'],
+      [
+        'database',
+        'The Drizzle config to read, the tables of each feature, their layers (beta).',
+        'first drizzle.config.* found',
+      ],
     ] as [string, string, string][],
   },
   kinds: {
@@ -169,6 +192,9 @@ export const configHelpEn = {
     pattern: 'Pattern',
     command: 'Command',
     ai: 'AI audit',
+    'db-layers': 'Database layers',
+    'db-mutual': 'Database mutual',
+    'db-siblings': 'Database siblings',
   } as Record<string, string>,
   params: {
     maxLines: (n: number) => `${n} lines max`,

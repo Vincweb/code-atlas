@@ -1,6 +1,7 @@
 import type { FeatureEdge, Graph } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
+import { useGraphWords } from './words'
 import { DASHED, FILL, STROKE, TONE, isRed, strokeWidth } from './edges'
 import type { Tone } from './edges'
 import { NODE_H, NODE_W, edgeGeometry } from './layout'
@@ -34,6 +35,7 @@ export const GraphSvg = ({
   onHover,
 }: Props) => {
   const t = useT()
+  const words = useGraphWords()
   const active = hover ?? focus
   const neighbours = new Set<string>()
   if (active) {
@@ -52,8 +54,8 @@ export const GraphSvg = ({
     const column = layout.bands[index]?.column
     if (!column) return ''
     if (column.kind === 'layer') return column.name
-    if (column.kind === 'unlayered') return t.graph.unlayered
-    return t.graph.depth(column.depth)
+    if (column.kind === 'unlayered') return words.unlayered
+    return words.depth(column.depth)
   }
 
   return (
@@ -115,7 +117,7 @@ export const GraphSvg = ({
           active === null ? (tone === 'grey' || tone === 'light' ? 0.45 : 0.95) : touched ? 1 : 0.06
         return (
           <g key={`${edge.from}→${edge.to}`} opacity={opacity}>
-            <title>{t.graph.edgeTitle(edge.from, edge.to, edge.weight)}</title>
+            <title>{words.edgeTitle(edge.from, edge.to, edge.weight)}</title>
             <path
               d={d}
               fill="none"
@@ -180,7 +182,7 @@ export const GraphSvg = ({
             opacity={dim ? 0.25 : 1}
             className="cursor-pointer"
           >
-            <title>{`${feature.id} · ${t.graph.files(filesOf.get(feature.id) ?? 0)}`}</title>
+            <title>{`${feature.id} · ${words.files(filesOf.get(feature.id) ?? 0)}`}</title>
             <rect
               width={NODE_W}
               height={NODE_H}

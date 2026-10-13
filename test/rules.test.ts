@@ -56,6 +56,7 @@ const engine: EngineResult = {
   ],
   stats: { files: 2, lines: 432, imports: 2, typeImports: 1, features: 2, functions: 2 },
   packages: [],
+  database: null,
   warnings: [],
 }
 
@@ -78,6 +79,7 @@ const configOf = (rules: RuleConfig[]): ResolvedConfig => ({
   allow: [],
   rules,
   ai: { model: 'sonnet', budgetUsd: 1, language: 'English' },
+  database: { config: null, features: null, layers: [], allow: [], junctions: [] },
 })
 
 const base = { family: 'f', severity: 'high' } as const

@@ -9,7 +9,7 @@ import { BAND_TEXT, bandOf } from '../../util/score'
 import { RunDialog } from '../audits/RunDialog'
 import { Link } from '../Link'
 import { SearchIcon } from '../welcome/icons'
-import { Button } from '../ui'
+import { Badge, Button } from '../ui'
 import { matchesStatus, sortRules } from './model'
 import type { StatusFilter } from './model'
 import { RuleCard } from './RuleCard'
@@ -142,8 +142,13 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
         return (
           <section key={familyScore.family} className="flex flex-col gap-2">
             <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h2 className="text-[16px] font-semibold tracking-tight">
+              <h2 className="flex items-center gap-2 text-[16px] font-semibold tracking-tight">
                 {t.families[familyScore.family] ?? familyScore.family}
+                {familyScore.beta && (
+                  <Badge className="border-accent/40 text-[10px] tracking-wide text-accent uppercase">
+                    {t.database.beta}
+                  </Badge>
+                )}
               </h2>
               <span
                 className={cx('font-semibold tabular-nums', BAND_TEXT[bandOf(familyScore.score)])}

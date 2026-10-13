@@ -5,6 +5,8 @@ import type {
   ClaudeStatus,
   DraftPayload,
   FilePayload,
+  MigrationSqlPayload,
+  MigrationsPayload,
   ProjectsPayload,
   SecurityPayload,
   StrixScan,
@@ -58,6 +60,14 @@ export const openInClaude = (root: string, prompt: string) =>
 
 export const fetchFile = (root: string, path: string) =>
   read<FilePayload>(`${API.file}${rootQuery(root)}&path=${encodeURIComponent(path)}`)
+
+export const fetchMigrations = (root: string) =>
+  read<MigrationsPayload>(`${API.migrations}${rootQuery(root)}`)
+
+export const fetchMigrationSql = (root: string, folder: string) =>
+  read<MigrationSqlPayload>(
+    `${API.migrationSql}${rootQuery(root)}&folder=${encodeURIComponent(folder)}`,
+  )
 
 export const runUrl = (root: string, rule: string) =>
   `${API.run}${rootQuery(root)}&rule=${encodeURIComponent(rule)}`

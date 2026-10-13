@@ -30,8 +30,37 @@ export const defaultTitle = (rule: RuleConfig): string => {
       return `\`${rule.run}\``
     case 'ai':
       return rule.prompt.slice(0, 60)
+    case 'db-layers':
+      return 'Database layering'
+    case 'db-mutual':
+      return 'Mutual database dependencies'
+    case 'db-siblings':
+      return 'Database sibling coupling'
   }
 }
+
+/** The edge classes each database rule reports, over the feature graph of the schema. */
+const DB_CLASSES: Record<'db-layers' | 'db-mutual' | 'db-siblings', EdgeClass[]> = {
+  'db-layers': ['up'],
+  'db-mutual': ['mutual'],
+  'db-siblings': ['sibling'],
+}
+
+const databaseViolations = (
+  rule: Extract<StaticRuleConfig, { kind: keyof typeof DB_CLASSES }>,
+  engine: EngineResult,
+): Violation[] =>
+  engine.database
+    ? engine.database.graph.edges
+        .filter((edge) => DB_CLASSES[rule.kind].includes(edge.class))
+        .flatMap((edge) =>
+          edge.imports.map((entry) => ({
+            file: entry.file,
+            line: entry.line,
+            message: `${edge.from} → ${edge.to} (${edge.class}): ${entry.target}`,
+          })),
+        )
+    : []
 
 const inScope = (path: string, files: string | undefined) => !files || matchGlob(path, files)
 
@@ -98,6 +127,8 @@ const collect = (
   engine: EngineResult,
   owners: Owners | null,
 ): Violation[] => {
+  if (rule.kind === 'db-layers' || rule.kind === 'db-mutual' || rule.kind === 'db-siblings')
+    return databaseViolations(rule, engine)
   switch (rule.kind) {
     case 'layers':
       return edgeViolations(engine, ['up'])

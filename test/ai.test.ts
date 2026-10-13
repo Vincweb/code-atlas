@@ -18,6 +18,7 @@ const config: ResolvedConfig = {
   allow: [],
   rules: [],
   ai: { model: 'sonnet', budgetUsd: 1, language: 'French' },
+  database: { config: null, features: null, layers: [], allow: [], junctions: [] },
 }
 const rule: AiRuleConfig = {
   id: 'AI',

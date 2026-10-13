@@ -112,6 +112,43 @@ One route writes, and only on a click: `POST /api/config/create` turns the draft
 `code-atlas.json`, refuses other origins, and never overwrites a file (`wx`). Everything else the
 tool writes lives under `.code-atlas/`.
 
+## Database (beta)
+
+A project with a `drizzle.config.*` gets a Database tab: the schema as a diagram, the feature
+graph of the schema, the migration DAG. Decisions:
+
+- **Static, from the source.** The config is read as text for `schema`, `out`, `dialect` and
+  `casing` — it is user code that loads `.env` and credentials — and the schema files it names are
+  parsed with the project's TypeScript (`createSourceFile`, no checker), following relative
+  imports and re-exports from the entry so a barrel works. Nothing connects to a database and
+  drizzle-kit never runs. Symbols are matched across files by name, through each file's relative
+  imports; snapshots carry no `file:line`, so they are not the source.
+- **Found under the project, then under its workspace.** A package often uses a sibling's schema
+  (`apps/backend` and `packages/db`), so the walk falls back to the nearest ancestor holding
+  `pnpm-workspace.yaml` or `.git`. `database.config` names one explicitly. A schema file outside
+  the project shows as text: `/api/file` keeps refusing it.
+- **Tables group into features by the first word of their name**, singular and plural together,
+  unless `database.features` says otherwise. The alternative — the file's folder — collapses a
+  flat `schema/` of 250 files into one feature. The draft config writes the guess out as patterns
+  to correct.
+- **The same edge classes and rules.** An edge is a foreign key from a table of one feature to a
+  table of another, classified by `classify` with `database.layers` and `database.allow`; the three
+  `db-*` rules mirror `layers`, `mutual` and `siblings`. One class is new: `junction`, for an edge
+  every key of which belongs to a junction table — at least two keys to distinct tables, and a
+  composite primary key or unique constraint covering two of them, or a name in
+  `database.junctions`. A junction edge is never red and never counts toward `mutual`: it is the
+  accepted way for two features to meet. A 1:N key down a layer is normal; routing it through a
+  junction would lose the "exactly one" guarantee, so "only through junctions" applies to siblings
+  and to pairs, not to the stack.
+- **Beta means: never a gate.** The `db-*` rules score their family, which the page marks beta and
+  the overall score leaves out, and `--check` and the baseline skip them. A project with a Drizzle
+  config and no `code-atlas.json` would otherwise fail CI on the day the tab appears.
+- **drizzle-graph draws the migrations.** Its `createScanner` is bundled from a dev dependency, so
+  the package keeps zero runtime dependencies. Only `buildGraph` and `readMigrationSql` are
+  called — `runDrizzleCheck` spawns drizzle-kit. The graph is a route of its own
+  (`/api/migrations`, lazy, guarded like `/api/file`), the folder taken from discovery, never from
+  the query. The v0 layout (`meta/_journal.json`) is named, not drawn.
+
 ## Handing work to Claude Code
 
 A prompt is offered two ways: copied, or opened in the Code tab of the Claude desktop app through

@@ -477,6 +477,90 @@
             },
             "required": ["id", "family", "severity", "kind", "prompt"],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Foreign keys that go up a database layer (beta).",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "db-layers"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Database features whose tables reference each other in both directions, junction tables aside (beta).",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "db-mutual"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Direct foreign keys between database features of a layer marked siblings (beta).",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "db-siblings"
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
+            "additionalProperties": false
           }
         ]
       }
@@ -498,6 +582,89 @@
         "language": {
           "type": "string",
           "description": "Language of the findings (English)."
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The Drizzle schema, read as source (beta). Without this key the first drizzle.config.* found applies.",
+      "properties": {
+        "config": {
+          "type": "string",
+          "description": "Path of the Drizzle config to read, relative to the project root."
+        },
+        "features": {
+          "type": "array",
+          "description": "Ordered groups of tables; the first matching group wins. Unmatched tables group by the first word of their name.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Feature name."
+              },
+              "tables": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Globs over table names, schema-qualified when not public: customer_*, backoffice.*."
+              }
+            },
+            "required": ["name", "tables"]
+          }
+        },
+        "layers": {
+          "type": "array",
+          "description": "Database layers ordered top to bottom, over database feature names.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Layer name."
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Feature globs of the layer."
+              },
+              "siblings": {
+                "type": "boolean",
+                "description": "Features of this layer should not depend on each other."
+              }
+            },
+            "required": ["name", "features"]
+          }
+        },
+        "allow": {
+          "type": "array",
+          "description": "Foreign-key edges accepted whatever their direction, as [from, to] database feature globs.",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "junctions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Globs of tables to treat as junction tables, beyond those detected from a composite key over two foreign keys."
         }
       }
     }

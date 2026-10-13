@@ -129,6 +129,7 @@ const engine = (
   functions: [],
   stats: { files: files.length, lines: 0, imports: 0, typeImports: 0, features: 0, functions: 0 },
   packages: [],
+  database: null,
   warnings: [],
 })
 

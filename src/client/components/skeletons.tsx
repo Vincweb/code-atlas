@@ -198,6 +198,7 @@ export const TabSkeleton = ({ tab }: { tab: Tab }) => {
     case 'overview':
       return <OverviewSkeleton />
     case 'graph':
+    case 'database':
       return <GraphSkeleton />
     case 'rules':
     case 'audits':

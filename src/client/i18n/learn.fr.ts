@@ -42,6 +42,8 @@ export const learnFr: typeof learnEn = {
     'clean-code':
       'La lisibilité du code : taille des fichiers, complexité et signature des fonctions, motifs proscrits.',
     tooling: 'Les commandes de votre projet — lint, types, tests — lancées comme des règles.',
+    database:
+      'Si le schéma tient : clés étrangères qui remontent une couche, deux features imbriquées l’une dans l’autre, features sœurs reliées en direct plutôt que par une table de jonction.',
     ai: 'Des relectures par Claude, à la demande, de ce qu’une règle ne sait pas mesurer.',
   },
   familyIdle: {
@@ -117,6 +119,21 @@ export const learnFr: typeof learnEn = {
       why: 'Il couvre ce qu’une règle automatique ne sait pas mesurer : nommage, responsabilités, intentions.',
       fix: 'Lire chaque constat : ce sont des pistes à juger, pas des verdicts.',
     },
+    'db-layers': {
+      what: 'Une clé étrangère d’une table d’une couche basse vers une table d’une couche plus haute.',
+      why: 'Les tables de référence ne doivent rien savoir des features bâties dessus, sinon retirer une feature casse le socle.',
+      fix: 'Déplacez la clé vers la feature qui dépend de l’autre, ou passez par une table de jonction.',
+    },
+    'db-mutual': {
+      what: 'Deux features dont les tables se référencent en direct, dans les deux sens.',
+      why: 'Aucune ne se charge, ne migre ni ne se retire sans l’autre : c’est une seule feature sous deux noms.',
+      fix: 'Gardez un seul sens, ou reliez-les par une table de jonction — qui ne compte jamais comme une imbrication.',
+    },
+    'db-siblings': {
+      what: 'Une clé étrangère directe entre deux tables de features sœurs, qui devraient rester indépendantes.',
+      why: 'Une clé 1:N imbrique une feature dans l’autre ; la suivante les rend encore plus dures à séparer.',
+      fix: 'Remplacez la clé par une table de jonction qui porte les deux clés sous une clé primaire composite.',
+    },
   },
 
   stepsTitle: 'Prochaines étapes',
@@ -184,5 +201,9 @@ export const learnFr: typeof learnEn = {
     ],
     ['Complexité', 'Le nombre de chemins d’exécution d’une fonction.'],
     ['Référence', 'Un instantané des violations, commité, auquel --check se compare.'],
+    [
+      'Table de jonction',
+      'Une table dont la clé composite porte des clés étrangères vers les tables de deux features : la voie acceptée pour qu’elles se rencontrent en base.',
+    ],
   ],
 }

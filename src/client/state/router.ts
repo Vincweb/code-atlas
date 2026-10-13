@@ -52,7 +52,12 @@ export const usePkg = () => useRoute().pkg
 /** A link within the project that keeps the package the page is scoped to; the tabs that read the
  * project as a whole drop it. */
 export const scopedPath = (root: string, tab: Tab = 'overview', rule?: string | null) =>
-  projectPath(root, tab, rule, tab === 'config' || tab === 'security' ? null : route.pkg)
+  projectPath(
+    root,
+    tab,
+    rule,
+    tab === 'config' || tab === 'security' || tab === 'database' ? null : route.pkg,
+  )
 
 export const navigate = (to: string, { replace = false }: { replace?: boolean } = {}) => {
   if (replace) window.history.replaceState(null, '', to)

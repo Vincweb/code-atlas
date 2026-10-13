@@ -32,5 +32,9 @@ export const ruleTitle = (rule: RuleResult, rules: RuleConfig[], t: Strings) => 
       if (configured.id === 'AI-ARCH') return titles.aiArch
       if (configured.id === 'AI-CLEAN') return titles.aiClean
       return rule.title
+    case 'db-layers':
+    case 'db-mutual':
+    case 'db-siblings':
+      return t.database.ruleTitles[configured.kind]
   }
 }

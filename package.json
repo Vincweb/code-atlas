@@ -1,13 +1,14 @@
 {
   "name": "@vincweb/code-atlas",
-  "version": "0.3.0",
-  "description": "Map and audit a TypeScript codebase — the feature dependency graph, its layers, its metrics, scripted and AI audit rules, and a CI guard against regressions",
+  "version": "0.4.0",
+  "description": "Map and audit a TypeScript codebase — the feature dependency graph, its layers, its metrics, scripted and AI audit rules, the Drizzle schema and its migrations, and a CI guard against regressions",
   "keywords": [
     "architecture",
     "dependency-graph",
     "code-quality",
     "audit",
     "clean-code",
+    "drizzle",
     "typescript",
     "cli",
     "devtools"
@@ -59,6 +60,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "drizzle-graph": "^0.2.0",
     "eslint": "^9.39.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.12.0",
