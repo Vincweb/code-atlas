@@ -5,7 +5,8 @@
 **Map and audit a TypeScript codebase.**
 
 The feature dependency graph across your layers, the metrics behind it, scripted and AI audit
-rules, a score per family — and a CI guard that fails only when something got worse.
+rules, a score per family and per package of a monorepo, the Drizzle schema beside the code — and
+a CI guard that fails only when something got worse.
 
 [![npm](https://img.shields.io/npm/v/@vincweb/code-atlas?style=flat-square&label=npm&labelColor=08090b&color=3b82f6)](https://www.npmjs.com/package/@vincweb/code-atlas)
 [![release](https://img.shields.io/github/v/release/Vincweb/code-atlas?style=flat-square&label=release&labelColor=08090b&color=3b82f6)](https://github.com/Vincweb/code-atlas/releases/latest)
@@ -67,8 +68,9 @@ to Claude when you run one.
 <img src="docs/media/graph.png" alt="The graph tab: features in five layer bands from Screens to Foundation, two red edges between cart and checkout, one red edge climbing from lib/api to the shared UI, and the panel listing the most coupled features and the red edges with the import behind each" width="960">
 </div>
 
-- **Overview** — the overall score, a score per family (architecture, clean code, tooling, AI
-  audits), the failing rules that weigh most, and the next steps.
+- **Overview** — the overall score, a score per family (architecture, clean code, tooling,
+  database, AI audits), the failing rules that weigh most, the packages of a monorepo worst first,
+  and the next steps.
 - **Graph** — one band per layer, top to bottom. Red for a dependency that climbs a layer or goes
   both ways, amber for coupling between sibling features. Click a feature for its files, its
   coupling, and the import statements behind each red edge.
@@ -146,6 +148,8 @@ from the graph — layers by dependency depth — to write into the project and 
 
 - **workspaces** — the package folders of a monorepo; read from `pnpm-workspace.yaml` or the
   `workspaces` of `package.json` when left out, `[]` to analyze the root as one project.
+- **database** — which Drizzle config to read, how tables group into features, their layers and
+  junction tables; see [Database (beta)](#database-beta) below.
 
 A rule scores `100 × 0.5^(violations / halfLife)`, its weight set by its severity; a family is the
 weighted mean of its rules, the overall score the mean of the families.
