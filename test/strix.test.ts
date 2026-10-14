@@ -5,21 +5,21 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import type { StrixScan } from '../src/shared/types'
-import { securityPayload } from '../src/server/security'
+import { securityPayload } from '../src/server/http/security'
 import {
   projectRelative,
   readRunSummaries,
   readStrixRun,
   strixRunsDir,
-} from '../src/server/strixReport'
+} from '../src/server/strix/report'
 import {
   copyProject,
   createScans,
   parseScanRequest,
   ScanError,
   strixArgs,
-} from '../src/server/strixScan'
-import { ciFileOf, scanStepsIn } from '../src/server/strixTooling'
+} from '../src/server/strix/scan'
+import { ciFileOf, scanStepsIn } from '../src/server/strix/tooling'
 
 const tempDir = (prefix: string) => fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)))
 

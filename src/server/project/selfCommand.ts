@@ -1,5 +1,5 @@
 import path from 'path'
-import type { Overrides } from './project'
+import type { Overrides } from './index'
 
 const quote = (value: string) =>
   /^[\w@%+=:,./-]+$/.test(value) ? value : `'${value.replace(/'/g, `'\\''`)}'`

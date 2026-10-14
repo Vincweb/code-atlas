@@ -3,7 +3,8 @@ import { join } from 'node:path'
 import type { ResolvedConfig, RuleConfig, RuleKind, StaticRuleConfig } from '../../shared/config'
 import { docCandidates } from '../../shared/docs'
 import type { EdgeClass, EngineResult, RuleResult, Violation } from '../../shared/types'
-import { matchGlob } from '../engine/glob'
+import { matchGlob } from '../../shared/glob'
+import { isSourceFile } from '../engine/project'
 import { ownersOf, settle } from './packages'
 import type { Owners } from './packages'
 
@@ -63,8 +64,6 @@ const databaseViolations = (
         )
     : []
 
-const SOURCE_FILE = /\.[cm]?[jt]sx?$/
-
 /** One violation per feature without a doc, counted against the package that holds it. */
 const docsViolations = (
   rule: Extract<StaticRuleConfig, { kind: 'docs' }>,
@@ -76,7 +75,7 @@ const docsViolations = (
   return (
     engine.graph.features
       // A feature a literal pattern names as one file has no folder to hold a doc.
-      .filter((feature) => missing.has(feature.id) && !SOURCE_FILE.test(feature.id))
+      .filter((feature) => missing.has(feature.id) && !isSourceFile(feature.id))
       .filter((feature) => !rule.features || matchGlob(feature.id, rule.features))
       .map((feature) => ({
         file: null,
@@ -216,17 +215,19 @@ const collect = (
 const compare = (a: Violation, b: Violation) =>
   (a.file ?? '').localeCompare(b.file ?? '') || (a.line ?? 0) - (b.line ?? 0)
 
+/**
+ * Every static rule's result. A caller that needs the owners of the files too passes them, so
+ * they are computed once per analysis.
+ */
 export const evaluateStatic = (
-  root: string,
-  config: ResolvedConfig,
+  project: Project & { commit: string | null },
   engine: EngineResult,
-  commit: string | null,
+  owners: Owners | null = ownersOf(engine),
 ): RuleResult[] => {
-  const owners = ownersOf(engine)
   const results: RuleResult[] = []
-  for (const rule of config.rules) {
+  for (const rule of project.config.rules) {
     if (rule.kind === 'command' || rule.kind === 'ai') continue
-    const violations = collect({ root, config }, rule, engine, owners).sort(compare)
+    const violations = collect(project, rule, engine, owners).sort(compare)
     const result: RuleResult = {
       id: rule.id,
       family: rule.family,
@@ -238,7 +239,7 @@ export const evaluateStatic = (
       score: null,
       violations: [],
       ranAt: new Date().toISOString(),
-      commit,
+      commit: project.commit,
       stale: false,
       error: null,
     }

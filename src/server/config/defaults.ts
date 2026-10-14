@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { matchGlob } from './engine/glob'
-import type { WorkspaceMember } from './engine/workspace'
+import { matchGlob } from '../../shared/glob'
+import type { WorkspaceMember } from '../engine/workspace'
 
 /** The files and features of a project whose config leaves them out, guessed from its folders. */
 

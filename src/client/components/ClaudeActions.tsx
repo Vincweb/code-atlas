@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { messageOf } from '../../shared/errors'
 import { openInClaude } from '../state/api'
 import { useT } from '../i18n'
 import { Button, Spinner } from './ui'
@@ -27,7 +28,7 @@ export const ClaudeActions = ({
       })
       .catch((reason: unknown) => {
         setLaunch('idle')
-        setError(reason instanceof Error ? reason.message : String(reason))
+        setError(messageOf(reason))
       })
   }
   const copy = () => {

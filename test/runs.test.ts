@@ -7,7 +7,7 @@ import type { CommandRuleConfig, ResolvedConfig } from '../src/shared/config'
 import type { RuleResult } from '../src/shared/types'
 import { runRule } from '../src/server/rules'
 import { readRun, writeRun } from '../src/server/rules/state'
-import { createRuns, RunError } from '../src/server/runs'
+import { createRuns, RunError } from '../src/server/http/runs'
 
 const command = (id: string, run = 'true'): CommandRuleConfig => ({
   id,

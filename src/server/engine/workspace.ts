@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { matchAny } from './glob'
+import { matchAny } from '../../shared/glob'
 import { isDirectory } from './fs'
 
 export type WorkspaceMember = { dir: string; name: string; hasSrc: boolean }

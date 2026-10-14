@@ -86,7 +86,8 @@ const configOf = (rules: RuleConfig[]): ResolvedConfig => ({
 
 const base = { family: 'f', severity: 'high' } as const
 
-const run = (rules: RuleConfig[]) => evaluateStatic(project(), configOf(rules), engine, 'abc')
+const run = (rules: RuleConfig[]) =>
+  evaluateStatic({ root: project(), config: configOf(rules), commit: 'abc' }, engine)
 
 test('graph rules report one violation per import statement', () => {
   const [layers, siblings, cycles] = run([
@@ -166,10 +167,12 @@ test('violations are capped, count is not', () => {
     })),
   }
   const [result] = evaluateStatic(
-    project(),
-    configOf([{ ...base, id: 'A', kind: 'complexity', max: 1 }]),
+    {
+      root: project(),
+      config: configOf([{ ...base, id: 'A', kind: 'complexity', max: 1 }]),
+      commit: null,
+    },
     many,
-    null,
   )
   assert.equal(result?.count, 600)
   assert.equal(result?.violations.length, 500)
@@ -345,13 +348,15 @@ test('mutual rule reports mutual edges only', () => {
     },
   }
   const [layers, result] = evaluateStatic(
-    project(),
-    configOf([
-      { ...base, id: 'L', kind: 'layers' },
-      { ...base, id: 'M', kind: 'mutual' },
-    ]),
+    {
+      root: project(),
+      config: configOf([
+        { ...base, id: 'L', kind: 'layers' },
+        { ...base, id: 'M', kind: 'mutual' },
+      ]),
+      commit: null,
+    },
     mutual,
-    null,
   )
   assert.equal(layers?.count, 0)
   assert.equal(result?.violations[0]?.message, 'src/a → src/b (mutual)')

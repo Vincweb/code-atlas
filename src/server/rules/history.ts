@@ -1,7 +1,7 @@
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { HistoryEntry, RuleResult, Scores } from '../../shared/types'
-import type { PackageScores } from './index'
+import type { PackageScores } from './score'
 
 /** Under `runs/`, the folder the README says to ignore: a history is per machine, like a run. */
 const HISTORY_FILE = join('runs', 'history.jsonl')

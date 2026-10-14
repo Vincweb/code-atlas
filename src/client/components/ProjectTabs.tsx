@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { isRed } from '../../shared/graph'
 import { TABS } from '../../shared/routes'
 import type { Tab } from '../../shared/routes'
 import type { Analysis } from '../../shared/types'
@@ -119,7 +120,7 @@ const badgeOf = (tab: Tab, analysis: Analysis | undefined): ReactNode => {
     )
   }
   if (tab === 'graph') {
-    const red = analysis.graph.edges.filter((e) => e.class === 'up' || e.class === 'mutual').length
+    const red = analysis.graph.edges.filter((e) => isRed(e.class)).length
     return counted(red, 'bad')
   }
   if (tab === 'docs') {
@@ -136,9 +137,7 @@ const badgeOf = (tab: Tab, analysis: Analysis | undefined): ReactNode => {
     return counted(audits, 'neutral')
   }
   if (tab === 'database' && analysis.database) {
-    const red = analysis.database.graph.edges.filter(
-      (e) => e.class === 'up' || e.class === 'mutual',
-    ).length
+    const red = analysis.database.graph.edges.filter((e) => isRed(e.class)).length
     return counted(red, 'bad')
   }
   if (tab === 'config' && analysis.configSource === 'default')

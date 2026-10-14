@@ -1,48 +1,27 @@
 import { useSyncExternalStore } from 'react'
+import { storedStore } from './stored'
 
 export type Theme = 'system' | 'light' | 'dark'
 
 export const THEMES: Theme[] = ['light', 'system', 'dark']
-const STORAGE_KEY = 'code-atlas.theme'
 
-const read = (): Theme => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'light' || saved === 'dark') return saved
-  } catch {
-    return 'system'
-  }
-  return 'system'
-}
+const store = storedStore<Theme>({
+  key: 'code-atlas.theme',
+  parse: (saved) => (saved === 'light' || saved === 'dark' ? saved : 'system'),
+  serialize: (value) => (value === 'system' ? null : value),
+})
 
 const apply = (value: Theme) => {
   if (value === 'system') delete document.documentElement.dataset.theme
   else document.documentElement.dataset.theme = value
 }
 
-let theme = read()
-apply(theme)
-const listeners = new Set<() => void>()
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
+apply(store.get())
 
 export const setTheme = (next: Theme) => {
-  if (next === theme) return
-  theme = next
+  if (next === store.get()) return
   apply(next)
-  try {
-    if (next === 'system') localStorage.removeItem(STORAGE_KEY)
-    else localStorage.setItem(STORAGE_KEY, next)
-  } catch {
-    return
-  } finally {
-    for (const listener of listeners) listener()
-  }
+  store.set(next)
 }
 
-export const useTheme = () => useSyncExternalStore(subscribe, () => theme)
+export const useTheme = () => useSyncExternalStore(store.subscribe, store.get)

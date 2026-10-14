@@ -1,5 +1,6 @@
 import path from 'path'
 import { CONFIG_FILE } from '../shared/config'
+import { isRed } from '../shared/graph'
 import type { ResolvedConfig } from '../shared/config'
 import type {
   DatabaseResult,
@@ -10,12 +11,12 @@ import type {
   Scores,
 } from '../shared/types'
 import { ConfigError } from './config'
-import { projectLabel } from './discover'
+import { projectLabel } from './project/discover'
 import { analyzeEngine } from './engine'
-import { gitState } from './git'
+import { gitState } from './project/git'
 import { projectContext } from './project'
 import type { Overrides } from './project'
-import { CONFIG_REFERENCE } from './reference'
+import { CONFIG_REFERENCE } from './config/reference'
 import { evaluate } from './rules'
 import type { PackageScores } from './rules'
 import { readHistory } from './rules/history'
@@ -72,7 +73,7 @@ const docsSection = (engine: EngineResult, templates: readonly string[]) => {
 const databaseSection = (database: DatabaseResult | null) => {
   if (!database) return ['## Database: no Drizzle config found']
   const chosen = database.configs.find((config) => config.chosen)
-  const red = database.graph.edges.filter((edge) => edge.class === 'up' || edge.class === 'mutual')
+  const red = database.graph.edges.filter((edge) => isRed(edge.class))
   const siblings = database.graph.edges.filter((edge) => edge.class === 'sibling')
   const { stats } = database
   return [
@@ -175,7 +176,7 @@ const stateOf = (
     git: gitState(root),
   })
   const red = engine.graph.edges
-    .filter((edge) => edge.class === 'up' || edge.class === 'mutual')
+    .filter((edge) => isRed(edge.class))
     .sort((a, b) => b.weight - a.weight)
   const siblings = engine.graph.edges.filter((edge) => edge.class === 'sibling')
   const { stats, graph } = engine

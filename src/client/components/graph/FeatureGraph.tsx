@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { KeyboardEvent } from 'react'
+import { isRed } from '../../../shared/graph'
 import type { Graph } from '../../../shared/types'
+import { useStoredState } from '../../state/stored'
+import type { Stored } from '../../state/stored'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Button } from '../ui'
@@ -11,7 +14,7 @@ import { GraphSvg } from './GraphSvg'
 import { NodePanel } from './NodePanel'
 import type { NodeDoc } from './NodePanel'
 import { OverviewPanel } from './OverviewPanel'
-import { drawOrder, isProblem, isRed } from './edges'
+import { drawOrder, isProblem } from './edges'
 import { layoutGraph } from './layout'
 import { GraphWordsContext, useGraphWords } from './words'
 import type { GraphWords } from './words'
@@ -22,24 +25,12 @@ const DEFAULT_MIN_WEIGHT = 5
 const CROWDED_EDGES = 40
 const MIN_SCALE = 0.7
 
-const usePanelOpen = (key: string) => {
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem(key) !== 'closed'
-    } catch {
-      return true
-    }
-  })
-  const update = (next: boolean) => {
-    setOpen(next)
-    try {
-      localStorage.setItem(key, next ? 'open' : 'closed')
-    } catch {
-      return
-    }
-  }
-  return [open, update] as const
-}
+/** Whether a graph's side panel is open, remembered per graph. */
+const storedPanel = (key: string): Stored<boolean> => ({
+  key,
+  parse: (saved) => saved !== 'closed',
+  serialize: (open) => (open ? 'open' : 'closed'),
+})
 
 /** The banner a graph without layers shows, with the way to the config. */
 export const NoLayersBanner = ({
@@ -76,7 +67,7 @@ const Inner = ({ graph, storageKey, showCycles = true, onOpen, docOf }: Props) =
   const [mode, setMode] = useState<Mode>('all')
   const [query, setQuery] = useState('')
   const [help, setHelp] = useState(false)
-  const [panelOpen, setPanelOpen] = usePanelOpen(storageKey)
+  const [panelOpen, setPanelOpen] = useStoredState(storedPanel(storageKey))
   const [frame, width] = useWidth()
 
   const layout = useMemo(() => layoutGraph(graph, width), [graph, width])

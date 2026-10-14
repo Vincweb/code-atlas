@@ -8,7 +8,6 @@ import { packageRules } from '../../shared/packages'
 import type {
   Baseline,
   EngineResult,
-  PackageBaseline,
   Regression,
   RuleResult,
   RunEvent,
@@ -17,17 +16,21 @@ import type {
 import { workspaceMembers } from '../engine/workspace'
 import { isDbKind } from '../../shared/config'
 import { runAi } from './ai'
+import { regressionsOf } from './baseline'
+import { logCheck } from './checkLog'
 import { runCommand } from './command'
 import { ownersOf, settle } from './packages'
 import type { Owners } from './packages'
 import { notRun } from './result'
 import { computeScores } from './score'
+import type { PackageScores } from './score'
 import { evaluateStatic } from './static'
 import { readBaseline, readRun, writeRun } from './state'
 
-type Git = { commit: string | null; dirty: boolean }
+export { isNewToBaseline, makeBaseline } from './baseline'
+export type { PackageScores } from './score'
 
-export type PackageScores = { dir: string; scores: Scores }
+type Git = { commit: string | null; dirty: boolean }
 
 /** The scores of each package, from the rules as that package sees them. */
 const scoresByPackage = (rules: RuleResult[], owners: Owners | null): PackageScores[] =>
@@ -36,6 +39,16 @@ const scoresByPackage = (rules: RuleResult[], owners: Owners | null): PackageSco
 /** A run's result as of this analysis: its violations owned by packages, its score recomputed. */
 const settleRun = (rule: RuleConfig, result: RuleResult, owners: Owners | null) =>
   settle(rule, result, result.violations, owners)
+
+/** Who owns what in a monorepo, and every static rule's result by id: once per analysis. */
+const staticsOf = (
+  project: { root: string; config: ResolvedConfig; commit: string | null },
+  engine: EngineResult,
+) => {
+  const owners = ownersOf(engine)
+  const results = evaluateStatic(project, engine, owners)
+  return { owners, statics: new Map(results.map((result) => [result.id, result])) }
+}
 
 export const evaluate = (opts: {
   root: string
@@ -50,8 +63,7 @@ export const evaluate = (opts: {
   baseline: Baseline | null
 } => {
   const { root, config, engine, stateDir, git } = opts
-  const owners = ownersOf(engine)
-  const statics = new Map(evaluateStatic(root, config, engine, git.commit).map((r) => [r.id, r]))
+  const { owners, statics } = staticsOf({ root, config, commit: git.commit }, engine)
   const rules = config.rules.map((rule): RuleResult => {
     if (rule.kind !== 'command' && rule.kind !== 'ai') return statics.get(rule.id) as RuleResult
     const stored = readRun(stateDir, rule)
@@ -94,72 +106,7 @@ export const runRule = async (opts: {
   return result
 }
 
-const countsOf = (rules: RuleResult[]) =>
-  Object.fromEntries(
-    rules
-      .filter((rule) => rule.kind !== 'ai' && !isDbKind(rule.kind))
-      .filter((rule) => rule.status === 'pass' || rule.status === 'fail')
-      .map((rule) => [rule.id, rule.count]),
-  )
-
-export const makeBaseline = (
-  rules: RuleResult[],
-  scores: Scores,
-  commit: string | null,
-  packages: PackageScores[] = [],
-): Baseline => ({
-  commit,
-  savedAt: new Date().toISOString(),
-  scores,
-  violations: countsOf(rules),
-  ...(packages.length
-    ? {
-        packages: Object.fromEntries(
-          packages.map(({ dir, scores: own }): [string, PackageBaseline] => [
-            dir,
-            { scores: own, violations: countsOf(packageRules(rules, dir)) },
-          ]),
-        ),
-      }
-    : {}),
-})
-
-/**
- * Whether the baseline never counted this rule. Every static rule is counted when a baseline is
- * recorded, so a missing one was added since — to the config, or to the defaults by a newer
- * code-atlas — and is reported, not checked, until the baseline is recorded again: upgrading must
- * not fail a CI whose code did not change. A command rule may be missing because the baseline was
- * recorded with --skip-commands; a red lint stays red, so it still compares with zero.
- */
-export const isNewToBaseline = (rule: RuleResult, baseline: Baseline | null) =>
-  baseline !== null && rule.kind !== 'command' && !(rule.id in baseline.violations)
-
-/** Every count above the baseline's: the whole repository's, then each package's it recorded. */
-const regressionsOf = (
-  rules: RuleResult[],
-  baseline: Baseline | null,
-  packages: PackageScores[],
-): Regression[] => {
-  const ran = rules.filter(
-    (rule) =>
-      (rule.status === 'pass' || rule.status === 'fail') && !isNewToBaseline(rule, baseline),
-  )
-  const global = ran.flatMap((rule) => {
-    const before = baseline?.violations[rule.id] ?? 0
-    return rule.count > before ? [{ id: rule.id, before, after: rule.count }] : []
-  })
-  const recorded = baseline?.packages
-  if (!recorded) return global
-  const own = packages.flatMap(({ dir }) =>
-    packageRules(ran, dir).flatMap((rule) => {
-      const before = recorded[dir]?.violations[rule.id] ?? 0
-      return rule.count > before ? [{ id: rule.id, package: dir, before, after: rule.count }] : []
-    }),
-  )
-  return [...global, ...own]
-}
-
-export const runCheck = async (opts: {
+type CheckOptions = {
   root: string
   config: ResolvedConfig
   engine: EngineResult
@@ -169,17 +116,15 @@ export const runCheck = async (opts: {
   /** The run is about to become the baseline: report the counts, not a verdict against the old one. */
   recording?: boolean
   log: (line: string) => void
-}): Promise<{
-  ok: boolean
-  rules: RuleResult[]
-  scores: Scores
-  packages: PackageScores[]
-  regressions: Regression[]
-  baseline: Baseline | null
-}> => {
-  const { root, config, engine, stateDir, git, skipCommands, recording = false, log } = opts
-  const owners = ownersOf(engine)
-  const statics = new Map(evaluateStatic(root, config, engine, git.commit).map((r) => [r.id, r]))
+}
+
+/** The rules --check gates on: the static ones of this analysis, and each command run now. */
+const gatedRules = async (
+  opts: CheckOptions,
+  owners: Owners | null,
+  statics: Map<string, RuleResult>,
+): Promise<RuleResult[]> => {
+  const { root, config, stateDir, git, skipCommands, log } = opts
   const rules: RuleResult[] = []
   for (const rule of config.rules) {
     // AI runs disagree between two runs; database rules are in beta. Neither gates.
@@ -200,76 +145,34 @@ export const runCheck = async (opts: {
     })
     rules.push(settleRun(rule, result, owners))
   }
+  return rules
+}
+
+export const runCheck = async (
+  opts: CheckOptions,
+): Promise<{
+  ok: boolean
+  rules: RuleResult[]
+  scores: Scores
+  packages: PackageScores[]
+  regressions: Regression[]
+  baseline: Baseline | null
+}> => {
+  const { root, config, engine, stateDir, git, recording = false, log } = opts
+  const { owners, statics } = staticsOf({ root, config, commit: git.commit }, engine)
+  const rules = await gatedRules(opts, owners, statics)
   const scores = computeScores(rules)
   const packages = scoresByPackage(rules, owners)
   const baseline = readBaseline(stateDir)
   const regressions = regressionsOf(rules, baseline, packages)
   const errored = rules.some((rule) => rule.kind === 'command' && rule.status === 'error')
-  const countOf = (rule: RuleResult) => {
-    if (recording) return `${rule.count}`
-    if (isNewToBaseline(rule, baseline)) return `${rule.count} (not in the baseline)`
-    return `${rule.count} (baseline ${baseline?.violations[rule.id] ?? 0})`
+  logCheck({ engine, rules, scores, packages, regressions, baseline, errored, recording }, log)
+  return {
+    ok: regressions.length === 0 && !errored,
+    rules,
+    scores,
+    packages,
+    regressions,
+    baseline,
   }
-  report(rules, scores, countOf, log)
-  reportPackages(engine, packages, log)
-  const ok = regressions.length === 0 && !errored
-  if (!recording) reportVerdict({ rules, regressions, baseline, errored }, log)
-  return { ok, rules, scores, packages, regressions, baseline }
-}
-
-/** The packages that regressed, the rules the baseline does not know yet, and the verdict. */
-const reportVerdict = (
-  run: {
-    rules: RuleResult[]
-    regressions: Regression[]
-    baseline: Baseline | null
-    errored: boolean
-  },
-  log: (line: string) => void,
-) => {
-  const { rules, regressions, baseline, errored } = run
-  for (const regression of regressions.filter((r) => r.package !== undefined))
-    log(
-      `  ✗ ${regression.package}: ${regression.id} ${regression.after} (baseline ${regression.before})`,
-    )
-  const fresh = rules.filter((rule) => isNewToBaseline(rule, baseline))
-  if (fresh.length)
-    log(
-      `⚠ Not in the baseline, so not checked: ${fresh.map((rule) => `${rule.id} (${rule.count})`).join(', ')} — run --update-baseline to start checking ${fresh.length === 1 ? 'it' : 'them'}`,
-    )
-  log(
-    regressions.length === 0 && !errored
-      ? '✓ No regression'
-      : `✗ ${regressions.length} regression(s)${errored ? ', a command could not run' : ''}`,
-  )
-}
-
-const reportPackages = (
-  engine: EngineResult,
-  packages: PackageScores[],
-  log: (line: string) => void,
-) => {
-  if (!packages.length) return
-  log('packages:')
-  for (const { dir, scores } of packages) {
-    const name = engine.packages.find((pkg) => pkg.dir === dir)?.name ?? dir
-    log(`  ${name} (${dir}): ${scores.overall ?? '—'}`)
-  }
-}
-
-const report = (
-  rules: RuleResult[],
-  scores: Scores,
-  countOf: (rule: RuleResult) => string,
-  log: (line: string) => void,
-) => {
-  for (const family of scores.families) {
-    log(`${family.family}: ${family.score ?? '—'}`)
-    for (const rule of rules.filter((r) => r.family === family.family)) {
-      if (rule.status === 'error') log(`  ✗ ${rule.id} ${rule.title} — error: ${rule.error}`)
-      else if (rule.status === 'fail') log(`  ✗ ${rule.id} ${rule.title} — ${countOf(rule)}`)
-      else if (rule.status === 'pass') log(`  ✓ ${rule.id} ${rule.title}`)
-    }
-  }
-  log(`overall: ${scores.overall ?? '—'}`)
 }

@@ -6,7 +6,7 @@ import type {
   StrixRun,
   StrixRunSummary,
   StrixSeverity,
-} from '../shared/types'
+} from '../../shared/types'
 
 const SEVERITY_ORDER: StrixSeverity[] = ['critical', 'high', 'medium', 'low', 'info']
 const MAX_RUNS = 20

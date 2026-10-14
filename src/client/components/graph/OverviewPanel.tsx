@@ -1,7 +1,7 @@
+import { isRed } from '../../../shared/graph'
 import type { FeatureEdge, Graph } from '../../../shared/types'
 import { SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'
-import { isRed } from './edges'
 import { useGraphWords } from './words'
 
 const MOST_COUPLED = 6

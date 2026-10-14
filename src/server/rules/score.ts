@@ -2,6 +2,8 @@ import { KNOWN_FAMILIES, isDbKind } from '../../shared/config'
 import { WEIGHT } from '../../shared/score'
 import type { FamilyScore, RuleResult, Scores } from '../../shared/types'
 
+export type PackageScores = { dir: string; scores: Scores }
+
 const familyOrder = (families: string[]) => {
   const known: string[] = KNOWN_FAMILIES.filter((family) => families.includes(family))
   const others = families.filter((family) => !known.includes(family)).sort()

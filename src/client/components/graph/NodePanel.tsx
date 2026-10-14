@@ -1,10 +1,11 @@
+import { isRed } from '../../../shared/graph'
 import type { FeatureEdge, FeatureNode } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Link } from '../Link'
 import { Button, SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'
-import { CHIP, TONE, isRed } from './edges'
+import { CHIP, TONE } from './edges'
 import { useGraphWords } from './words'
 
 /** A feature's doc as the panel shows it: its one-line definition and the link to the Docs tab. */

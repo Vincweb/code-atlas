@@ -1,4 +1,4 @@
-import type { DbTable } from '../../../shared/types'
+import type { DatabaseResult, DbTable } from '../../../shared/types'
 
 export const CARD_W = 224
 export const HEADER_H = 30
@@ -140,4 +140,37 @@ export const layoutErd = (own: DbTable[], others: DbTable[], available: number):
     width: Math.max(available, PAD * 2 + columns * CARD_W + (columns - 1) * GAP_X),
     height: Math.max(...heights) - GAP_Y + PAD,
   }
+}
+
+/** The feature picker's choice that shows every table. */
+export const ALL = '*'
+
+/**
+ * The tables a view of one feature shows: its own, and with `neighbours` those a foreign key links
+ * to them either way. Every table under `ALL`.
+ */
+export const tablesInView = (db: DatabaseResult, feature: string, neighbours: boolean) => {
+  if (feature === ALL) return { own: db.tables, others: [] }
+  const own = db.tables.filter((table) => table.feature === feature)
+  if (!neighbours) return { own, others: [] }
+  const ownIds = new Set(own.map((table) => table.id))
+  const linked = new Set<string>()
+  for (const table of db.tables)
+    for (const key of table.foreignKeys) {
+      if (ownIds.has(table.id) && !ownIds.has(key.table)) linked.add(key.table)
+      if (!ownIds.has(table.id) && ownIds.has(key.table)) linked.add(table.id)
+    }
+  return { own, others: db.tables.filter((table) => linked.has(table.id)) }
+}
+
+/** The active table and the tables one drawn foreign key away from it. */
+export const relatedTables = (active: string | null, edges: ErdEdge[]) => {
+  const related = new Set<string>()
+  if (active === null) return related
+  related.add(active)
+  for (const edge of edges) {
+    if (edge.source === active) related.add(edge.target)
+    if (edge.target === active) related.add(edge.source)
+  }
+  return related
 }

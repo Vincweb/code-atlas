@@ -1,3 +1,5 @@
+import type { EdgeClass } from './types'
+
 /**
  * Tarjan's strongly connected components. Iterative, so a long import chain cannot overflow the
  * stack. Every node reachable from `nodes` lands in exactly one component.
@@ -87,3 +89,6 @@ export const condensedDepths = (
   }
   return new Map(nodes.map((node) => [node, depth[componentOf.get(node) ?? 0] ?? 0]))
 }
+
+/** The edges that break the layering: one climbing a layer, or two features importing each other. */
+export const isRed = (edgeClass: EdgeClass) => edgeClass === 'up' || edgeClass === 'mutual'

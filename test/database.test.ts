@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import type { ResolvedConfig, ResolvedDatabaseConfig, RuleConfig } from '../src/shared/config'
 import { loadConfig } from '../src/server/config'
-import { draftConfig } from '../src/server/configDraft'
+import { draftConfig } from '../src/server/config/draft'
 import { analyzeEngine } from '../src/server/engine'
 import { findDrizzleConfigs, readDrizzleConfig } from '../src/server/engine/database/discover'
 import { prefixOf } from '../src/server/engine/database/features'
@@ -214,10 +214,8 @@ test('the database rules report the foreign keys behind each edge', () => {
     { id: 'S', family: 'database', severity: 'low', kind: 'db-siblings' },
   ]
   const [layers, mutual, siblings] = evaluateStatic(
-    root,
-    configOf(layered, rules),
+    { root, config: configOf(layered, rules), commit: null },
     analyzeEngine(root, configOf(layered)),
-    null,
   )
   assert.equal(layers?.count, 1)
   assert.deepEqual(layers?.violations[0], {
@@ -228,7 +226,10 @@ test('the database rules report the foreign keys behind each edge', () => {
   assert.equal(mutual?.count, 0)
   assert.equal(siblings?.count, 2)
   assert.equal(layers?.title, 'Database layering')
-  const [flatMutual] = evaluateStatic(root, configOf(flat, [rules[1] as RuleConfig]), engine, null)
+  const [flatMutual] = evaluateStatic(
+    { root, config: configOf(flat, [rules[1] as RuleConfig]), commit: null },
+    engine,
+  )
   assert.equal(flatMutual?.count, 2)
 })
 
@@ -237,7 +238,7 @@ test('the database family is scored but stays out of the overall score and of --
     { id: 'CC', family: 'clean-code', severity: 'medium', kind: 'max-lines', max: 1000 },
     { id: 'DB', family: 'database', severity: 'medium', kind: 'db-mutual' },
   ]
-  const results = evaluateStatic(root, configOf(flat, rules), engine, null)
+  const results = evaluateStatic({ root, config: configOf(flat, rules), commit: null }, engine)
   const scores = computeScores(results)
   const database = scores.families.find((family) => family.family === 'database')
   assert.equal(database?.beta, true)

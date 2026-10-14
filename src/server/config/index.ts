@@ -1,20 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import type { AtlasConfig, LayerConfig, ResolvedConfig, RuleKind } from '../shared/config'
-import type { ConfigSource } from '../shared/types'
-import { CONFIG_FILE, SEVERITIES } from '../shared/config'
-import { DEFAULT_DOCS, DOC_EXTENSION } from '../shared/docs'
-import type { ResolvedDatabaseConfig, RuleConfig } from '../shared/config'
-import { drizzleConfigs } from './engine/database'
-import { defaultRules } from './rules/defaults'
-import { detectWorkspaces, workspaceMembers } from './engine/workspace'
-import {
-  DEFAULT_EXCLUDE,
-  defaultFeatures,
-  defaultInclude,
-  workspaceFeatures,
-} from './configDefaults'
-import { isDirectory } from './engine/fs'
+import type { AtlasConfig, LayerConfig, ResolvedConfig, RuleKind } from '../../shared/config'
+import type { ConfigSource } from '../../shared/types'
+import { CONFIG_FILE, SEVERITIES } from '../../shared/config'
+import { DEFAULT_DOCS, DOC_EXTENSION } from '../../shared/docs'
+import { messageOf } from '../../shared/errors'
+import type { ResolvedDatabaseConfig, RuleConfig } from '../../shared/config'
+import { drizzleConfigs } from '../engine/database'
+import { defaultRules } from '../rules/defaults'
+import { detectWorkspaces, workspaceMembers } from '../engine/workspace'
+import { DEFAULT_EXCLUDE, defaultFeatures, defaultInclude, workspaceFeatures } from './defaults'
+import { isDirectory } from '../engine/fs'
 
 export class ConfigError extends Error {
   issues: string[]
@@ -128,7 +124,7 @@ const checkPattern = (raw: Record<string, unknown>, label: string, issues: strin
   try {
     new RegExp(raw.pattern, typeof raw.flags === 'string' ? raw.flags : '')
   } catch (error) {
-    issues.push(`${label}.pattern does not compile: ${(error as Error).message}`)
+    issues.push(`${label}.pattern does not compile: ${messageOf(error)}`)
   }
 }
 
@@ -271,7 +267,7 @@ const readConfigFile = (path: string): AtlasConfig => {
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'))
   } catch (error) {
-    throw new ConfigError([`cannot read ${path}: ${(error as Error).message}`])
+    throw new ConfigError([`cannot read ${path}: ${messageOf(error)}`])
   }
   const issues = validate(parsed)
   if (issues.length) throw new ConfigError(issues)

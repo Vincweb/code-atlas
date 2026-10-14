@@ -1,6 +1,6 @@
 import { execFile } from 'child_process'
-import type { ClaudeStatus } from '../shared/types'
-import { spawnEnv } from './rules/process'
+import type { ClaudeStatus } from '../../shared/types'
+import { spawnEnv } from '../rules/process'
 
 const TTL_MS = 60_000
 let cached: { at: number; status: ClaudeStatus } | null = null

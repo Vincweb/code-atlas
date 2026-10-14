@@ -1,6 +1,6 @@
-import { callTool, paramsOf } from './mcpCalls'
-import type { McpContext } from './mcpCalls'
-import { INSTRUCTIONS, TOOLS } from './mcpTools'
+import { callTool, paramsOf } from './calls'
+import type { McpContext } from './calls'
+import { INSTRUCTIONS, TOOLS } from './tools'
 
 /**
  * The Model Context Protocol over stdio, written by hand: newline-delimited JSON-RPC 2.0, the
@@ -9,8 +9,8 @@ import { INSTRUCTIONS, TOOLS } from './mcpTools'
  */
 export const PROTOCOL_VERSION = '2025-06-18'
 
-export type { McpContext } from './mcpCalls'
-export { TOOLS } from './mcpTools'
+export type { McpContext } from './calls'
+export { TOOLS } from './tools'
 
 type JsonRpcId = string | number | null
 

@@ -33,6 +33,3 @@ export const readJson = (request: http.IncomingMessage) =>
     })
     request.on('error', reject)
   })
-
-export const messageOf = (error: unknown) =>
-  error instanceof Error ? error.message : String(error)

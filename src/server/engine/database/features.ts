@@ -1,6 +1,6 @@
 import type { ResolvedDatabaseConfig } from '../../../shared/config'
 import type { DbTable, FeatureEdge, FeatureNode, Graph } from '../../../shared/types'
-import { matchAny } from '../glob'
+import { matchAny } from '../../../shared/glob'
 import { classify, layerIndex, neighbours, round } from '../graph'
 
 /** `customer_calls` → `customer`, `chatArtifacts` → `chat`: the first word of the name. */

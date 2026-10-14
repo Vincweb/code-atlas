@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { STATE_DIR } from '../shared/config'
+import { STATE_DIR } from '../../shared/config'
 
 const git = (root: string, args: string[]) =>
   execFileSync('git', args, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] })

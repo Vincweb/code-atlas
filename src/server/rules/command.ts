@@ -3,10 +3,9 @@ import { existsSync } from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
 import type { CommandRuleConfig } from '../../shared/config'
 import type { PackageRef, RuleResult, RunEvent, Violation } from '../../shared/types'
-import { followProcess } from './process'
+import { followProcess, stripAnsi } from './process'
 import { finishRun } from './result'
 
-const ANSI = new RegExp(String.raw`\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007`, 'g')
 const PATH = String.raw`(?:\/|\.{0,2}\/)?[\w@.\-/]+\.[a-z]{1,4}`
 const LOCATION = new RegExp(String.raw`(?:^|\s)(${PATH})[:(](\d+)`, 'i')
 /** A line that names a file and nothing else, as ESLint's stylish format heads its messages. */
@@ -107,7 +106,7 @@ export const runCommand = async (
     signal: opts.signal,
     timeoutMs: (rule.timeoutSec ?? 600) * 1000,
     onLine: (raw) => {
-      const line = raw.replace(ANSI, '')
+      const line = stripAnsi(raw)
       lines.push(line)
       if (line.trim()) pending.push(line.trim())
       if (lines.length > KEEP_LINES * 2) lines.splice(0, lines.length - KEEP_LINES)

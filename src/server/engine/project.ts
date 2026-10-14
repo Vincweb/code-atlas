@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type * as TS from 'typescript'
-import { matchAny } from './glob'
+import { matchAny } from '../../shared/glob'
 import type { ResolvedConfig } from '../../shared/config'
 import { EngineError } from './errors'
 import type { TsApi } from './typescript'
@@ -22,6 +22,9 @@ export type SourceFile = {
 }
 
 const SOURCE_EXTENSIONS = /\.(?:[cm]?[jt]s|[jt]sx)$/
+
+/** Whether a path is a file the engine parses: TypeScript or JavaScript, JSX included. */
+export const isSourceFile = (file: string) => SOURCE_EXTENSIONS.test(file)
 
 const toRelative = (root: string, file: string) =>
   path.relative(root, file).split(path.sep).join('/')
@@ -96,7 +99,7 @@ export const collectFiles = (
       const relative = toRelative(root, fileName)
       if (files.has(relative) || relative.startsWith('..') || path.isAbsolute(relative)) continue
       if (relative.endsWith('.d.ts') || /(^|\/)node_modules\//.test(relative)) continue
-      if (!SOURCE_EXTENSIONS.test(relative)) continue
+      if (!isSourceFile(relative)) continue
       if (!matchAny(relative, config.include) || matchAny(relative, config.exclude)) continue
       let text: string
       try {

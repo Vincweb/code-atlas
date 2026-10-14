@@ -8,7 +8,7 @@ import type {
   StrixIntegration,
   StrixSkill,
   StrixTools,
-} from '../shared/types'
+} from '../../shared/types'
 
 const TTL_MS = 60_000
 const MAX_CI_BYTES = 200_000

@@ -1,11 +1,11 @@
 import { execFileSync, spawn } from 'node:child_process'
-import type { ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { STRIX_MODES } from '../shared/types'
-import type { StrixScan, StrixScanRequest } from '../shared/types'
-import { listRunNames, runProgress, strixCwd } from './strixReport'
+import { STRIX_MODES } from '../../shared/types'
+import type { StrixScan, StrixScanRequest } from '../../shared/types'
+import { signalTree, stripAnsi } from '../rules/process'
+import { listRunNames, runProgress, strixCwd } from './report'
 
 const MAX_FILES = 20_000
 const MAX_BYTES = 300_000_000
@@ -21,7 +21,6 @@ const TIMEOUT_MS: Record<StrixScan['mode'], number> = {
   deep: 12 * HOURS,
 }
 const SKIPPED = new Set(['node_modules', '.git', '.code-atlas', 'strix_runs'])
-const ANSI = new RegExp(String.raw`\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007`, 'g')
 const FRAME = /^[\s│┃║╭╮╰╯┏┓┗┛─━═┌┐└┘|]+|[\s│┃║╭╮╰╯┏┓┗┛─━═┌┐└┘|]+$/g
 
 export class ScanError extends Error {
@@ -143,17 +142,12 @@ const launch = (bin: string, args: string[], stateDir: string, copy: { temp: str
   }
 }
 
-const cleanLine = (line: string) => line.replace(ANSI, '').replace(FRAME, '').trim()
+const cleanLine = (line: string) => stripAnsi(line).replace(FRAME, '').trim()
 
-type Scan = { state: StrixScan; stop: (reason: 'cancelled') => void; refresh: () => void }
-
-const signalGroup = (child: ChildProcess, signal: NodeJS.Signals) => {
-  try {
-    if (child.pid !== undefined && process.platform !== 'win32') process.kill(-child.pid, signal)
-    else child.kill(signal)
-  } catch {
-    // already gone
-  }
+type Scan = {
+  state: StrixScan
+  stop: (reason: 'cancelled' | 'timeout') => void
+  refresh: () => void
 }
 
 /** One scan at a time per project, kept by the server so it outlives the page that started it. */
@@ -199,8 +193,8 @@ export const createScans = (opts: { strixBin?: string } = {}) => {
     }
     const stop = (reason: 'cancelled' | 'timeout') => {
       failure ??= reason
-      signalGroup(child, 'SIGTERM')
-      killer ??= setTimeout(() => signalGroup(child, 'SIGKILL'), GRACE_MS)
+      signalTree(child, 'SIGTERM')
+      killer ??= setTimeout(() => signalTree(child, 'SIGKILL'), GRACE_MS)
     }
     scan.stop = stop
     scan.refresh = refresh

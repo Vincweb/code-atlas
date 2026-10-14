@@ -4,7 +4,8 @@ import type http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { isRebound, readProjectFile } from '../src/server/server'
+import { isRebound } from '../src/server/http'
+import { readProjectFile } from '../src/server/http/routes'
 
 const requestTo = (host: string | undefined) =>
   ({ headers: host === undefined ? {} : { host } }) as http.IncomingMessage

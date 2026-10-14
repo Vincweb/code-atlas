@@ -5,7 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { describeProject } from '../src/server/describe'
-import { describeCommand } from '../src/server/selfCommand'
+import { describeCommand } from '../src/server/project/selfCommand'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'layered')
 const none = { root: null, config: null, state: null }

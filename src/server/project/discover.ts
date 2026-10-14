@@ -1,10 +1,10 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { CONFIG_FILE } from '../shared/config'
-import type { BrowsePayload, FolderEntry, Place } from '../shared/types'
-import { detectWorkspaces } from './engine/workspace'
-import { entriesOf, isDirectory } from './engine/fs'
+import { CONFIG_FILE } from '../../shared/config'
+import type { BrowsePayload, FolderEntry, Place } from '../../shared/types'
+import { detectWorkspaces } from '../engine/workspace'
+import { entriesOf, isDirectory } from '../engine/fs'
 
 const SKIP = new Set(['node_modules', 'dist', 'build', 'coverage', '.next', '.turbo'])
 const MAX_ENTRIES = 500

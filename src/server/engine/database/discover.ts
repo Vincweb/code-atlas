@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { DrizzleConfigInfo } from '../../../shared/types'
-import { matchGlob } from '../glob'
+import { matchGlob } from '../../../shared/glob'
 import { entriesOf, isDirectory } from '../fs'
 
 const SKIP = new Set([

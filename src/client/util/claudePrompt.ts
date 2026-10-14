@@ -2,6 +2,7 @@
 export const MCP_INSTALL = 'claude mcp add -s project code-atlas -- npx -y @vincweb/code-atlas mcp'
 
 import { CONFIG_FILE } from '../../shared/config'
+import { isRed } from '../../shared/graph'
 import type { Analysis, RuleResult } from '../../shared/types'
 import type { Strings } from '../i18n'
 
@@ -22,9 +23,7 @@ const contextOf = (analysis: Analysis, t: Strings, redCount: number) => {
   const unlayered = graph.layers.length
     ? graph.features.filter((f) => f.layer === null).map((f) => f.id)
     : []
-  const red = graph.edges
-    .filter((edge) => edge.class === 'up' || edge.class === 'mutual')
-    .sort((a, b) => b.weight - a.weight)
+  const red = graph.edges.filter((edge) => isRed(edge.class)).sort((a, b) => b.weight - a.weight)
   const redList = red
     .slice(0, redCount)
     .map((edge) => `${edge.from} → ${edge.to} (${t.edgeClass[edge.class]}, ${edge.weight})`)
@@ -42,7 +41,7 @@ const contextOf = (analysis: Analysis, t: Strings, redCount: number) => {
           words.database(
             database.stats.tables,
             database.stats.features,
-            database.graph.edges.filter((e) => e.class === 'up' || e.class === 'mutual').length,
+            database.graph.edges.filter((e) => isRed(e.class)).length,
           ),
         ]
       : []),

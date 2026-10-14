@@ -1,24 +1,26 @@
 import path from 'node:path'
-import type { EdgeClass, FeatureEdge, HistoryEntry, Violation } from '../shared/types'
-import { scopeAnalysis } from '../shared/scope'
-import { describeProject } from './describe'
-import { isProject } from './discover'
-import { docCandidates } from '../shared/docs'
-import { analyzeEngine } from './engine'
-import { findDoc, parseDoc } from './engine/docs'
-import { matchGlob } from './engine/glob'
-import { gitState } from './git'
-import { analyzeProject, projectContext } from './project'
-import type { Overrides } from './project'
-import { CONFIG_REFERENCE } from './reference'
-import { checkReport } from './report'
-import { runCheck } from './rules'
-import { historyEntry, recordHistory } from './rules/history'
+import type { EdgeClass, FeatureEdge, HistoryEntry, Violation } from '../../shared/types'
+import { scopeAnalysis } from '../../shared/scope'
+import { describeProject } from '../describe'
+import { isProject } from '../project/discover'
+import { docCandidates } from '../../shared/docs'
+import { messageOf } from '../../shared/errors'
+import { isRed } from '../../shared/graph'
+import { analyzeEngine } from '../engine'
+import { findDoc, parseDoc } from '../engine/docs'
+import { matchGlob } from '../../shared/glob'
+import { gitState } from '../project/git'
+import { analyzeProject, projectContext } from '../project'
+import type { Overrides } from '../project'
+import { CONFIG_REFERENCE } from '../config/reference'
+import { checkReport } from '../report'
+import { runCheck } from '../rules'
+import { historyEntry, recordHistory } from '../rules/history'
 
-import { EDGE_CLASSES, MAX_EDGES, MAX_VIOLATIONS } from './mcpTools'
-import type { ToolName } from './mcpTools'
+import { EDGE_CLASSES, MAX_EDGES, MAX_VIOLATIONS } from './tools'
+import type { ToolName } from './tools'
 
-/** What each tool of `code-atlas mcp` answers; the catalogue is in mcpTools.ts, the protocol in mcp.ts. */
+/** What each tool of `code-atlas mcp` answers; the catalogue is in tools.ts, the protocol in index.ts. */
 export type McpContext = { overrides: Overrides; cwd: string; version: string }
 
 export type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean }
@@ -167,8 +169,7 @@ const edges = (ctx: McpContext, params: Params) => {
   if (!graph) throw new ToolError('no Drizzle config found: the project has no database graph')
   const kept = graph.edges.filter(
     (edge) =>
-      (kind === 'all' ||
-        (kind === 'red' ? edge.class === 'up' || edge.class === 'mutual' : edge.class === kind)) &&
+      (kind === 'all' || (kind === 'red' ? isRed(edge.class) : edge.class === kind)) &&
       (!feature || edge.from === feature || edge.to === feature),
   )
   return {
@@ -265,8 +266,7 @@ const text = (value: unknown): ToolResult => ({
 
 const failure = (error: unknown): ToolResult => {
   // A config error's message already lists its issues, one per line.
-  const message = error instanceof Error ? error.message : String(error)
-  return { content: [{ type: 'text', text: message }], isError: true }
+  return { content: [{ type: 'text', text: messageOf(error) }], isError: true }
 }
 
 export const callTool = async (

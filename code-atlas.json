@@ -9,8 +9,12 @@
     },
     {
       "name": "Interface",
-      "features": ["src/client/components", "src/server"],
+      "features": ["src/client/components", "src/server/http", "src/server/mcp"],
       "siblings": true
+    },
+    {
+      "name": "Services",
+      "features": ["src/server", "src/server/project", "src/server/config", "src/server/strix"]
     },
     {
       "name": "Core",

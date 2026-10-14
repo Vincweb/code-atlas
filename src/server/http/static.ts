@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 
 export const clientDir = fileURLToPath(
   new URL(
-    import.meta.url.includes('/src/server/') ? '../../dist/client/' : './client/',
+    import.meta.url.includes('/src/server/') ? '../../../dist/client/' : './client/',
     import.meta.url,
   ),
 )

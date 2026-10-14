@@ -3,9 +3,9 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { describeProject } from './server/describe'
-import { isProject } from './server/discover'
+import { isProject } from './server/project/discover'
 import { analyzeEngine } from './server/engine'
-import { gitState } from './server/git'
+import { gitState } from './server/project/git'
 import { serveMcp } from './server/mcp'
 import { projectContext } from './server/project'
 import type { Overrides } from './server/project'
@@ -19,10 +19,11 @@ import {
 } from './server/report'
 import type { Format } from './server/report'
 import type { CheckReport } from './shared/types'
+import { messageOf } from './shared/errors'
 import { makeBaseline, runCheck } from './server/rules'
 import { historyEntry, recordHistory } from './server/rules/history'
 import { writeBaseline } from './server/rules/state'
-import { serveAtlas } from './server/server'
+import { serveAtlas } from './server/http'
 
 const DEFAULT_PORT = 4800
 const DEFAULT_HOST = '127.0.0.1'
@@ -82,7 +83,7 @@ const valueOf = (argv: string[], ...names: string[]) => {
 const has = (argv: string[], ...names: string[]) => names.some((name) => argv.includes(name))
 
 /** A config error's message already lists its issues, one per line. */
-const describe = (error: unknown) => `✗ ${error instanceof Error ? error.message : String(error)}`
+const describe = (error: unknown) => `✗ ${messageOf(error)}`
 
 /** What a format prints besides the text report; `json` and `sarif` own stdout entirely. */
 const emit = (format: Format, report: CheckReport) => {

@@ -1,11 +1,12 @@
 import { basename, join } from 'node:path'
 import type { ResolvedConfig } from '../../shared/config'
+import { messageOf } from '../../shared/errors'
 import { packageOf } from '../../shared/packages'
 import type { EngineResult, FileNode, FunctionMetric, PackageRef } from '../../shared/types'
 import { packageName, workspaceMembers } from './workspace'
 import { analyzeDatabase } from './database'
 import { featureDocs } from './docs'
-import { featureOf } from './glob'
+import { featureOf } from '../../shared/glob'
 import { measureFunctions } from './complexity'
 import { buildGraph } from './graph'
 import { extractImports, parseFile, resolveImports } from './imports'
@@ -65,9 +66,7 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
   try {
     database = analyzeDatabase(root, config, ts)
   } catch (error) {
-    warnings.push(
-      `database schema not read: ${error instanceof Error ? error.message : String(error)}`,
-    )
+    warnings.push(`database schema not read: ${messageOf(error)}`)
   }
 
   return {

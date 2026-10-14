@@ -1,4 +1,4 @@
-import type { EdgeClass } from '../shared/types'
+import type { EdgeClass } from '../../shared/types'
 
 /** What `code-atlas mcp` offers: each tool's name, what it answers and the shape of its input. */
 export const MAX_VIOLATIONS = 50

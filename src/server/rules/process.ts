@@ -3,17 +3,25 @@ import type { ChildProcess } from 'node:child_process'
 export const spawnEnv = (drop: (key: string) => boolean): NodeJS.ProcessEnv =>
   Object.fromEntries(Object.entries(process.env).filter(([key]) => !drop(key)))
 
-/** Kills a process and everything it started: a shell's children outlive a kill of the shell. */
-export const killTree = (pid: number | undefined, fallback: () => void) => {
-  if (pid !== undefined && process.platform !== 'win32') {
+const ANSI = new RegExp(String.raw`\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007`, 'g')
+
+/** A line of a terminal program's output without its colours and cursor moves. */
+export const stripAnsi = (line: string) => line.replace(ANSI, '')
+
+/**
+ * Signals a process and everything it started: a shell's children outlive a signal to the shell.
+ * A process spawned `detached` leads a group of its own; one already gone is left alone.
+ */
+export const signalTree = (child: ChildProcess, signal: NodeJS.Signals) => {
+  if (child.pid !== undefined && process.platform !== 'win32') {
     try {
-      process.kill(-pid, 'SIGKILL')
+      process.kill(-child.pid, signal)
       return
     } catch {
       // the group is already gone
     }
   }
-  fallback()
+  child.kill(signal)
 }
 
 export type ProcessEnd = {
@@ -49,7 +57,7 @@ export const followProcess = (
     }
     const stop = (reason: string) => {
       failure ??= reason
-      killTree(child.pid, () => child.kill('SIGKILL'))
+      signalTree(child, 'SIGKILL')
     }
     const timeout =
       opts.timeoutMs === undefined ? null : setTimeout(() => stop('timeout'), opts.timeoutMs)

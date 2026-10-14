@@ -6,11 +6,11 @@ import type {
   DbFeatureConfig,
   LayerConfig,
   ResolvedConfig,
-} from '../shared/config'
-import type { DatabaseResult, EngineResult } from '../shared/types'
-import { condensedDepths } from '../shared/graph'
-import { featureOf } from './engine/glob'
-import { defaultRules } from './rules/defaults'
+} from '../../shared/config'
+import type { DatabaseResult, EngineResult } from '../../shared/types'
+import { condensedDepths } from '../../shared/graph'
+import { featureOf } from '../../shared/glob'
+import { defaultRules } from '../rules/defaults'
 
 const SCHEMA_URL = 'https://raw.githubusercontent.com/Vincweb/code-atlas/main/schema.json'
 

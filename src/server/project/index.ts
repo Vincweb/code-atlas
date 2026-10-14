@@ -1,6 +1,6 @@
 import path from 'path'
-import { STATE_DIR } from '../shared/config'
-import type { ResolvedConfig } from '../shared/config'
+import { STATE_DIR } from '../../shared/config'
+import type { ResolvedConfig } from '../../shared/config'
 import type {
   Analysis,
   Bucket,
@@ -12,17 +12,17 @@ import type {
   FunctionMetric,
   ImportEdge,
   Workspace,
-} from '../shared/types'
-import { loadConfig } from './config'
+} from '../../shared/types'
+import { loadConfig } from '../config'
 import { projectLabel } from './discover'
-import { analyzeEngine } from './engine'
-import { buildGraph } from './engine/graph'
+import { analyzeEngine } from '../engine'
+import { buildGraph } from '../engine/graph'
 import { gitState } from './git'
-import { evaluate } from './rules'
-import type { PackageScores } from './rules'
-import { historyEntry, readHistory, recordHistory } from './rules/history'
+import { evaluate } from '../rules'
+import type { PackageScores } from '../rules'
+import { historyEntry, readHistory, recordHistory } from '../rules/history'
 import { describeCommand } from './selfCommand'
-import { AI_TOOLS, FINDINGS_SCHEMA, aiInvocation } from './rules/ai'
+import { AI_TOOLS, FINDINGS_SCHEMA, aiInvocation } from '../rules/ai'
 
 const MAX_FUNCTIONS = 300
 const COMPLEXITY_EDGES = [5, 10, 15, 25]
@@ -77,6 +77,9 @@ const statsOf = (
 const mostComplex = (functions: FunctionMetric[]) =>
   [...functions].sort((a, b) => b.complexity - a.complexity).slice(0, MAX_FUNCTIONS)
 
+/** Each file's package, for the figures a monorepo shows package by package. */
+type PackageOfFile = Map<string, string | null>
+
 /**
  * Each package's figures, and the graph of the packages themselves: one node per package, whose
  * edges are the imports from one package into another.
@@ -85,9 +88,9 @@ const workspaceOf = (
   engine: EngineResult,
   config: ResolvedConfig,
   packages: PackageScores[],
+  packageOfFile: PackageOfFile,
 ): Workspace | null => {
   if (!engine.packages.length) return null
-  const packageOfFile = new Map(engine.files.map((file) => [file.path, file.package]))
   const asPackages = engine.files.map((file) => ({ ...file, feature: file.package ?? '.' }))
   return {
     packages: engine.packages.map((pkg) => {
@@ -110,9 +113,8 @@ const workspaceOf = (
 }
 
 /** The most complex functions overall, and in a monorepo those of each package as well. */
-const functionsOf = (engine: EngineResult) => {
+const functionsOf = (engine: EngineResult, packageOfFile: PackageOfFile) => {
   if (!engine.packages.length) return mostComplex(engine.functions)
-  const packageOfFile = new Map(engine.files.map((file) => [file.path, file.package]))
   const kept = new Set(mostComplex(engine.functions))
   for (const pkg of engine.packages)
     for (const fn of mostComplex(
@@ -147,6 +149,9 @@ export const analyzeProject = (
   const engine = analyzeEngine(root, config)
   const git = gitState(root)
   const { rules, scores, packages, baseline } = evaluate({ root, config, engine, stateDir, git })
+  const packageOfFile: PackageOfFile = new Map(
+    engine.files.map((file) => [file.path, file.package]),
+  )
   const history = record
     ? recordHistory(stateDir, historyEntry(scores, rules, packages, git))
     : readHistory(stateDir)
@@ -165,7 +170,7 @@ export const analyzeProject = (
     stats: engine.stats,
     graph: engine.graph,
     files: engine.files,
-    functions: functionsOf(engine),
+    functions: functionsOf(engine, packageOfFile),
     database: engine.database,
     docs: engine.docs,
     rules,
@@ -181,7 +186,7 @@ export const analyzeProject = (
       }),
     },
     distribution: distributionsOf(engine.files, engine.functions),
-    workspace: workspaceOf(engine, config, packages),
+    workspace: workspaceOf(engine, config, packages, packageOfFile),
     describeCommand: describeCommand(root, overrides),
     warnings: engine.warnings,
     history,

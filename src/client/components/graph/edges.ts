@@ -27,8 +27,6 @@ export const DASHED: Record<EdgeClass, boolean> = {
 export const isProblem = (edgeClass: EdgeClass) =>
   TONE[edgeClass] === 'red' || TONE[edgeClass] === 'amber'
 
-export const isRed = (edgeClass: EdgeClass) => TONE[edgeClass] === 'red'
-
 const ORDER: Record<Tone, number> = { light: 0, grey: 1, amber: 2, red: 3 }
 
 export const drawOrder = (a: EdgeClass, b: EdgeClass) => ORDER[TONE[a]] - ORDER[TONE[b]]

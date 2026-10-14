@@ -1,6 +1,7 @@
-import { useState } from 'react'
 import { projectPath } from '../../../shared/routes'
 import type { Analysis, DatabaseResult } from '../../../shared/types'
+import { useStoredState } from '../../state/stored'
+import type { Stored } from '../../state/stored'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Chip, Warnings } from '../ui'
@@ -12,26 +13,11 @@ import { SchemaView } from './SchemaView'
 type View = 'schema' | 'features' | 'migrations'
 
 const VIEWS: View[] = ['schema', 'features', 'migrations']
-const VIEW_KEY = 'code-atlas.database-view'
 
-const useView = () => {
-  const [view, setView] = useState<View>(() => {
-    try {
-      const saved = localStorage.getItem(VIEW_KEY)
-      return VIEWS.includes(saved as View) ? (saved as View) : 'schema'
-    } catch {
-      return 'schema'
-    }
-  })
-  const update = (next: View) => {
-    setView(next)
-    try {
-      localStorage.setItem(VIEW_KEY, next)
-    } catch {
-      return
-    }
-  }
-  return [view, update] as const
+const STORED_VIEW: Stored<View> = {
+  key: 'code-atlas.database-view',
+  parse: (saved) => VIEWS.find((view) => view === saved) ?? 'schema',
+  serialize: (view) => view,
 }
 
 const EmptyState = ({ root }: { root: string }) => {
@@ -111,7 +97,7 @@ const Header = ({ db, root }: { db: DatabaseResult; root: string }) => {
 
 export const DatabaseTab = ({ analysis, root }: { analysis: Analysis; root: string }) => {
   const t = useT()
-  const [view, setView] = useView()
+  const [view, setView] = useStoredState(STORED_VIEW)
   const db = analysis.database
   if (!db) return <EmptyState root={root} />
   return (

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { gitState } from '../src/server/git'
+import { gitState } from '../src/server/project/git'
 
 const run = (root: string, args: string[]) =>
   execFileSync('git', args, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] })

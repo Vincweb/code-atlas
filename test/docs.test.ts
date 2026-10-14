@@ -244,7 +244,10 @@ const configWith = (features?: string): ResolvedConfig => ({
 })
 
 test('the docs rule reports each feature without a doc, not the packages', () => {
-  const [rule] = evaluateStatic('/proj', configWith(), engineWith(false), null)
+  const [rule] = evaluateStatic(
+    { root: '/proj', config: configWith(), commit: null },
+    engineWith(false),
+  )
   assert.equal(rule?.count, 2)
   assert.deepEqual(
     rule?.violations.map((violation) => violation.message),
@@ -253,12 +256,18 @@ test('the docs rule reports each feature without a doc, not the packages', () =>
       'apps/web/src/ui has no doc: add apps/web/src/ui/README.md',
     ],
   )
-  const [narrowed] = evaluateStatic('/proj', configWith('**/ui'), engineWith(false), null)
+  const [narrowed] = evaluateStatic(
+    { root: '/proj', config: configWith('**/ui'), commit: null },
+    engineWith(false),
+  )
   assert.equal(narrowed?.count, 1)
 })
 
 test('in a monorepo, a missing doc counts against the package of its feature', () => {
-  const [rule] = evaluateStatic('/proj', configWith(), engineWith(true), null)
+  const [rule] = evaluateStatic(
+    { root: '/proj', config: configWith(), commit: null },
+    engineWith(true),
+  )
   assert.deepEqual(rule?.packages, { 'apps/web': 2 })
   assert.equal(rule?.unattributed, 0)
 })

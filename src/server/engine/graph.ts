@@ -1,4 +1,4 @@
-import { matchAny, matchGlob } from './glob'
+import { matchAny, matchGlob } from '../../shared/glob'
 import type { ResolvedConfig } from '../../shared/config'
 import type {
   EdgeClass,

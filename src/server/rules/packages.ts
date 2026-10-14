@@ -2,7 +2,7 @@ import type { RuleConfig } from '../../shared/config'
 import { packageOf, withoutPackages } from '../../shared/packages'
 import { ruleScore } from '../../shared/score'
 import type { EngineResult, RuleResult, Violation } from '../../shared/types'
-import { matchGlob } from '../engine/glob'
+import { matchGlob } from '../../shared/glob'
 
 const MAX_VIOLATIONS = 500
 
