@@ -99,6 +99,12 @@ to Claude when you run one.
 <br>
 
 <div align="center">
+<img src="docs/media/docs.png" alt="The docs tab: 2 of 14 features documented, the features listed by layer with their one-line definition, and the cart's README rendered — its description, owner and status from the front matter, a table of its entry points" width="960">
+</div>
+
+<br>
+
+<div align="center">
 <img src="docs/media/metrics.png" alt="The metrics tab: files, lines, functions, average complexity, features and instability, the distribution of function complexity and file size, and the table of features" width="960">
 </div>
 

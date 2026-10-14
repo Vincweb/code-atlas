@@ -112,14 +112,16 @@ try {
     color: { r: 0, g: 0, b: 0, a: 0 },
   })
 
-  const open = async (url) => {
+  // `ready` names an element that shows once the page's own late content is in, like a doc
+  // whose renderer loads with it.
+  const open = async (url, ready = null) => {
+    const shown = ready ? `!!document.querySelector(${JSON.stringify(ready)})` : 'true'
     const loaded = page.once('Page.loadEventFired')
     await page.send('Page.navigate', { url })
     await loaded
     await until(async () => {
       const { result } = await page.send('Runtime.evaluate', {
-        expression:
-          "document.readyState === 'complete' && !document.querySelector('.animate-pulse')",
+        expression: `document.readyState === 'complete' && !document.querySelector('.animate-pulse') && ${shown}`,
       })
       return result.value
     }, url)
@@ -127,14 +129,14 @@ try {
     await sleep(700)
   }
 
-  const shoot = async (name, url, width, height) => {
+  const shoot = async (name, url, width, height, ready) => {
     await page.send('Emulation.setDeviceMetricsOverride', {
       width,
       height,
       deviceScaleFactor: 2,
       mobile: false,
     })
-    await open(url)
+    await open(url, ready)
     const { data } = await page.send('Page.captureScreenshot', { format: 'png' })
     await writeFile(join(media, `${name}.png`), Buffer.from(data, 'base64'))
     console.log(`  ${name}.png`)
@@ -149,6 +151,7 @@ try {
   const project = `${origin}/project?root=${encodeURIComponent(demo)}`
   await shoot('overview', project, 1440, 900)
   await shoot('graph', `${project}&tab=graph`, 1440, 900)
+  await shoot('docs', `${project}&tab=docs#src%2Fcomponents%2Fcart`, 1440, 900, '.atlas-doc table')
   await shoot('rules', `${project}&tab=rules&rule=ARCH-MUTUAL`, 1440, 900)
   await shoot('metrics', `${project}&tab=metrics`, 1440, 900)
   await shoot('welcome', `${origin}/`, 1440, 900)
