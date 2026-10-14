@@ -42,6 +42,13 @@ const ICONS: Record<Tab, ReactNode> = {
       <path d="M11 7 7 16M13 7l4 9" />
     </Svg>
   ),
+  docs: (
+    <Svg>
+      <path d="M5.5 5A1.5 1.5 0 0 1 7 3.5h11.5v14H7A1.5 1.5 0 0 0 5.5 19V5Z" />
+      <path d="M5.5 19A1.5 1.5 0 0 0 7 20.5h11.5v-3" />
+      <path d="M9 7.5h6M9 11h4" />
+    </Svg>
+  ),
   rules: (
     <Svg>
       <path d="M10 6h10M10 12h10M10 18h10" />
@@ -91,6 +98,10 @@ const Count = ({ value, tone }: { value: number; tone: 'bad' | 'neutral' }) => (
   </span>
 )
 
+/** A count beside a tab's name, hidden at zero. */
+const counted = (value: number, tone: 'bad' | 'neutral') =>
+  value ? <Count value={value} tone={tone} /> : null
+
 const badgeOf = (tab: Tab, analysis: Analysis | undefined): ReactNode => {
   if (!analysis) return null
   if (tab === 'overview') {
@@ -109,21 +120,26 @@ const badgeOf = (tab: Tab, analysis: Analysis | undefined): ReactNode => {
   }
   if (tab === 'graph') {
     const red = analysis.graph.edges.filter((e) => e.class === 'up' || e.class === 'mutual').length
-    return red ? <Count value={red} tone="bad" /> : null
+    return counted(red, 'bad')
+  }
+  if (tab === 'docs') {
+    const documented = new Set(analysis.docs.filter((doc) => doc.path).map((doc) => doc.id))
+    const missing = analysis.graph.features.filter((f) => !documented.has(f.id)).length
+    return counted(missing, 'neutral')
   }
   if (tab === 'rules') {
     const failing = analysis.rules.filter((r) => r.status === 'fail' || r.status === 'error').length
-    return failing ? <Count value={failing} tone="bad" /> : null
+    return counted(failing, 'bad')
   }
   if (tab === 'audits') {
     const audits = analysis.audits.items.length
-    return audits ? <Count value={audits} tone="neutral" /> : null
+    return counted(audits, 'neutral')
   }
   if (tab === 'database' && analysis.database) {
     const red = analysis.database.graph.edges.filter(
       (e) => e.class === 'up' || e.class === 'mutual',
     ).length
-    return red ? <Count value={red} tone="bad" /> : null
+    return counted(red, 'bad')
   }
   if (tab === 'config' && analysis.configSource === 'default')
     return <span className="size-2 rounded-full bg-warn" aria-hidden="true" />

@@ -34,7 +34,6 @@ const rule = (id: string, status: RuleResult['status'], count: number): RuleResu
   ranAt: null,
   commit: null,
   stale: false,
-  costUsd: null,
   error: null,
 })
 

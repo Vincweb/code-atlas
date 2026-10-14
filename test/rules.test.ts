@@ -57,6 +57,7 @@ const engine: EngineResult = {
   stats: { files: 2, lines: 432, imports: 2, typeImports: 1, features: 2, functions: 2 },
   packages: [],
   database: null,
+  docs: [],
   warnings: [],
 }
 
@@ -75,6 +76,7 @@ const configOf = (rules: RuleConfig[]): ResolvedConfig => ({
   tsconfig: 'tsconfig.json',
   workspaces: [],
   features: [],
+  docs: [],
   layers: [],
   allow: [],
   rules,
@@ -214,7 +216,6 @@ test('evaluate merges stored runs, marks stale, and placeholders', () => {
     ranAt: 'x',
     commit: 'old',
     stale: false,
-    costUsd: null,
     error: null,
   })
   const out = evaluate({ root, config, engine, stateDir, git: { commit: 'new', dirty: false } })
@@ -257,6 +258,41 @@ test('runCheck ratchets against the baseline', async () => {
   const second = await runCheck(opts)
   assert.equal(second.ok, true)
   assert.equal(second.rules.length, 1)
+})
+
+test('a static rule the baseline never counted is reported, not a regression; a command rule is', async () => {
+  const root = project()
+  const stateDir = join(root, '.code-atlas')
+  writeBaseline(stateDir, {
+    commit: 'old',
+    savedAt: 'then',
+    scores: { overall: null, families: [] },
+    violations: {},
+  })
+  const lines: string[] = []
+  const opts = {
+    root,
+    engine,
+    stateDir,
+    git: { commit: 'c', dirty: false },
+    skipCommands: false,
+    log: (l: string) => lines.push(l),
+  }
+  const fresh = await runCheck({
+    ...opts,
+    config: configOf([{ ...base, id: 'LINES', kind: 'max-lines', max: 400 }]),
+  })
+  assert.equal(fresh.ok, true)
+  assert.deepEqual(fresh.regressions, [])
+  assert.ok(lines.some((l) => l.endsWith('✗ LINES Files over 400 lines — 1 (not in the baseline)')))
+  assert.ok(lines.some((l) => l.startsWith('⚠ Not in the baseline, so not checked: LINES (1)')))
+
+  const command = await runCheck({
+    ...opts,
+    config: configOf([{ ...base, id: 'FAILS', kind: 'command', run: 'node -e "process.exit(1)"' }]),
+  })
+  assert.equal(command.ok, false)
+  assert.equal(command.regressions[0]?.id, 'FAILS')
 })
 
 test('runCheck recording a baseline reports the counts without a verdict', async () => {

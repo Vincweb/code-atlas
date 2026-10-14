@@ -47,22 +47,3 @@ export const Glossary = () => {
     </details>
   )
 }
-
-export const Warnings = ({ warnings }: { warnings: string[] }) => {
-  const t = useT()
-  if (warnings.length === 0) return null
-  return (
-    <details className="rounded-xl border border-warn-line bg-warn-bg px-4 py-3">
-      <summary className="cursor-pointer font-medium text-warn">
-        {t.overview.warnings(warnings.length)}
-      </summary>
-      <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
-        {warnings.map((warning, index) => (
-          <li key={index} className="break-words">
-            {warning}
-          </li>
-        ))}
-      </ul>
-    </details>
-  )
-}

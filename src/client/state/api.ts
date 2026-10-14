@@ -1,8 +1,10 @@
 import { API, rootQuery } from '../../shared/routes'
+import type { RunsPayload } from '../../shared/runs'
 import type {
   Analysis,
   BrowsePayload,
   ClaudeStatus,
+  DocPayload,
   DraftPayload,
   FilePayload,
   MigrationSqlPayload,
@@ -61,6 +63,9 @@ export const openInClaude = (root: string, prompt: string) =>
 export const fetchFile = (root: string, path: string) =>
   read<FilePayload>(`${API.file}${rootQuery(root)}&path=${encodeURIComponent(path)}`)
 
+export const fetchDoc = (root: string, feature: string) =>
+  read<DocPayload>(`${API.doc}${rootQuery(root)}&feature=${encodeURIComponent(feature)}`)
+
 export const fetchMigrations = (root: string) =>
   read<MigrationsPayload>(`${API.migrations}${rootQuery(root)}`)
 
@@ -69,8 +74,13 @@ export const fetchMigrationSql = (root: string, folder: string) =>
     `${API.migrationSql}${rootQuery(root)}&folder=${encodeURIComponent(folder)}`,
   )
 
-export const runUrl = (root: string, rule: string) =>
-  `${API.run}${rootQuery(root)}&rule=${encodeURIComponent(rule)}`
+export const fetchRuns = (root: string) => read<RunsPayload>(`${API.runs}${rootQuery(root)}`)
+
+export const startRuns = (root: string, rules: string[]) =>
+  post<RunsPayload>(`${API.run}${rootQuery(root)}`, { rules })
+
+export const cancelRuns = (root: string, rule: string | null) =>
+  post<RunsPayload>(`${API.runCancel}${rootQuery(root)}`, { rule })
 
 export const fetchSecurity = (root: string, run: string | null) =>
   read<SecurityPayload>(

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
+import { Chip } from '../ui'
 
 export const Section = ({
   id,
@@ -28,28 +29,6 @@ export const Section = ({
     </header>
     {children}
   </section>
-)
-
-export const Chip = ({ children, className }: { children: ReactNode; className?: string }) => (
-  <span
-    className={cx(
-      'inline-flex items-center rounded-md border border-line bg-bg px-2 py-0.5 font-mono text-[12px]',
-      className,
-    )}
-  >
-    {children}
-  </span>
-)
-
-export const Code = ({ text, className }: { text: string; className?: string }) => (
-  <pre
-    className={cx(
-      'max-h-[32rem] overflow-auto rounded-xl border border-line bg-code-bg p-4 font-mono text-[12px] leading-5',
-      className,
-    )}
-  >
-    {text}
-  </pre>
 )
 
 export type StackLayer = { name: string; siblings: boolean; features: string[] }

@@ -1,7 +1,7 @@
 import { projectPath } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { navigate, usePkg } from '../../state/router'
+import { navigate, scopedPath, usePkg } from '../../state/router'
 import { isWholeWorkspace } from '../../../shared/scope'
 import { FeatureGraph, NoLayersBanner } from './FeatureGraph'
 
@@ -10,6 +10,14 @@ export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string 
   const pkg = usePkg()
   // A monorepo's whole view draws its packages: each node opens that package's own graph.
   const packagesView = isWholeWorkspace(analysis, pkg)
+  const docOf = (id: string) => {
+    const doc = analysis.docs.find((candidate) => candidate.id === id)
+    return {
+      description: doc?.description ?? null,
+      documented: !!doc?.path,
+      to: `${scopedPath(root, 'docs')}#${encodeURIComponent(id)}`,
+    }
+  }
   return (
     <div className="flex flex-col gap-3">
       {packagesView ? (
@@ -27,6 +35,7 @@ export const GraphTab = ({ analysis, root }: { analysis: Analysis; root: string 
       <FeatureGraph
         graph={analysis.graph}
         storageKey="code-atlas.graph-panel"
+        docOf={docOf}
         {...(packagesView
           ? { onOpen: (id: string) => navigate(projectPath(root, 'graph', null, id)) }
           : {})}

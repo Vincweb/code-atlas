@@ -36,5 +36,7 @@ export const ruleTitle = (rule: RuleResult, rules: RuleConfig[], t: Strings) => 
     case 'db-mutual':
     case 'db-siblings':
       return t.database.ruleTitles[configured.kind]
+    case 'docs':
+      return t.docs.ruleTitle
   }
 }

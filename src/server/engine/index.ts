@@ -4,6 +4,7 @@ import { packageOf } from '../../shared/packages'
 import type { EngineResult, FileNode, FunctionMetric, PackageRef } from '../../shared/types'
 import { packageName, workspaceMembers } from './workspace'
 import { analyzeDatabase } from './database'
+import { featureDocs } from './docs'
 import { featureOf } from './glob'
 import { measureFunctions } from './complexity'
 import { buildGraph } from './graph'
@@ -57,6 +58,7 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
   if (held.has(ROOT_PACKAGE))
     packages.push({ dir: ROOT_PACKAGE, name: packageName(root, '') || basename(root) })
   const graph = buildGraph(files, imports, config)
+  const docIds = [...graph.features.map((feature) => feature.id), ...packages.map((pkg) => pkg.dir)]
   const typeImports = imports.filter((edge) => edge.kind === 'type').length
 
   let database = null
@@ -84,6 +86,7 @@ export const analyzeEngine = (root: string, config: ResolvedConfig): EngineResul
     },
     packages,
     database,
+    docs: featureDocs(root, docIds, config.docs),
     warnings,
   }
 }

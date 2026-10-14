@@ -2,26 +2,24 @@ import { useState } from 'react'
 import type { Analysis, RuleResult } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
-import { useInvalidateAnalysis } from '../../state/queries'
 import { scopedPath, useRoute } from '../../state/router'
 import { ruleTitle } from '../../util/ruleTitle'
 import { BAND_TEXT, bandOf } from '../../util/score'
-import { RunDialog } from '../audits/RunDialog'
+import { RunDialog } from '../RunDialog'
 import { Link } from '../Link'
-import { SearchIcon } from '../welcome/icons'
+import { SearchIcon } from '../icons'
 import { Badge, Button } from '../ui'
 import { matchesStatus, sortRules } from './model'
 import type { StatusFilter } from './model'
 import { RuleCard } from './RuleCard'
-import { useRunner } from './useRunner'
+import { useRunner } from '../../state/runs'
 
 const FILTERS: StatusFilter[] = ['all', 'fail', 'pass', 'pending']
 
 export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string }) => {
   const t = useT()
   const focused = useRoute().rule
-  const invalidate = useInvalidateAnalysis(root)
-  const runner = useRunner(root, () => void invalidate())
+  const runner = useRunner(root)
   const [status, setStatus] = useState<StatusFilter>('all')
   const [family, setFamily] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -29,7 +27,7 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
 
   const run = (rule: RuleResult) => {
     if (rule.kind === 'ai') setConfirming(rule.id)
-    else void runner.runOne(rule.id)
+    else runner.runOne(rule.id)
   }
   const commandIds = analysis.rules.filter((rule) => rule.kind === 'command').map((r) => r.id)
 
@@ -168,7 +166,6 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
                   title={titled.find((entry) => entry.rule.id === rule.id)?.title ?? rule.title}
                   focused={rule.id === focused}
                   state={runner.states[rule.id]}
-                  locked={runner.busy}
                   onRun={() => run(rule)}
                   onCancel={() => runner.cancel(rule.id)}
                 />
@@ -182,7 +179,7 @@ export const RulesTab = ({ analysis, root }: { analysis: Analysis; root: string 
           analysis={analysis}
           ids={[confirming]}
           onConfirm={() => {
-            void runner.runOne(confirming)
+            runner.runOne(confirming)
             setConfirming(null)
           }}
           onClose={() => setConfirming(null)}

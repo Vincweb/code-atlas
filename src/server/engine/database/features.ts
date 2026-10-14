@@ -1,9 +1,7 @@
 import type { ResolvedDatabaseConfig } from '../../../shared/config'
 import type { DbTable, FeatureEdge, FeatureNode, Graph } from '../../../shared/types'
 import { matchAny } from '../glob'
-import { classify, layerIndex, neighbours } from '../graph'
-
-const round = (value: number) => Math.round(value * 100) / 100
+import { classify, layerIndex, neighbours, round } from '../graph'
 
 /** `customer_calls` → `customer`, `chatArtifacts` → `chat`: the first word of the name. */
 export const prefixOf = (name: string) =>

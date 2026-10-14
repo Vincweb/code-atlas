@@ -3,7 +3,8 @@ import { existsSync } from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
 import type { CommandRuleConfig } from '../../shared/config'
 import type { PackageRef, RuleResult, RunEvent, Violation } from '../../shared/types'
-import { finishRun, killTree } from './result'
+import { followProcess } from './process'
+import { finishRun } from './result'
 
 const ANSI = new RegExp(String.raw`\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007`, 'g')
 const PATH = String.raw`(?:\/|\.{0,2}\/)?[\w@.\-/]+\.[a-z]{1,4}`
@@ -78,7 +79,7 @@ export const parseCommandOutput = (
   return violations
 }
 
-export const runCommand = (
+export const runCommand = async (
   root: string,
   rule: CommandRuleConfig,
   opts: {
@@ -87,64 +88,39 @@ export const runCommand = (
     signal?: AbortSignal
     packages?: PackageRef[]
   },
-): Promise<RuleResult> =>
-  new Promise((resolve) => {
-    const child = spawn(rule.run, {
-      cwd: root,
-      shell: true,
-      detached: process.platform !== 'win32',
-      env: { ...process.env, FORCE_COLOR: '0', CI: '1' },
-    })
-    const lines: string[] = []
-    let pending: string[] = []
-    const partial = { out: '', err: '' }
-    let failure: string | null = null
-    let settled = false
-
-    const flush = () => {
-      const last = pending[pending.length - 1]
-      pending = []
-      if (last) opts.onEvent({ type: 'progress', message: last.slice(0, 300) })
-    }
-    const timer = setInterval(flush, 100)
-    const take = (source: 'out' | 'err', chunk: Buffer) => {
-      const parts = (partial[source] + chunk.toString('utf8').replace(ANSI, '')).split(/\r?\n/)
-      partial[source] = parts.pop() ?? ''
-      for (const line of parts) {
-        lines.push(line)
-        if (line.trim()) pending.push(line.trim())
-      }
-      if (lines.length > KEEP_LINES * 2) lines.splice(0, lines.length - KEEP_LINES)
-    }
-    const stop = (reason: string) => {
-      failure ??= reason
-      killTree(child.pid, () => child.kill('SIGKILL'))
-    }
-    const timeout = setTimeout(() => stop('timeout'), (rule.timeoutSec ?? 600) * 1000)
-    const onAbort = () => stop('cancelled')
-    if (opts.signal?.aborted) onAbort()
-    else opts.signal?.addEventListener('abort', onAbort, { once: true })
-
-    const finish = (code: number | null, spawnError: string | null) => {
-      if (settled) return
-      settled = true
-      clearInterval(timer)
-      clearTimeout(timeout)
-      opts.signal?.removeEventListener('abort', onAbort)
-      for (const rest of [partial.out, partial.err]) if (rest) lines.push(rest)
-      flush()
-      const tail = lines.slice(-KEEP_LINES)
-      const error = failure ?? spawnError
-      if (error || code === 0) return resolve(finishRun(rule, opts.commit, { error }))
-      const parsed = parseCommandOutput(root, tail, opts.packages)
-      const violations = parsed.length
-        ? parsed
-        : [{ file: null, line: null, message: tail.slice(-20).join('\n').trim() }]
-      resolve(finishRun(rule, opts.commit, { violations, ok: false }))
-    }
-
-    child.stdout?.on('data', (chunk: Buffer) => take('out', chunk))
-    child.stderr?.on('data', (chunk: Buffer) => take('err', chunk))
-    child.on('error', (error) => finish(null, error.message))
-    child.on('close', (code) => finish(code, null))
+): Promise<RuleResult> => {
+  const child = spawn(rule.run, {
+    cwd: root,
+    shell: true,
+    detached: process.platform !== 'win32',
+    env: { ...process.env, FORCE_COLOR: '0', CI: '1' },
   })
+  const lines: string[] = []
+  let pending: string[] = []
+  const flush = () => {
+    const last = pending[pending.length - 1]
+    pending = []
+    if (last) opts.onEvent({ type: 'progress', message: last.slice(0, 300) })
+  }
+  const timer = setInterval(flush, 100)
+  const end = await followProcess(child, {
+    signal: opts.signal,
+    timeoutMs: (rule.timeoutSec ?? 600) * 1000,
+    onLine: (raw) => {
+      const line = raw.replace(ANSI, '')
+      lines.push(line)
+      if (line.trim()) pending.push(line.trim())
+      if (lines.length > KEEP_LINES * 2) lines.splice(0, lines.length - KEEP_LINES)
+    },
+  })
+  clearInterval(timer)
+  flush()
+  const tail = lines.slice(-KEEP_LINES)
+  const error = end.failure ?? end.spawnError?.message ?? null
+  if (error || end.code === 0) return finishRun(rule, opts.commit, { error })
+  const parsed = parseCommandOutput(root, tail, opts.packages)
+  const violations = parsed.length
+    ? parsed
+    : [{ file: null, line: null, message: tail.slice(-20).join('\n').trim() }]
+  return finishRun(rule, opts.commit, { violations, ok: false })
+}

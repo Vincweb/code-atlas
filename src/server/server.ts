@@ -2,25 +2,23 @@ import fs from 'fs'
 import http from 'http'
 import os from 'os'
 import path from 'path'
-import { CONFIG_FILE, RUN_KINDS } from '../shared/config'
-import type { AiRuleConfig, CommandRuleConfig } from '../shared/config'
+import { CONFIG_FILE } from '../shared/config'
 import { API, claudeLink, projectPath } from '../shared/routes'
-import type { RunEvent } from '../shared/types'
 import { ConfigError } from './config'
-import { draftConfig, draftText } from './rules/draft'
+import { draftConfig, draftText } from './configDraft'
 import { browseDirectories, canonicalDir, expandHome, isProject, places } from './discover'
 import { analyzeEngine, EngineError } from './engine'
 import { drizzleConfigs, migrationsDirOf } from './engine/database'
+import { findDoc } from './engine/docs'
 import { buildMigrationGraph, migrationsInfo, readMigrationSql } from './engine/database/migrations'
 import { claudeStatus } from './claudeStatus'
-import { gitState } from './git'
 import { openBrowser, openUrl } from './open'
 import { analyzeProject, projectContext } from './project'
 import type { Overrides } from './project'
 import { json, messageOf, readJson } from './http'
 import type { ApiCall, ProjectCall } from './http'
-import { runRule } from './rules'
 import { securityRoutes } from './security'
+import { createRuns, runRoutes } from './runs'
 import { createScans } from './strixScan'
 import { strixTools } from './strixTooling'
 import { DEV_CLIENT, MISSING_CLIENT, clientIsBuilt, devPage, serveClientFile } from './static'
@@ -36,7 +34,10 @@ const GUARDED_ROUTES: string[] = [
   API.createConfig,
   API.claudeOpen,
   API.file,
+  API.doc,
+  API.runs,
   API.run,
+  API.runCancel,
   API.security,
   API.securityScan,
   API.securityCancel,
@@ -112,7 +113,7 @@ export const serveAtlas = ({
     ? (process.env.CODE_ATLAS_WEB ?? 'http://localhost:4801')
     : null
   const startupRoot = overrides.root === null ? null : path.resolve(overrides.root)
-  const running = new Set<string>()
+  const runs = createRuns()
   const scans = createScans()
 
   const targetFor = (url: URL): Target => {
@@ -128,48 +129,6 @@ export const serveAtlas = ({
     }
     if (startupRoot) return { root: startupRoot }
     return { status: 409, error: 'no project named — add ?root=<path> to the request' }
-  }
-
-  const streamRun = (response: http.ServerResponse, root: string, ruleId: string) => {
-    response.writeHead(200, {
-      'content-type': 'text/event-stream; charset=utf-8',
-      'cache-control': 'no-store',
-      connection: 'keep-alive',
-    })
-    const send = (event: RunEvent) => response.write(`data: ${JSON.stringify(event)}\n\n`)
-    const fail = (message: string) => {
-      send({ type: 'error', message })
-      response.end()
-    }
-
-    const key = `${root}\0${ruleId}`
-    if (running.has(key)) return fail(`${ruleId} is already running`)
-
-    const { config, stateDir } = projectContext(root, overrides)
-    const rule = config.rules.find((candidate) => candidate.id === ruleId)
-    if (!rule) return fail(`no rule ${ruleId} in this project's config`)
-    if (!RUN_KINDS.includes(rule.kind))
-      return fail(`${ruleId} is computed by every analysis — there is nothing to run`)
-
-    const controller = new AbortController()
-    response.on('close', () => {
-      if (!response.writableEnded) controller.abort()
-    })
-    running.add(key)
-    void runRule({
-      root,
-      config,
-      rule: rule as CommandRuleConfig | AiRuleConfig,
-      stateDir,
-      commit: gitState(root).commit,
-      onEvent: send,
-      signal: controller.signal,
-    })
-      .catch((error: unknown) => send({ type: 'error', message: errorPayload(error).body.error }))
-      .finally(() => {
-        running.delete(key)
-        response.end()
-      })
   }
 
   const createConfig = ({ request, response, root }: ProjectCall) => {
@@ -271,9 +230,15 @@ export const serveAtlas = ({
       },
     ],
     [
-      API.run,
-      ({ response, url, root }) => streamRun(response, root, url.searchParams.get('rule') ?? ''),
+      API.doc,
+      ({ response, url, root }) => {
+        const id = url.searchParams.get('feature') ?? ''
+        const found = findDoc(root, id, projectContext(root, overrides).config.docs)
+        if (!found) json(response, { error: `no doc for ${id}` }, 404)
+        else json(response, { id, ...found })
+      },
     ],
+    ...runRoutes(overrides, runs),
     ...securityRoutes(overrides, scans),
     [
       API.migrations,
@@ -365,6 +330,7 @@ export const serveAtlas = ({
 
   const shutdown = () => {
     scans.stopAll()
+    runs.stopAll()
     server.close(() => process.exit(0))
     server.closeAllConnections()
   }

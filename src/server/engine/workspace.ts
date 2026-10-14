@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { matchAny } from './glob'
+import { isDirectory } from './fs'
 
 export type WorkspaceMember = { dir: string; name: string; hasSrc: boolean }
 
@@ -14,8 +15,6 @@ const readJson = (path: string): unknown => {
     return null
   }
 }
-
-const isDirectory = (path: string) => existsSync(path) && statSync(path).isDirectory()
 
 const stringsOf = (value: unknown) =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : []

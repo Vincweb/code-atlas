@@ -10,7 +10,7 @@ import type {
 } from '../../shared/types'
 import { findCycles } from './cycles'
 
-const round = (value: number) => Math.round(value * 100) / 100
+export const round = (value: number) => Math.round(value * 100) / 100
 
 export const layerIndex = (feature: string, layers: Layering['layers']) => {
   const index = layers.findIndex((layer) => matchAny(feature, layer.features))

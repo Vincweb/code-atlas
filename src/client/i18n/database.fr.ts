@@ -1,6 +1,5 @@
+import { plural } from './plural'
 import type { databaseEn } from './database.en'
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 export const databaseFr: typeof databaseEn = {
   beta: 'bêta',

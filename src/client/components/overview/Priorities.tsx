@@ -1,7 +1,7 @@
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { Link } from '../Link'
-import { SeverityBadge } from '../rules/badges'
+import { SeverityBadge } from '../badges'
 import { ruleTitle } from '../../util/ruleTitle'
 import { prioritiesOf } from './model'
 import type { Priority } from './model'

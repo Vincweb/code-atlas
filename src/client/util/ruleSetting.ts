@@ -19,6 +19,8 @@ export const ruleSetting = (rule: RuleConfig, config: ResolvedConfig, t: Strings
       return rule.run
     case 'ai':
       return rule.model ?? config.ai.model
+    case 'docs':
+      return rule.features ?? null
     default:
       return null
   }

@@ -49,6 +49,26 @@ const layersSection = (config: ResolvedConfig, engine: EngineResult) => {
   return [...lines, `Unlayered: ${unlayered.join(', ') || 'none'}`]
 }
 
+const MAX_DOCS = 60
+
+/** Each feature's doc: where it is, and what it says the feature is for. */
+const docsSection = (engine: EngineResult, templates: readonly string[]) => {
+  const ids = new Set(engine.graph.features.map((feature) => feature.id))
+  const docs = engine.docs.filter((doc) => ids.has(doc.id))
+  const documented = docs.filter((doc) => doc.path !== null).length
+  return [
+    `## Feature docs: ${documented} of ${docs.length} features documented (looked for ${templates.join(', ')})`,
+    ...docs
+      .slice(0, MAX_DOCS)
+      .map((doc) =>
+        doc.path
+          ? `- ${doc.id}: ${doc.path}${doc.description ? ` — ${doc.description}` : ''}`
+          : `- ${doc.id}: none`,
+      ),
+    ...(docs.length > MAX_DOCS ? [`… ${docs.length - MAX_DOCS} more`] : []),
+  ]
+}
+
 const databaseSection = (database: DatabaseResult | null) => {
   if (!database) return ['## Database: no Drizzle config found']
   const chosen = database.configs.find((config) => config.chosen)
@@ -168,6 +188,8 @@ const stateOf = (
     '',
     '## Features and layers',
     ...layersSection(config, engine),
+    '',
+    ...docsSection(engine, config.docs),
     '',
     `## Red edges (up and mutual): ${red.length}`,
     ...red.slice(0, MAX_EDGES).map((edge) => edgeLine(edge)),

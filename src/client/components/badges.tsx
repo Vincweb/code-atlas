@@ -1,7 +1,7 @@
-import type { Severity } from '../../../shared/config'
-import type { RuleStatus } from '../../../shared/types'
-import { useT } from '../../i18n'
-import { Badge } from '../ui'
+import type { Severity } from '../../shared/config'
+import type { RuleStatus } from '../../shared/types'
+import { useT } from '../i18n'
+import { Badge } from './ui'
 
 const SEVERITY_CLASS: Record<Severity, string> = {
   critical: 'border-sev-critical text-sev-critical',

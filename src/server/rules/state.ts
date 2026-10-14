@@ -37,8 +37,15 @@ const writeJson = (path: string, value: unknown) => {
 const runPath = (stateDir: string, rule: RuleConfig) => join(stateDir, 'runs', `${rule.id}.json`)
 
 export const readRun = (stateDir: string, rule: RuleConfig): RuleResult | null => {
-  const stored = readJson(runPath(stateDir, rule)) as { hash?: string; result?: RuleResult } | null
-  return stored?.hash === ruleHash(rule) && stored.result ? stored.result : null
+  const stored = readJson(runPath(stateDir, rule)) as {
+    hash?: string
+    result?: RuleResult & { costUsd?: unknown }
+  } | null
+  if (stored?.hash !== ruleHash(rule) || !stored.result) return null
+  // Runs recorded before 0.6 carry the cost Claude estimated at API prices; it is no longer shown.
+  const result = { ...stored.result }
+  delete result.costUsd
+  return result
 }
 
 export const writeRun = (stateDir: string, rule: RuleConfig, result: RuleResult) =>

@@ -2,7 +2,8 @@ import { projectPath } from '../../../shared/routes'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { Link } from '../Link'
-import { Chip, LayerStack, Section } from './parts'
+import { Chip } from '../ui'
+import { LayerStack, Section } from './parts'
 
 /** How the Drizzle schema is read: the config, the features, their layers, the junction tables. */
 export const DatabaseSection = ({ analysis, root }: { analysis: Analysis; root: string }) => {

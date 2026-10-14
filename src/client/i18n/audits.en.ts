@@ -12,7 +12,6 @@ const example = {
 export const auditsEn = {
   summary: (n: number, ran: number) => `${n} ${n === 1 ? 'audit' : 'audits'} · ${ran} run`,
   familyScore: 'AI audits score',
-  spent: (usd: string) => `${usd} in total (estimate at API prices)`,
   runAll: 'Run every audit',
   confirm: {
     titleOne: 'Run this AI audit?',
@@ -191,8 +190,8 @@ export const auditsEn = {
   settingsTitle: 'Settings',
   settingsText:
     'Defaults for every audit, under the “ai” key of code-atlas.json. Each rule can set its own model.',
-  costTitle: 'Cost and safety',
-  cost: [
+  safetyTitle: 'Login and consent',
+  safety: [
     'An audit uses your own Claude Code login: code-atlas handles no key.',
     'Nothing starts on its own: an audit runs on a click, after confirmation, and can be cancelled.',
   ],

@@ -13,6 +13,7 @@ const config: ResolvedConfig = {
   tsconfig: 'tsconfig.json',
   workspaces: [],
   features: ['src/components/*', 'src/lib/*'],
+  docs: [],
   layers: [
     { name: 'Entry', features: ['src', 'src/pages'] },
     { name: 'Features', siblings: true, features: ['src/components/*'] },

@@ -1,10 +1,11 @@
 import path from 'node:path'
 import type { EdgeClass, FeatureEdge, HistoryEntry, Violation } from '../shared/types'
 import { scopeAnalysis } from '../shared/scope'
-import { ConfigError } from './config'
 import { describeProject } from './describe'
 import { isProject } from './discover'
-import { analyzeEngine, EngineError } from './engine'
+import { docCandidates } from '../shared/docs'
+import { analyzeEngine } from './engine'
+import { findDoc, parseDoc } from './engine/docs'
 import { matchGlob } from './engine/glob'
 import { gitState } from './git'
 import { analyzeProject, projectContext } from './project'
@@ -25,6 +26,7 @@ export type ToolResult = { content: { type: 'text'; text: string }[]; isError?: 
 const MAX_IMPORTS = 10
 const MAX_HISTORY = 10
 const MAX_CHECK_VIOLATIONS = 20
+const MAX_DOC_CHARS = 20_000
 
 class ToolError extends Error {}
 
@@ -178,10 +180,26 @@ const edges = (ctx: McpContext, params: Params) => {
   }
 }
 
+/** A feature's doc as written, or where it was looked for. */
+const docOf = (root: string, id: string, templates: readonly string[]) => {
+  const found = findDoc(root, id, templates)
+  if (!found) return { path: null, lookedFor: docCandidates(id, templates) }
+  const { title, description, owner, status } = parseDoc(found.text)
+  const cut = found.text.length > MAX_DOC_CHARS
+  return {
+    path: found.path,
+    title,
+    description,
+    owner,
+    status,
+    text: cut ? `${found.text.slice(0, MAX_DOC_CHARS)}\n… (cut, read ${found.path})` : found.text,
+  }
+}
+
 const feature = (ctx: McpContext, params: Params) => {
   const id = stringOf(params, 'id')
   if (!id) throw new ToolError('id is required')
-  const { analysis } = scoped(ctx, params)
+  const { root, analysis } = scoped(ctx, params)
   const node = analysis.graph.features.find((candidate) => candidate.id === id)
   if (!node)
     throw new ToolError(
@@ -197,6 +215,7 @@ const feature = (ctx: McpContext, params: Params) => {
     instability: node.instability,
     outgoing: analysis.graph.edges.filter((edge) => edge.from === id).map(edgeView),
     incoming: analysis.graph.edges.filter((edge) => edge.to === id).map(edgeView),
+    doc: docOf(root, id, analysis.config.docs),
   }
 }
 
@@ -245,14 +264,8 @@ const text = (value: unknown): ToolResult => ({
 })
 
 const failure = (error: unknown): ToolResult => {
-  const message =
-    error instanceof ConfigError
-      ? [error.message, ...error.issues.map((issue) => `- ${issue}`)].join('\n')
-      : error instanceof EngineError || error instanceof ToolError
-        ? error.message
-        : error instanceof Error
-          ? error.message
-          : String(error)
+  // A config error's message already lists its issues, one per line.
+  const message = error instanceof Error ? error.message : String(error)
   return { content: [{ type: 'text', text: message }], isError: true }
 }
 

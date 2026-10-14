@@ -88,7 +88,8 @@ export const runRule = async (opts: {
           packages: workspaceMembers(root, config.workspaces, config.tsconfig),
         })
       : await runAi(root, rule, config, base)
-  writeRun(stateDir, rule, result)
+  // A cancelled run found nothing worth keeping: the previous result stays.
+  if (!signal?.aborted) writeRun(stateDir, rule, result)
   onEvent({ type: 'done', result })
   return result
 }
@@ -123,13 +124,26 @@ export const makeBaseline = (
     : {}),
 })
 
+/**
+ * Whether the baseline never counted this rule. Every static rule is counted when a baseline is
+ * recorded, so a missing one was added since — to the config, or to the defaults by a newer
+ * code-atlas — and is reported, not checked, until the baseline is recorded again: upgrading must
+ * not fail a CI whose code did not change. A command rule may be missing because the baseline was
+ * recorded with --skip-commands; a red lint stays red, so it still compares with zero.
+ */
+export const isNewToBaseline = (rule: RuleResult, baseline: Baseline | null) =>
+  baseline !== null && rule.kind !== 'command' && !(rule.id in baseline.violations)
+
 /** Every count above the baseline's: the whole repository's, then each package's it recorded. */
 const regressionsOf = (
   rules: RuleResult[],
   baseline: Baseline | null,
   packages: PackageScores[],
 ): Regression[] => {
-  const ran = rules.filter((rule) => rule.status === 'pass' || rule.status === 'fail')
+  const ran = rules.filter(
+    (rule) =>
+      (rule.status === 'pass' || rule.status === 'fail') && !isNewToBaseline(rule, baseline),
+  )
   const global = ran.flatMap((rule) => {
     const before = baseline?.violations[rule.id] ?? 0
     return rule.count > before ? [{ id: rule.id, before, after: rule.count }] : []
@@ -191,23 +205,43 @@ export const runCheck = async (opts: {
   const baseline = readBaseline(stateDir)
   const regressions = regressionsOf(rules, baseline, packages)
   const errored = rules.some((rule) => rule.kind === 'command' && rule.status === 'error')
-  const countOf = (rule: RuleResult) =>
-    recording ? `${rule.count}` : `${rule.count} (baseline ${baseline?.violations[rule.id] ?? 0})`
+  const countOf = (rule: RuleResult) => {
+    if (recording) return `${rule.count}`
+    if (isNewToBaseline(rule, baseline)) return `${rule.count} (not in the baseline)`
+    return `${rule.count} (baseline ${baseline?.violations[rule.id] ?? 0})`
+  }
   report(rules, scores, countOf, log)
   reportPackages(engine, packages, log)
-  if (!recording)
-    for (const regression of regressions.filter((r) => r.package !== undefined))
-      log(
-        `  ✗ ${regression.package}: ${regression.id} ${regression.after} (baseline ${regression.before})`,
-      )
   const ok = regressions.length === 0 && !errored
-  if (!recording)
-    log(
-      ok
-        ? '✓ No regression'
-        : `✗ ${regressions.length} regression(s)${errored ? ', a command could not run' : ''}`,
-    )
+  if (!recording) reportVerdict({ rules, regressions, baseline, errored }, log)
   return { ok, rules, scores, packages, regressions, baseline }
+}
+
+/** The packages that regressed, the rules the baseline does not know yet, and the verdict. */
+const reportVerdict = (
+  run: {
+    rules: RuleResult[]
+    regressions: Regression[]
+    baseline: Baseline | null
+    errored: boolean
+  },
+  log: (line: string) => void,
+) => {
+  const { rules, regressions, baseline, errored } = run
+  for (const regression of regressions.filter((r) => r.package !== undefined))
+    log(
+      `  ✗ ${regression.package}: ${regression.id} ${regression.after} (baseline ${regression.before})`,
+    )
+  const fresh = rules.filter((rule) => isNewToBaseline(rule, baseline))
+  if (fresh.length)
+    log(
+      `⚠ Not in the baseline, so not checked: ${fresh.map((rule) => `${rule.id} (${rule.count})`).join(', ')} — run --update-baseline to start checking ${fresh.length === 1 ? 'it' : 'them'}`,
+    )
+  log(
+    regressions.length === 0 && !errored
+      ? '✓ No regression'
+      : `✗ ${regressions.length} regression(s)${errored ? ', a command could not run' : ''}`,
+  )
 }
 
 const reportPackages = (

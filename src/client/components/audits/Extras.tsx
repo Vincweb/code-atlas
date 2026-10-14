@@ -21,9 +21,9 @@ export const Extras = ({ analysis }: { analysis: Analysis }) => {
             </div>
           ))}
         </dl>
-        <h2 className="mt-2 text-[16px] font-semibold tracking-tight">{help.costTitle}</h2>
+        <h2 className="mt-2 text-[16px] font-semibold tracking-tight">{help.safetyTitle}</h2>
         <ul className="flex list-disc flex-col gap-1.5 pl-5 leading-relaxed text-muted">
-          {help.cost.map((line) => (
+          {help.safety.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>

@@ -200,6 +200,7 @@ export const TabSkeleton = ({ tab }: { tab: Tab }) => {
     case 'graph':
     case 'database':
       return <GraphSkeleton />
+    case 'docs':
     case 'rules':
     case 'audits':
     case 'security':

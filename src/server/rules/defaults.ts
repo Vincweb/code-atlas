@@ -69,6 +69,7 @@ export const defaultRules = (
     rules.push({ id: 'ARCH-SIBLINGS', family: 'architecture', severity: 'low', kind: 'siblings' })
   rules.push(
     { id: 'ARCH-CYCLES', family: 'architecture', severity: 'high', kind: 'no-cycle' },
+    { id: 'ARCH-DOCS', family: 'architecture', severity: 'low', kind: 'docs' },
     { id: 'CC-LINES', family: 'clean-code', severity: 'medium', kind: 'max-lines', max: 400 },
     { id: 'CC-COMPLEXITY', family: 'clean-code', severity: 'medium', kind: 'complexity', max: 15 },
     { id: 'CC-PARAMS', family: 'clean-code', severity: 'low', kind: 'max-params', max: 4 },

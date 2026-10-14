@@ -1,11 +1,23 @@
 import { useState } from 'react'
-import type { RuleResult } from '../../../shared/types'
-import { useT } from '../../i18n'
-import { Button } from '../ui'
-import { FileLink, useViewer } from '../viewer'
-import { groupByFile } from './model'
+import type { RuleResult } from '../../shared/types'
+import { useT } from '../i18n'
+import { Button } from './ui'
+import { FileLink, useViewer } from './viewer'
 
 const FIRST_FILES = 8
+
+type FileGroup = { file: string | null; items: RuleResult['violations'] }
+
+const groupByFile = (violations: RuleResult['violations']): FileGroup[] => {
+  const groups = new Map<string, FileGroup>()
+  for (const violation of violations) {
+    const key = violation.file ?? ''
+    const group = groups.get(key) ?? { file: violation.file, items: [] }
+    group.items.push(violation)
+    groups.set(key, group)
+  }
+  return [...groups.values()].sort((a, b) => b.items.length - a.items.length)
+}
 
 export const Violations = ({ rule }: { rule: RuleResult }) => {
   const t = useT()

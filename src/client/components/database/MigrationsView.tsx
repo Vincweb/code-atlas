@@ -5,7 +5,7 @@ import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { useMigrations } from '../../state/queries'
 import { Badge, ErrorBox, Spinner } from '../ui'
-import { SearchIcon } from '../welcome/icons'
+import { SearchIcon } from '../icons'
 import { MigrationDetails } from './MigrationDetails'
 import { MigrationLanes, ROW_HEIGHT } from './MigrationLanes'
 

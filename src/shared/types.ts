@@ -1,5 +1,6 @@
 import type { Graph as MigrationGraph } from 'drizzle-graph'
 import type { DatabaseResult } from './database'
+import type { FeatureDoc } from './docs'
 import type { HistoryEntry } from './report'
 import type { AtlasConfig, ResolvedConfig, RuleKind, Severity } from './config'
 
@@ -83,6 +84,8 @@ export type EngineResult = {
   /** The workspace packages that hold files; empty outside a monorepo. */
   packages: PackageRef[]
   database: DatabaseResult | null
+  /** The doc of each feature, and in a monorepo of each package. */
+  docs: FeatureDoc[]
   warnings: string[]
 }
 
@@ -114,7 +117,6 @@ export type RuleResult = {
   ranAt: string | null
   commit: string | null
   stale: boolean
-  costUsd: number | null
   error: string | null
 }
 
@@ -165,6 +167,7 @@ export type Analysis = {
   files: FileNode[]
   functions: FunctionMetric[]
   database: DatabaseResult | null
+  docs: FeatureDoc[]
   rules: RuleResult[]
   scores: Scores
   baseline: Baseline | null
@@ -389,4 +392,6 @@ export type MigrationsPayload = { dir: string; graph: MigrationGraph }
 
 export type MigrationSqlPayload = { folder: string; sql: string }
 
-export type { CheckReport, HistoryEntry, Regression } from './report'
+export type { CheckReport, HistoryEntry, NewRule, Regression } from './report'
+
+export type { DocPayload, FeatureDoc } from './docs'

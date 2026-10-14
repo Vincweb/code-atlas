@@ -6,19 +6,19 @@ import { useT } from '../../i18n'
 import { useRoute } from '../../state/router'
 import { fixPrompt } from '../../util/claudePrompt'
 import { cx } from '../../util/cx'
-import { formatUsd, relativeTime } from '../../util/format'
+import { relativeTime } from '../../util/format'
 import { ruleSetting } from '../../util/ruleSetting'
 import { BAND_TEXT, bandOf } from '../../util/score'
 import type { Band } from '../../util/score'
 import { ClaudeActions } from '../ClaudeActions'
 import { Link } from '../Link'
-import { ChevronIcon } from '../welcome/icons'
+import { ChevronIcon } from '../icons'
 import { Badge, Button } from '../ui'
-import { SeverityBadge } from './badges'
+import { SeverityBadge } from '../badges'
 import { RunPanel } from './RunPanel'
-import { hasOutput } from './useRunner'
-import type { RunState } from './useRunner'
-import { Violations } from './Violations'
+import { hasOutput } from '../../state/runs'
+import type { RunState } from '../../state/runs'
+import { Violations } from '../Violations'
 
 const BAR: Record<Band, string> = {
   good: 'bg-good',
@@ -40,7 +40,6 @@ type Props = {
   title: string
   focused: boolean
   state: RunState | undefined
-  locked: boolean
   onRun: () => void
   onCancel: () => void
 }
@@ -72,7 +71,6 @@ const RuleFacts = ({ analysis, rule }: { analysis: Analysis; rule: RuleResult })
       {RUN_KINDS.includes(rule.kind) && (
         <span>
           {rule.ranAt ? t.rules.lastRun(relativeTime(rule.ranAt, t.locale)) : t.rules.never}
-          {rule.costUsd !== null && ` · ${formatUsd(rule.costUsd)}`}
         </span>
       )}
     </span>
@@ -145,7 +143,7 @@ const RuleDetails = ({ analysis, rule, title }: Pick<Props, 'analysis' | 'rule' 
 }
 
 export const RuleCard = (props: Props) => {
-  const { analysis, rule, title, focused, state, locked, onRun, onCancel } = props
+  const { analysis, rule, title, focused, state, onRun, onCancel } = props
   const t = useT()
   const [open, setOpen] = useState(focused)
   const card = useRef<HTMLLIElement>(null)
@@ -201,7 +199,7 @@ export const RuleCard = (props: Props) => {
           )}
           <ScoreMeter score={ran ? rule.score : null} />
           {runnable && (
-            <Button onClick={onRun} disabled={state?.running || locked}>
+            <Button onClick={onRun} disabled={state?.running}>
               {t.rules.run}
             </Button>
           )}

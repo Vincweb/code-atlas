@@ -2,7 +2,9 @@ import { spawn } from 'node:child_process'
 import { isAbsolute, relative } from 'node:path'
 import type { AiRuleConfig, ResolvedConfig } from '../../shared/config'
 import type { RuleResult, RunEvent } from '../../shared/types'
-import { finishRun, killTree, spawnEnv } from './result'
+import { followProcess, spawnEnv } from './process'
+import type { ProcessEnd } from './process'
+import { finishRun } from './result'
 
 export const FINDINGS_SCHEMA = {
   type: 'object',
@@ -26,7 +28,7 @@ export const FINDINGS_SCHEMA = {
 type Finding = { file: string; line: number; message: string }
 type Parsed = {
   progress?: string
-  result?: { ok: boolean; findings: Finding[]; costUsd: number | null; error: string | null }
+  result?: { ok: boolean; findings: Finding[]; error: string | null }
 }
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -72,7 +74,6 @@ const progressOf = (block: Record<string, unknown>, root: string): string | null
 
 const resultOf = (event: Record<string, unknown>, root: string): NonNullable<Parsed['result']> => {
   const ok = event.is_error !== true && event.subtype === 'success'
-  const costUsd = typeof event.total_cost_usd === 'number' ? event.total_cost_usd : null
   let findings = toFindings(root, event.structured_output)
   if (!findings.length && typeof event.result === 'string') {
     try {
@@ -86,7 +87,7 @@ const resultOf = (event: Record<string, unknown>, root: string): NonNullable<Par
     : []
   const subtype = typeof event.subtype === 'string' ? event.subtype : 'error'
   const error = ok ? null : errors.join('; ') || subtype
-  return { ok, findings, costUsd, error }
+  return { ok, findings, error }
 }
 
 export const parseStreamLine = (line: string, root: string): Parsed | null => {
@@ -145,7 +146,16 @@ export const aiInvocation = (rule: AiRuleConfig, config: ResolvedConfig) => {
   return { model, prompt, args }
 }
 
-export const runAi = (
+/** Why Claude gave no findings, when it said nothing itself. */
+const failureOf = (end: ProcessEnd, stderr: string) => {
+  if (end.failure) return end.failure
+  if (end.spawnError?.code === 'ENOENT') return 'claude-not-found'
+  return (
+    end.spawnError?.message ?? (stderr.trim().slice(-300) || `claude exited with code ${end.code}`)
+  )
+}
+
+export const runAi = async (
   root: string,
   rule: AiRuleConfig,
   config: ResolvedConfig,
@@ -155,70 +165,36 @@ export const runAi = (
     signal?: AbortSignal
     claudeBin?: string
   },
-): Promise<RuleResult> =>
-  new Promise((resolve) => {
-    const { args } = aiInvocation(rule, config)
-    const child = spawn(opts.claudeBin ?? 'claude', args, {
-      cwd: root,
-      detached: process.platform !== 'win32',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: spawnEnv((key) => key === 'CLAUDECODE' || key.startsWith('CLAUDE_')),
-    })
-    let buffer = ''
-    let stderr = ''
-    let parsed: NonNullable<Parsed['result']> | null = null
-    let failure: string | null = null
-    let settled = false
-
-    const handle = (line: string) => {
-      const event = parseStreamLine(line, root)
-      if (event?.progress) opts.onEvent({ type: 'progress', message: event.progress })
-      if (event?.result) parsed = event.result
-    }
-    const onAbort = () => {
-      failure ??= 'cancelled'
-      killTree(child.pid, () => child.kill('SIGKILL'))
-    }
-    if (opts.signal?.aborted) onAbort()
-    else opts.signal?.addEventListener('abort', onAbort, { once: true })
-
-    const finish = (code: number | null) => {
-      if (settled) return
-      settled = true
-      opts.signal?.removeEventListener('abort', onAbort)
-      if (buffer.trim()) handle(buffer)
-      const result = parsed
-      if (failure || !result)
-        return resolve(
-          finishRun(rule, opts.commit, {
-            costUsd: result?.costUsd ?? null,
-            error: failure ?? (stderr.trim().slice(-300) || `claude exited with code ${code}`),
-          }),
-        )
-      if (!result.ok)
-        return resolve(
-          finishRun(rule, opts.commit, { costUsd: result.costUsd, error: result.error }),
-        )
-      const violations = result.findings.map((finding) => ({
-        file: finding.file || null,
-        line: finding.line >= 1 ? finding.line : null,
-        message: finding.message,
-      }))
-      resolve(finishRun(rule, opts.commit, { violations, costUsd: result.costUsd }))
-    }
-
-    child.stdout?.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString('utf8')
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-      for (const line of lines) if (line.trim()) handle(line)
-    })
-    child.stderr?.on('data', (chunk: Buffer) => {
-      stderr = (stderr + chunk.toString('utf8')).slice(-2000)
-    })
-    child.on('error', (error: NodeJS.ErrnoException) => {
-      failure ??= error.code === 'ENOENT' ? 'claude-not-found' : error.message
-      finish(null)
-    })
-    child.on('close', (code) => finish(code))
+): Promise<RuleResult> => {
+  const { args } = aiInvocation(rule, config)
+  const child = spawn(opts.claudeBin ?? 'claude', args, {
+    cwd: root,
+    detached: process.platform !== 'win32',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: spawnEnv((key) => key === 'CLAUDECODE' || key.startsWith('CLAUDE_')),
   })
+  let stderr = ''
+  // Set by the stream as it is read: an object, so the narrowing of a local does not hide it.
+  const last: { result: NonNullable<Parsed['result']> | null } = { result: null }
+  const end = await followProcess(child, {
+    signal: opts.signal,
+    onLine: (line, source) => {
+      if (source === 'err') stderr = `${stderr}${line}\n`.slice(-2000)
+      else if (line.trim()) {
+        const event = parseStreamLine(line, root)
+        if (event?.progress) opts.onEvent({ type: 'progress', message: event.progress })
+        if (event?.result) last.result = event.result
+      }
+    },
+  })
+  const { result } = last
+  if (end.failure || end.spawnError || !result)
+    return finishRun(rule, opts.commit, { error: failureOf(end, stderr) })
+  if (!result.ok) return finishRun(rule, opts.commit, { error: result.error })
+  const violations = result.findings.map((finding) => ({
+    file: finding.file || null,
+    line: finding.line >= 1 ? finding.line : null,
+    message: finding.message,
+  }))
+  return finishRun(rule, opts.commit, { violations })
+}

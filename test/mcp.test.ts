@@ -110,9 +110,23 @@ test('overview, violations, edges and feature read the fixture', async () => {
     id: string
     files: string[]
     incoming: unknown[]
+    doc: { path: string; description: string; status: string; text: string }
   }
   assert.equal(feature.id, 'src/lib')
   assert.ok(feature.files.includes('src/lib/x.ts'))
+  assert.equal(feature.doc.path, 'src/lib/README.md')
+  assert.equal(feature.doc.description, 'The helpers every other feature builds on.')
+  assert.equal(feature.doc.status, 'stable')
+  assert.match(feature.doc.text, /# lib/)
+  const bare = (await call(ctx, 'feature', { id: 'src/pages' })).json() as {
+    doc: { path: null; lookedFor: string[] }
+  }
+  assert.equal(bare.doc.path, null)
+  assert.deepEqual(bare.doc.lookedFor, [
+    'src/pages/README.md',
+    'src/pages/AGENTS.md',
+    'src/pages/CLAUDE.md',
+  ])
 })
 
 test('a bad argument, a missing project or an invalid config is a tool error, not a crash', async () => {

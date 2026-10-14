@@ -50,6 +50,13 @@
       "kind": "no-cycle"
     },
     {
+      "id": "ARCH-DOCS",
+      "family": "architecture",
+      "severity": "low",
+      "kind": "docs",
+      "features": "src/{components,lib}/*"
+    },
+    {
       "id": "NO-UI-IN-LIB",
       "family": "architecture",
       "severity": "high",

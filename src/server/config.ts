@@ -1,14 +1,20 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import type { AtlasConfig, LayerConfig, ResolvedConfig, RuleKind } from '../shared/config'
 import type { ConfigSource } from '../shared/types'
 import { CONFIG_FILE, SEVERITIES } from '../shared/config'
-import { matchGlob } from './engine/glob'
+import { DEFAULT_DOCS, DOC_EXTENSION } from '../shared/docs'
 import type { ResolvedDatabaseConfig, RuleConfig } from '../shared/config'
 import { drizzleConfigs } from './engine/database'
 import { defaultRules } from './rules/defaults'
 import { detectWorkspaces, workspaceMembers } from './engine/workspace'
-import type { WorkspaceMember } from './engine/workspace'
+import {
+  DEFAULT_EXCLUDE,
+  defaultFeatures,
+  defaultInclude,
+  workspaceFeatures,
+} from './configDefaults'
+import { isDirectory } from './engine/fs'
 
 export class ConfigError extends Error {
   issues: string[]
@@ -27,6 +33,7 @@ const TOP_KEYS = [
   'tsconfig',
   'workspaces',
   'features',
+  'docs',
   'layers',
   'allow',
   'rules',
@@ -49,6 +56,7 @@ const KIND_FIELDS: Record<RuleKind, { required: string[]; optional: string[] }> 
   'db-layers': { required: [], optional: [] },
   'db-mutual': { required: [], optional: [] },
   'db-siblings': { required: [], optional: [] },
+  docs: { required: [], optional: ['features'] },
 }
 
 const FIELD_TYPES: Record<string, 'string' | 'number' | 'boolean'> = {
@@ -65,6 +73,7 @@ const FIELD_TYPES: Record<string, 'string' | 'number' | 'boolean'> = {
   prompt: 'string',
   model: 'string',
   budgetUsd: 'number',
+  features: 'string',
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -224,6 +233,12 @@ const checkDatabase = (value: unknown, issues: string[]) => {
     issues.push('database.junctions must be an array of strings')
 }
 
+const checkDocs = (value: unknown, issues: string[]) => {
+  if (!isStringArray(value)) issues.push('docs must be an array of strings')
+  else if (!value.every((doc) => DOC_EXTENSION.test(doc)))
+    issues.push('docs must name Markdown files: .md, .mdx or .markdown')
+}
+
 const checkRules = (value: unknown, issues: string[]) => {
   if (!Array.isArray(value)) {
     issues.push('rules must be an array')
@@ -240,6 +255,7 @@ const validate = (raw: unknown): string[] => {
   for (const key of ['include', 'exclude', 'workspaces', 'features'])
     if (raw[key] !== undefined && !isStringArray(raw[key]))
       issues.push(`${key} must be an array of strings`)
+  if (raw.docs !== undefined) checkDocs(raw.docs, issues)
   if (raw.tsconfig !== undefined && typeof raw.tsconfig !== 'string')
     issues.push('tsconfig must be a string')
   if (raw.layers !== undefined) checkLayers(raw.layers, issues)
@@ -249,73 +265,6 @@ const validate = (raw: unknown): string[] => {
   if (raw.database !== undefined) checkDatabase(raw.database, issues)
   return issues
 }
-
-const isDirectory = (path: string) => existsSync(path) && statSync(path).isDirectory()
-
-const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage'])
-
-const subdirectories = (dir: string) => {
-  try {
-    return readdirSync(dir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
-      .filter((entry) => !SKIP_DIRS.has(entry.name))
-      .map((entry) => entry.name)
-  } catch {
-    return []
-  }
-}
-
-const defaultFeatures = (root: string, hasSrc: boolean) => {
-  const base = hasSrc ? 'src' : ''
-  const prefix = base ? `${base}/` : ''
-  const grouped = subdirectories(join(root, base))
-    .filter((name) => subdirectories(join(root, base, name)).length >= 3)
-    .sort()
-    .map((name) => `${prefix}${name}/*`)
-  return [...grouped, `${prefix}*`]
-}
-
-const membersUnder = (pattern: string, members: WorkspaceMember[]) =>
-  members.filter((member) =>
-    matchGlob(member.dir, pattern.replace(/^\.\//, '').replace(/\/+$/, '')),
-  )
-
-const ownPatterns = (patterns: readonly string[]) =>
-  patterns.filter((pattern) => !pattern.startsWith('!'))
-
-/** `<pattern>/src/**` for the packages with a src folder, the whole folder for the others. */
-const workspaceInclude = (
-  patterns: readonly string[],
-  members: WorkspaceMember[],
-  rootSrc: boolean,
-) => {
-  const include = ownPatterns(patterns).flatMap((pattern) =>
-    membersUnder(pattern, members).some((member) => member.hasSrc)
-      ? [`${pattern.replace(/\/+$/, '')}/src/**`]
-      : [],
-  )
-  for (const member of members) if (!member.hasSrc) include.push(`${member.dir}/**`)
-  return rootSrc ? [...include, 'src/**'] : include
-}
-
-/** The single-project defaults inside each package, deepest packages first. */
-const workspaceFeatures = (root: string, members: WorkspaceMember[], rootSrc: boolean) => {
-  const byDepth = [...members].sort((a, b) => b.dir.split('/').length - a.dir.split('/').length)
-  const features = byDepth.flatMap((member) =>
-    defaultFeatures(join(root, member.dir), member.hasSrc).map(
-      (pattern) => `${member.dir}/${pattern}`,
-    ),
-  )
-  return rootSrc ? [...features, ...defaultFeatures(root, true)] : features
-}
-
-const DEFAULT_EXCLUDE = [
-  '**/*.test.*',
-  '**/*.spec.*',
-  '**/*.d.ts',
-  '**/node_modules/**',
-  '**/dist/**',
-]
 
 const readConfigFile = (path: string): AtlasConfig => {
   let parsed: unknown
@@ -354,19 +303,14 @@ const resolveConfig = (root: string, raw: AtlasConfig): ResolvedConfig => {
     })
   ).map(withoutCap)
   return {
-    include:
-      raw.include ??
-      (members.length
-        ? workspaceInclude(workspaces, members, rootSrc)
-        : hasSrc
-          ? ['src/**']
-          : ['**']),
+    include: raw.include ?? defaultInclude(workspaces, members, { hasSrc, rootSrc }),
     exclude: raw.exclude ?? DEFAULT_EXCLUDE,
     tsconfig,
     workspaces,
     features:
       raw.features ??
       (members.length ? workspaceFeatures(root, members, rootSrc) : defaultFeatures(root, hasSrc)),
+    docs: raw.docs ?? DEFAULT_DOCS,
     layers,
     allow: raw.allow ?? [],
     rules,

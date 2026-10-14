@@ -3,14 +3,7 @@ import path from 'node:path'
 import { createScanner } from 'drizzle-graph'
 import type { Graph as MigrationGraph } from 'drizzle-graph'
 import type { DbMigrationsInfo } from '../../../shared/types'
-
-const entriesOf = (dir: string) => {
-  try {
-    return fs.readdirSync(dir, { withFileTypes: true })
-  } catch {
-    return []
-  }
-}
+import { entriesOf } from '../fs'
 
 /** Drizzle Kit v1 keeps one folder per migration, each with a snapshot; v0 kept a journal. */
 export const migrationsInfo = (dir: string): DbMigrationsInfo | null => {

@@ -1,9 +1,9 @@
-import type { Analysis } from '../../../shared/types'
-import { useT } from '../../i18n'
-import { useClaudeStatus } from '../../state/queries'
-import { ruleTitle } from '../../util/ruleTitle'
-import { ConfirmDialog } from '../Dialog'
-import { SparkIcon } from '../welcome/icons'
+import type { Analysis } from '../../shared/types'
+import { useT } from '../i18n'
+import { useClaudeStatus } from '../state/queries'
+import { ruleTitle } from '../util/ruleTitle'
+import { ConfirmDialog } from './Dialog'
+import { SparkIcon } from './icons'
 
 export const RunDialog = ({
   analysis,

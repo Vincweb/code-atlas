@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import type { DatabaseResult, DbTable } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { useWidth } from '../graph/FeatureGraph'
+import { useWidth } from '../../util/useWidth'
 import { SectionTitle } from '../ui'
 import { FileLink } from '../viewer'
-import { SearchIcon } from '../welcome/icons'
+import { SearchIcon } from '../icons'
 import { featureColor, layoutErd } from './erd'
 import { TableCard } from './TableCard'
 

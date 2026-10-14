@@ -1,21 +1,26 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { ResolvedConfig, RuleConfig, StaticRuleConfig } from '../../shared/config'
+import type { ResolvedConfig, RuleConfig, RuleKind, StaticRuleConfig } from '../../shared/config'
+import { docCandidates } from '../../shared/docs'
 import type { EdgeClass, EngineResult, RuleResult, Violation } from '../../shared/types'
 import { matchGlob } from '../engine/glob'
 import { ownersOf, settle } from './packages'
 import type { Owners } from './packages'
 
+/** The titles that do not depend on a rule's settings. */
+const FIXED_TITLES: Partial<Record<RuleKind, string>> = {
+  layers: 'Layering',
+  mutual: 'Mutual dependencies',
+  siblings: 'Sibling coupling',
+  'no-cycle': 'Import cycles',
+  docs: 'Undocumented features',
+  'db-layers': 'Database layering',
+  'db-mutual': 'Mutual database dependencies',
+  'db-siblings': 'Database sibling coupling',
+}
+
 export const defaultTitle = (rule: RuleConfig): string => {
   switch (rule.kind) {
-    case 'layers':
-      return 'Layering'
-    case 'mutual':
-      return 'Mutual dependencies'
-    case 'siblings':
-      return 'Sibling coupling'
-    case 'no-cycle':
-      return 'Import cycles'
     case 'forbid-import':
       return `Forbidden imports ${rule.from} → ${rule.to}`
     case 'max-lines':
@@ -30,12 +35,8 @@ export const defaultTitle = (rule: RuleConfig): string => {
       return `\`${rule.run}\``
     case 'ai':
       return rule.prompt.slice(0, 60)
-    case 'db-layers':
-      return 'Database layering'
-    case 'db-mutual':
-      return 'Mutual database dependencies'
-    case 'db-siblings':
-      return 'Database sibling coupling'
+    default:
+      return FIXED_TITLES[rule.kind] ?? rule.kind
   }
 }
 
@@ -61,6 +62,30 @@ const databaseViolations = (
           })),
         )
     : []
+
+const SOURCE_FILE = /\.[cm]?[jt]sx?$/
+
+/** One violation per feature without a doc, counted against the package that holds it. */
+const docsViolations = (
+  rule: Extract<StaticRuleConfig, { kind: 'docs' }>,
+  engine: EngineResult,
+  templates: readonly string[],
+): Violation[] => {
+  const missing = new Set(engine.docs.filter((doc) => doc.path === null).map((doc) => doc.id))
+  const packageOf = new Map(engine.files.map((file) => [file.feature, file.package]))
+  return (
+    engine.graph.features
+      // A feature a literal pattern names as one file has no folder to hold a doc.
+      .filter((feature) => missing.has(feature.id) && !SOURCE_FILE.test(feature.id))
+      .filter((feature) => !rule.features || matchGlob(feature.id, rule.features))
+      .map((feature) => ({
+        file: null,
+        line: null,
+        message: `${feature.id} has no doc: add ${docCandidates(feature.id, templates)[0] ?? 'one'}`,
+        ...(engine.packages.length ? { package: packageOf.get(feature.id) ?? null } : {}),
+      }))
+  )
+}
 
 const inScope = (path: string, files: string | undefined) => !files || matchGlob(path, files)
 
@@ -121,14 +146,17 @@ const cycleOwner = (cycle: string[], owners: Owners | null) => {
   return { package: others.every((owner) => owner === first) ? (first ?? null) : null }
 }
 
+type Project = { root: string; config: ResolvedConfig }
+
 const collect = (
-  root: string,
+  { root, config }: Project,
   rule: StaticRuleConfig,
   engine: EngineResult,
   owners: Owners | null,
 ): Violation[] => {
   if (rule.kind === 'db-layers' || rule.kind === 'db-mutual' || rule.kind === 'db-siblings')
     return databaseViolations(rule, engine)
+  if (rule.kind === 'docs') return docsViolations(rule, engine, config.docs)
   switch (rule.kind) {
     case 'layers':
       return edgeViolations(engine, ['up'])
@@ -198,7 +226,7 @@ export const evaluateStatic = (
   const results: RuleResult[] = []
   for (const rule of config.rules) {
     if (rule.kind === 'command' || rule.kind === 'ai') continue
-    const violations = collect(root, rule, engine, owners).sort(compare)
+    const violations = collect({ root, config }, rule, engine, owners).sort(compare)
     const result: RuleResult = {
       id: rule.id,
       family: rule.family,
@@ -212,7 +240,6 @@ export const evaluateStatic = (
       ranAt: new Date().toISOString(),
       commit,
       stale: false,
-      costUsd: null,
       error: null,
     }
     results.push(settle(rule, result, violations, owners))

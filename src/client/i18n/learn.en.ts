@@ -1,5 +1,4 @@
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
+import { plural } from './plural'
 export const learnEn = {
   bands: { good: 'Good', warn: 'Watch', bad: 'Needs work', none: 'Incomplete' },
   verdict: {
@@ -55,7 +54,7 @@ export const learnEn = {
   } as Record<string, string>,
   familyIdle: {
     tooling: 'Not run yet: commands run from the Rules tab.',
-    ai: 'Not run yet: each audit costs a little, so it runs on demand.',
+    ai: 'Not run yet: an audit takes Claude a few minutes, so it runs on demand.',
     other: 'No result yet.',
   },
   seeRules: 'See the rules',
@@ -124,6 +123,11 @@ export const learnEn = {
       what: 'A problem Claude found while reading the code.',
       why: 'It covers what an automatic rule cannot measure: naming, responsibilities, intent.',
       fix: 'Read each finding: they are leads to weigh, not verdicts.',
+    },
+    docs: {
+      what: 'A feature without a doc: no README.md, AGENTS.md or CLAUDE.md in its folder, nor where the config’s “docs” points.',
+      why: 'What it is for lives only in the heads of those who wrote it: a newcomer, a reviewer or an agent has to rebuild it from the code.',
+      fix: 'Add a short README.md to its folder — what it is for, its entry points, what it depends on. The Docs tab has Claude Code draft it.',
     },
     'db-layers': {
       what: 'A foreign key from a table of a lower database layer to a table of a higher one.',

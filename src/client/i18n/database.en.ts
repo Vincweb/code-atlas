@@ -1,5 +1,4 @@
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
+import { plural } from './plural'
 /** The Database tab, in beta: the Drizzle schema, its feature graph and its migrations. */
 export const databaseEn = {
   beta: 'beta',

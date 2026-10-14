@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { Button } from '../ui'
-import { Code } from '../config/parts'
+import { Button, Code } from '../ui'
 
 export const frameOf = (analysis: Analysis) => {
   const item = analysis.audits.items[0]

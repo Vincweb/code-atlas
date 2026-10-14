@@ -5,7 +5,7 @@ import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../../util/score'
 import { Link } from '../Link'
-import { SearchIcon } from '../welcome/icons'
+import { SearchIcon } from '../icons'
 
 type SortKey = 'name' | 'files' | 'lines' | 'score' | `family:${string}`
 

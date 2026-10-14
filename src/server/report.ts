@@ -1,6 +1,7 @@
 import path from 'node:path'
 import type { Severity } from '../shared/config'
 import type { CheckReport, EngineResult, RuleResult, Scores, Violation } from '../shared/types'
+import { isNewToBaseline } from './rules'
 import type { PackageScores } from './rules'
 import type { Baseline, Regression } from '../shared/types'
 
@@ -44,6 +45,11 @@ export const checkReport = (opts: {
       scores,
     })),
     regressions: result.regressions,
+    newRules: recording
+      ? []
+      : result.rules
+          .filter((rule) => isNewToBaseline(rule, result.baseline))
+          .map((rule) => ({ id: rule.id, count: rule.count })),
     baseline: result.baseline
       ? { commit: result.baseline.commit, savedAt: result.baseline.savedAt }
       : null,
@@ -97,6 +103,14 @@ export const githubAnnotations = (report: CheckReport): string[] => {
       ),
     )
   }
+  for (const rule of report.newRules)
+    lines.push(
+      command(
+        'warning',
+        { title: `code-atlas: ${rule.id} is not in the baseline` },
+        `${rule.count} violation${rule.count === 1 ? '' : 's'}, not checked until the baseline is recorded again (--update-baseline)`,
+      ),
+    )
   let left = MAX_ANNOTATIONS
   for (const rule of regressedRules(report)) {
     for (const violation of rule.violations.filter(located)) {
@@ -119,6 +133,43 @@ export const githubAnnotations = (report: CheckReport): string[] => {
 }
 
 const scoreOf = (score: number | null) => (score === null ? '—' : String(score))
+
+type RulesById = Map<string, RuleResult>
+
+/** Each regression with the first of its violations. */
+const regressionsSection = (report: CheckReport, byId: RulesById): string[] => {
+  if (!report.regressions.length) return []
+  const lines = ['', '### Regressions', '']
+  for (const regression of report.regressions) {
+    const rule = byId.get(regression.id)
+    const where = regression.package ? ` in \`${regression.package}\`` : ''
+    lines.push(
+      `- **${regression.id}** ${rule?.title ?? ''}${where}: ${regression.after} (baseline ${regression.before})`,
+    )
+    const shown = (rule?.violations ?? [])
+      .filter((violation) => !regression.package || violation.package === regression.package)
+      .slice(0, MAX_ANNOTATIONS)
+    for (const violation of shown)
+      lines.push(
+        `  - ${violation.file ? `\`${violation.file}${violation.line === null ? '' : `:${violation.line}`}\` — ` : ''}${violation.message}`,
+      )
+  }
+  return lines
+}
+
+/** The rules the baseline does not count yet: reported, not checked. */
+const newRulesSection = (report: CheckReport, byId: RulesById): string[] =>
+  report.newRules.length
+    ? [
+        '',
+        '### Not in the baseline',
+        '',
+        ...report.newRules.map(
+          ({ id, count }) =>
+            `- **${id}** ${byId.get(id)?.title ?? ''}: ${count} — not checked until the baseline is recorded again (\`--update-baseline\`)`,
+        ),
+      ]
+    : []
 
 /** The job summary, Markdown for `$GITHUB_STEP_SUMMARY`. */
 export const summaryMarkdown = (report: CheckReport): string => {
@@ -148,23 +199,7 @@ export const summaryMarkdown = (report: CheckReport): string => {
         .map((pkg) => `| ${pkg.name} (\`${pkg.dir}\`) | ${scoreOf(pkg.scores.overall)} |`),
     )
   }
-  if (report.regressions.length) {
-    lines.push('', '### Regressions', '')
-    for (const regression of report.regressions) {
-      const rule = byId.get(regression.id)
-      const where = regression.package ? ` in \`${regression.package}\`` : ''
-      lines.push(
-        `- **${regression.id}** ${rule?.title ?? ''}${where}: ${regression.after} (baseline ${regression.before})`,
-      )
-      const shown = (rule?.violations ?? [])
-        .filter((violation) => !regression.package || violation.package === regression.package)
-        .slice(0, MAX_ANNOTATIONS)
-      for (const violation of shown)
-        lines.push(
-          `  - ${violation.file ? `\`${violation.file}${violation.line === null ? '' : `:${violation.line}`}\` — ` : ''}${violation.message}`,
-        )
-    }
-  }
+  lines.push(...regressionsSection(report, byId), ...newRulesSection(report, byId))
   return lines.join('\n') + '\n'
 }
 
@@ -230,6 +265,7 @@ export const sarifReport = (report: CheckReport, version: string) => {
           overall: report.scores.overall,
           commit: report.commit,
           regressions: report.regressions,
+          newRules: report.newRules,
         },
       },
     ],

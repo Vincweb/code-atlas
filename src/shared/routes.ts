@@ -5,6 +5,7 @@ export const PROJECT_PATH = '/project'
 export const TABS = [
   'overview',
   'graph',
+  'docs',
   'rules',
   'audits',
   'security',
@@ -35,7 +36,10 @@ export const API = {
   draft: '/api/draft',
   createConfig: '/api/config/create',
   file: '/api/file',
+  doc: '/api/doc',
+  runs: '/api/runs',
   run: '/api/run',
+  runCancel: '/api/run/cancel',
   claude: '/api/claude',
   claudeOpen: '/api/claude/open',
   security: '/api/security',

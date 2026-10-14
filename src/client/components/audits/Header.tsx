@@ -3,7 +3,6 @@ import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { useClaudeStatus } from '../../state/queries'
 import { MCP_INSTALL } from '../../util/claudePrompt'
-import { formatUsd } from '../../util/format'
 import { BAND_TEXT, bandOf } from '../../util/score'
 import { Button, CopyButton, Spinner } from '../ui'
 
@@ -72,7 +71,6 @@ export const AuditsHeader = ({
   const help = t.audits
   const audits = analysis.rules.filter((rule) => rule.kind === 'ai')
   const ran = audits.filter((rule) => rule.ranAt !== null).length
-  const spent = audits.reduce((sum, rule) => sum + (rule.costUsd ?? 0), 0)
   const family = analysis.scores.families.find((f) => f.family === 'ai')?.score ?? null
 
   return (
@@ -91,9 +89,6 @@ export const AuditsHeader = ({
               {family ?? '–'}
             </span>
           </span>
-          {spent > 0 && (
-            <span className="text-[12px] text-muted">{help.spent(formatUsd(spent))}</span>
-          )}
         </div>
         <p className="max-w-2xl leading-relaxed text-muted">{help.intro}</p>
         <span className="flex flex-wrap gap-2">

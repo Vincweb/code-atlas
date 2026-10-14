@@ -14,6 +14,7 @@ const config: ResolvedConfig = {
   tsconfig: 'tsconfig.json',
   workspaces: [],
   features: [],
+  docs: [],
   layers: [],
   allow: [],
   rules: [],
@@ -97,7 +98,6 @@ test('result lines', () => {
     result: {
       ok: true,
       findings: [{ file: 'src/a.ts', line: 3, message: 'm' }],
-      costUsd: 0.07,
       error: null,
     },
   })
@@ -114,7 +114,6 @@ test('result lines', () => {
   assert.deepEqual(failed?.result, {
     ok: false,
     findings: [],
-    costUsd: 0.31,
     error: 'Reached maximum budget ($0.1)',
   })
 })
@@ -167,7 +166,7 @@ test('runAi turns findings into violations', async () => {
     claudeBin,
   })
   assert.equal(result.status, 'fail')
-  assert.equal(result.costUsd, 0.5)
+  assert.equal('costUsd' in result, false)
   assert.deepEqual(result.violations, [{ file: 'src/a.ts', line: null, message: 'bad' }])
   assert.ok(events.some((e) => e.type === 'progress' && e.message === 'Model m'))
 })

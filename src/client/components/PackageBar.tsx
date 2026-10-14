@@ -10,7 +10,7 @@ import { cx } from '../util/cx'
 import { packageIn } from '../../shared/scope'
 import { BAND_BOX, BAND_TEXT, bandOf } from '../util/score'
 import { Link } from './Link'
-import { ChevronIcon, SearchIcon } from './welcome/icons'
+import { ChevronIcon, SearchIcon } from './icons'
 
 /** One line of the list: the whole repository (dir null) or a package. */
 type Choice = {

@@ -14,6 +14,9 @@ export type HistoryEntry = {
 
 export type Regression = { id: string; package?: string; before: number; after: number }
 
+/** A rule the baseline never counted: reported, not checked, until the baseline is recorded again. */
+export type NewRule = { id: string; count: number }
+
 /** What `--check` found, as `--format json` prints it and the `check` MCP tool returns it. */
 export type CheckReport = {
   ok: boolean
@@ -27,5 +30,6 @@ export type CheckReport = {
   rules: RuleResult[]
   packages: { dir: string; name: string; scores: Scores }[]
   regressions: Regression[]
+  newRules: NewRule[]
   baseline: { commit: string | null; savedAt: string } | null
 }

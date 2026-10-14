@@ -86,7 +86,7 @@ export const TOOLS = [
   {
     name: 'feature',
     description:
-      'One feature: its layer, its files, its coupling (afferent, efferent, instability) and its edges in and out.',
+      'One feature: its layer, its files, its coupling (afferent, efferent, instability), its edges in and out, and its doc — the README.md, AGENTS.md or CLAUDE.md of its folder, or where the config\'s "docs" says — with what it says the feature is for.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -100,7 +100,7 @@ export const TOOLS = [
   {
     name: 'check',
     description:
-      'Run the rules and compare with the baseline, as `code-atlas --check` does: the regressions, if any, and the scores. Static rules only unless commands is true, which also runs the command rules (lint, types, tests) of the config.',
+      'Run the rules and compare with the baseline, as `code-atlas --check` does: the regressions, if any, the rules the baseline does not count yet (newRules: reported, not checked), and the scores. Static rules only unless commands is true, which also runs the command rules (lint, types, tests) of the config.',
     inputSchema: {
       type: 'object',
       properties: {

@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import type { ResolvedConfig, ResolvedDatabaseConfig, RuleConfig } from '../src/shared/config'
 import { loadConfig } from '../src/server/config'
-import { draftConfig } from '../src/server/rules/draft'
+import { draftConfig } from '../src/server/configDraft'
 import { analyzeEngine } from '../src/server/engine'
 import { findDrizzleConfigs, readDrizzleConfig } from '../src/server/engine/database/discover'
 import { prefixOf } from '../src/server/engine/database/features'
@@ -37,6 +37,7 @@ const configOf = (database: ResolvedDatabaseConfig, rules: RuleConfig[] = []): R
   tsconfig: 'tsconfig.json',
   workspaces: [],
   features: ['src/*'],
+  docs: [],
   layers: [],
   allow: [],
   rules,

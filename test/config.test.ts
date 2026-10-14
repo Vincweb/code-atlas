@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import type { EngineResult } from '../src/shared/types'
 import { ConfigError, loadConfig } from '../src/server/config'
 import { defaultRules } from '../src/server/rules/defaults'
-import { draftConfig, draftText } from '../src/server/rules/draft'
+import { draftConfig, draftText } from '../src/server/configDraft'
 
 const project = (files: Record<string, string> = {}, dirs: string[] = []) => {
   const root = mkdtempSync(join(tmpdir(), 'atlas-config-'))
@@ -145,6 +145,7 @@ const engine = (
   stats: { files: files.length, lines: 0, imports: 0, typeImports: 0, features: 0, functions: 0 },
   packages: [],
   database: null,
+  docs: [],
   warnings: [],
 })
 

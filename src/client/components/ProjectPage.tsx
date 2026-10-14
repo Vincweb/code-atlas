@@ -9,6 +9,7 @@ import { scopeAnalysis } from '../../shared/scope'
 import { AuditsTab } from './audits/AuditsTab'
 import { ConfigTab } from './ConfigTab'
 import { DatabaseTab } from './database/DatabaseTab'
+import { DocsTab } from './docs/DocsTab'
 import { GraphTab } from './graph/GraphTab'
 import { MetricsTab } from './metrics/MetricsTab'
 import { Overview } from './Overview'
@@ -16,6 +17,7 @@ import { PackageBar } from './PackageBar'
 import { ProjectHeader } from './ProjectHeader'
 import { ProjectTabs } from './ProjectTabs'
 import { RulesTab } from './rules/RulesTab'
+import { useRunsWatcher } from '../state/runs'
 import { SecurityTab } from './security/SecurityTab'
 import { TabSkeleton } from './skeletons'
 import { ErrorBox, Spinner } from './ui'
@@ -29,6 +31,7 @@ const UNSCOPED: Tab[] = ['config', 'security', 'database']
 const TAB_VIEWS: Record<Tab, ComponentType<{ analysis: Analysis; root: string }>> = {
   overview: Overview,
   graph: GraphTab,
+  docs: DocsTab,
   rules: RulesTab,
   audits: AuditsTab,
   security: SecurityTab,
@@ -41,6 +44,7 @@ export const ProjectPage = ({ root, tab, pkg }: Props) => {
   const t = useT()
   const query = useAnalysis(root)
   const reanalyse = useInvalidateAnalysis(root)
+  useRunsWatcher(root)
   const analysis = query.data
   const scoped = useMemo(() => analysis && scopeAnalysis(analysis, pkg), [analysis, pkg])
   const TabView = TAB_VIEWS[tab]

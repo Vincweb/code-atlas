@@ -31,6 +31,7 @@ export type StaticRuleConfig = RuleBase &
     | { kind: 'db-layers' }
     | { kind: 'db-mutual' }
     | { kind: 'db-siblings' }
+    | { kind: 'docs'; features?: string }
   )
 
 export type CommandRuleConfig = RuleBase & { kind: 'command'; run: string; timeoutSec?: number }
@@ -71,6 +72,8 @@ export type AtlasConfig = {
   /** Package folders of a monorepo; detected from the package manager when left out. */
   workspaces?: string[]
   features?: string[]
+  /** Ordered paths of a feature's doc, with `{feature}` and `{name}`; the first file found wins. */
+  docs?: string[]
   layers?: LayerConfig[]
   allow?: [string, string][]
   rules?: RuleConfig[]

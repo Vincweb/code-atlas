@@ -84,6 +84,15 @@ path in the condensed feature graph — to copy and correct.
   (`Sec-Fetch-Site`), and a server bound to loopback answers no `Host` but a loopback name — a
   page whose domain was rebound to 127.0.0.1 would otherwise pass as same-origin. Results are kept under `.code-atlas/runs/`, keyed by the rule's hash, and
   marked stale when the commit moved.
+- **A run belongs to the server, not to the page.** The first versions streamed a run over
+  server-sent events and cancelled it when the stream closed, so leaving the tab killed an audit
+  minutes in, and a "run them all" queue lived in the component and died with it. The server now
+  keeps the runs of each project — `POST /api/run` queues rules, `GET /api/runs` lists them,
+  `POST /api/run/cancel` stops one or all — and the page polls the list while one is active, once
+  for every tab. One run at a time per project: two audits at once would compete for the same
+  login, and a lint next to a test run for the same CPU. A finished run's output stays until the
+  rule runs again; a cancelled one keeps the previous result on disk; stopping the server cancels
+  them all, so no `claude -p` outlives it.
 
 ## AI rules run Claude Code headless
 
@@ -95,7 +104,9 @@ Claude Code login; the tool handles no key. The child's environment drops `CLAUD
 
 No spending cap. The first versions passed `--max-budget-usd` and asked the user to confirm a
 number per audit; it is their own login and their own plan, and nobody tuned the knob — it only
-cut audits short. The cost of a run is still read from Claude's result and shown, as a fact. A
+cut audits short. No cost is shown either: Claude's `total_cost_usd` is an estimate at API
+prices, which on a subscription is not what the user pays, and a figure that looks like a bill
+but is not one misleads. Runs recorded before carry it; it is dropped when they are read. A
 `budgetUsd` in an older config is accepted and ignored, so the config keeps loading; the schema no
 longer offers it, since the schema says what to write and the loader forgives what was written.
 
@@ -111,6 +122,13 @@ families. One global number alone hides which family regressed, so the page lead
 Compares every non-AI rule's violation count with `.code-atlas/baseline.json` and fails on any
 increase — a ratchet. Without a baseline, any violation fails. `--update-baseline` writes the
 current state. AI rules never gate: two runs on the same commit can differ.
+
+A static rule the baseline never counted is reported — a warning in the text, a `::warning` on
+GitHub, `newRules` in JSON — and not checked until the baseline is recorded again. Every static
+rule is counted when a baseline is recorded, so a missing one was added since: to the config, or
+to the defaults by a newer code-atlas, and an upgrade must not fail a CI whose code did not move.
+The alternative, a missing count read as zero, did exactly that. Command rules keep comparing
+with zero: a baseline recorded with `--skip-commands` lacks them, and a red lint stays red.
 
 ## Writing into the project
 
@@ -154,6 +172,37 @@ graph of the schema, the migration DAG. Decisions:
   called — `runDrizzleCheck` spawns drizzle-kit. The graph is a route of its own
   (`/api/migrations`, lazy, guarded like `/api/file`), the folder taken from discovery, never from
   the query. The v0 layout (`meta/_journal.json`) is named, not drawn.
+
+## Feature docs live next to the code
+
+A feature's doc is a Markdown file in its folder — `README.md`, then `AGENTS.md`, then `CLAUDE.md`
+— found by convention, not declared. Renaming or deleting the folder takes the doc with it, GitHub
+shows it when the folder is browsed, and coding agents already read the nearest `AGENTS.md` or
+`CLAUDE.md`: one file serves the reader and the agent. A project that keeps its docs apart — spec
+tools write `specs/<feature>/` or `.kiro/specs/<feature>/` — lists its own paths in `docs`, with
+`{feature}` and `{name}`; the first file found wins.
+
+- **The definition is a front matter.** `description`, `owner`, `status`, `title`, read by hand
+  like `pnpm-workspace.yaml` — no YAML dependency, `key: value` lines and folded block scalars.
+  Without one, the first level-1 heading and the first paragraph of prose stand in. The
+  description shows in the graph's panel, `describe` and the `feature` MCP tool, which also
+  returns the text: the doc feeds the agent that edits the feature, not only the page.
+- **Read at analysis, served by feature.** The analysis carries each doc's path and definition,
+  not its text; the page reads the text from `/api/doc?feature=`, guarded like `/api/file`. The
+  server rebuilds the path from the config, never from the query, so a dot folder can be read
+  (`.kiro`) where `/api/file` refuses one: only Markdown, inside the project once links are
+  followed, outside `node_modules`.
+- **Rendered without HTML or images.** A README from a cloned repository is untrusted, on a page
+  whose routes run commands: raw HTML is dropped, not rendered. A remote image would tell its host
+  the project was opened, so an image shows its alt text. A relative link opens its file in the
+  viewer. The renderer (react-markdown, remark-gfm) is a dev dependency bundled into the page, in
+  a chunk of its own loaded with the first doc.
+- **A rule, low.** `docs` reports each feature without a doc — never a package — against the
+  package that holds it, narrowed by a glob over feature ids. It sits in the architecture family
+  at low severity: a missing doc is a gap, not a fault, and a family of its own would weigh as
+  much in the overall score as all the architecture rules together. A project on the default
+  rules gains it; a baseline recorded before has no count for it, so `--check` warns about it
+  without failing until the baseline is recorded again (see `--check`).
 
 ## Handing work to Claude Code
 

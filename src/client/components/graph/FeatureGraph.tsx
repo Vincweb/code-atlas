@@ -1,13 +1,15 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import type { Graph } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Button } from '../ui'
-import { ChevronIcon, SearchIcon } from '../welcome/icons'
+import { ChevronIcon, SearchIcon } from '../icons'
+import { useWidth } from '../../util/useWidth'
 import { GraphHelp, Legend } from './GraphHelp'
 import { GraphSvg } from './GraphSvg'
 import { NodePanel } from './NodePanel'
+import type { NodeDoc } from './NodePanel'
 import { OverviewPanel } from './OverviewPanel'
 import { drawOrder, isProblem, isRed } from './edges'
 import { layoutGraph } from './layout'
@@ -19,22 +21,6 @@ type Mode = 'all' | 'problems'
 const DEFAULT_MIN_WEIGHT = 5
 const CROWDED_EDGES = 40
 const MIN_SCALE = 0.7
-
-export const useWidth = () => {
-  const ref = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(0)
-  useLayoutEffect(() => {
-    const element = ref.current
-    if (!element) return
-    setWidth(element.clientWidth)
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(Math.round(entry.contentRect.width))
-    })
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
-  return [ref, width] as const
-}
 
 const usePanelOpen = (key: string) => {
   const [open, setOpen] = useState(() => {
@@ -79,9 +65,11 @@ type Props = {
   showCycles?: boolean
   /** In a monorepo's whole view, opens the package a node stands for. */
   onOpen?: (id: string) => void
+  /** What a feature's doc says of it, and the way to it; the database graph has none. */
+  docOf?: (id: string) => NodeDoc
 }
 
-const Inner = ({ graph, storageKey, showCycles = true, onOpen }: Props) => {
+const Inner = ({ graph, storageKey, showCycles = true, onOpen, docOf }: Props) => {
   const words = useGraphWords()
   const [focus, setFocus] = useState<string | null>(null)
   const [hover, setHover] = useState<string | null>(null)
@@ -234,6 +222,7 @@ const Inner = ({ graph, storageKey, showCycles = true, onOpen }: Props) => {
                 onFocus={focusOn}
                 onClose={() => setFocus(null)}
                 {...(onOpen ? { onOpen } : {})}
+                doc={docOf?.(selected.id)}
               />
             ) : (
               <OverviewPanel graph={graph} showCycles={showCycles} onFocus={focusOn} />

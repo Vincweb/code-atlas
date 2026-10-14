@@ -27,7 +27,6 @@ const rule = (id: string, count: number, violations: RuleResult['violations']): 
   ranAt: null,
   commit: null,
   stale: false,
-  costUsd: null,
   error: null,
 })
 
@@ -61,7 +60,7 @@ const report = (): CheckReport =>
         commit: 'old',
         savedAt: 'yesterday',
         scores: { overall: 70, families: [] },
-        violations: {},
+        violations: { UP: 1, LOW: 1, OK: 0 },
       },
     },
   })
@@ -124,6 +123,37 @@ test('annotations escape what the runner would misread, and stop at ten', () => 
   const lines = withWorkspace('/repo', () => githubAnnotations(many))
   assert.equal(lines.length, 11)
   assert.equal(lines[1], '::error file=src/0.ts,line=1,title=code-atlas%3A MANY::50%25 done%0Anext')
+})
+
+test('a rule the baseline never counted is a warning, in the report, the annotations and the summary', () => {
+  const result = {
+    ok: true,
+    rules: [rule('DOCS', 3, []), rule('OK', 0, [])],
+    scores: { overall: 90, families: [] },
+    packages: [],
+    regressions: [],
+    baseline: {
+      commit: 'old',
+      savedAt: 'then',
+      scores: { overall: 90, families: [] },
+      violations: { OK: 0 },
+    },
+  }
+  const reportOf = (recording: boolean) =>
+    checkReport({ root: '/repo', engine, git: { commit: 'abc', dirty: false }, recording, result })
+  const made = reportOf(false)
+  assert.deepEqual(made.newRules, [{ id: 'DOCS', count: 3 }])
+  assert.deepEqual(
+    withWorkspace('/repo', () => githubAnnotations(made)),
+    [
+      '::warning title=code-atlas%3A DOCS is not in the baseline::3 violations, not checked until the baseline is recorded again (--update-baseline)',
+    ],
+  )
+  assert.match(
+    summaryMarkdown(made),
+    /### Not in the baseline\n\n- \*\*DOCS\*\* Rule DOCS: 3 — not checked/,
+  )
+  assert.deepEqual(reportOf(true).newRules, [])
 })
 
 test('the job summary tables the families and lists the regressions with their cases', () => {

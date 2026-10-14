@@ -1,19 +1,25 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
+import { isActive } from '../../shared/runs'
+import type { RunsPayload } from '../../shared/runs'
 import type { StrixScanRequest } from '../../shared/types'
 import {
+  cancelRuns,
   cancelScan,
   createConfig,
   fetchAnalysis,
   fetchBrowse,
   fetchClaudeStatus,
+  fetchDoc,
   fetchDraft,
   fetchFile,
-  fetchMigrationSql,
   fetchMigrations,
+  fetchMigrationSql,
   fetchProjects,
+  fetchRuns,
   fetchSecurity,
   fetchStrixTools,
+  startRuns,
   startScan,
 } from './api'
 
@@ -82,6 +88,41 @@ export const useFile = (root: string, path: string) =>
     queryFn: () => fetchFile(root, path),
     staleTime: 10_000,
   })
+
+/** A feature's doc, read again on each analysis: the analysis key is its prefix. */
+export const useDoc = (root: string, feature: string, path: string | null) =>
+  useQuery({
+    queryKey: [...analysisKey(root), 'doc', feature, path],
+    queryFn: () => fetchDoc(root, feature),
+    enabled: path !== null,
+  })
+
+const runsKey = (root: string) => ['runs', root] as const
+
+const RUNS_POLL_MS = 1000
+
+/**
+ * The command and AI runs of the project, which the server drives whatever page is open; polled
+ * while one is waiting or running. Every tab reads this one query.
+ */
+export const useRuns = (root: string) =>
+  useQuery({
+    queryKey: runsKey(root),
+    queryFn: () => fetchRuns(root),
+    refetchInterval: (query) => (query.state.data?.runs.some(isActive) ? RUNS_POLL_MS : false),
+  })
+
+/** Starting and cancelling answer the new list, which replaces the polled one at once. */
+export const useRunActions = (root: string) => {
+  const client = useQueryClient()
+  const onSuccess = (payload: RunsPayload) => client.setQueryData(runsKey(root), payload)
+  const start = useMutation({ mutationFn: (rules: string[]) => startRuns(root, rules), onSuccess })
+  const cancel = useMutation({
+    mutationFn: (rule: string | null) => cancelRuns(root, rule),
+    onSuccess,
+  })
+  return { start, cancel }
+}
 
 const securityKey = (root: string) => ['security', root] as const
 

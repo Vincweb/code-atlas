@@ -2,10 +2,9 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { ConfigError } from './server/config'
 import { describeProject } from './server/describe'
 import { isProject } from './server/discover'
-import { analyzeEngine, EngineError } from './server/engine'
+import { analyzeEngine } from './server/engine'
 import { gitState } from './server/git'
 import { serveMcp } from './server/mcp'
 import { projectContext } from './server/project'
@@ -82,12 +81,8 @@ const valueOf = (argv: string[], ...names: string[]) => {
 
 const has = (argv: string[], ...names: string[]) => names.some((name) => argv.includes(name))
 
-const describe = (error: unknown) => {
-  if (error instanceof ConfigError)
-    return [`✗ ${error.message}`, ...error.issues.map((issue) => `  - ${issue}`)].join('\n')
-  if (error instanceof EngineError) return `✗ ${error.message}`
-  return `✗ ${error instanceof Error ? error.message : String(error)}`
-}
+/** A config error's message already lists its issues, one per line. */
+const describe = (error: unknown) => `✗ ${error instanceof Error ? error.message : String(error)}`
 
 /** What a format prints besides the text report; `json` and `sarif` own stdout entirely. */
 const emit = (format: Format, report: CheckReport) => {

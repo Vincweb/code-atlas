@@ -167,6 +167,7 @@ export const analyzeProject = (
     files: engine.files,
     functions: functionsOf(engine),
     database: engine.database,
+    docs: engine.docs,
     rules,
     scores,
     baseline,

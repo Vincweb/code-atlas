@@ -4,7 +4,7 @@ import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
 import { Button, ErrorBox, Spinner } from '../ui'
 import { Explorer } from './Explorer'
-import { FolderIcon } from './icons'
+import { FolderIcon } from '../icons'
 import { RecentProjects } from './RecentProjects'
 
 type Props = {

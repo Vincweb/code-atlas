@@ -1,6 +1,6 @@
 {
   "name": "@vincweb/code-atlas",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Map and audit a TypeScript codebase — the feature dependency graph, its layers, its metrics, scripted and AI audit rules, the Drizzle schema and its migrations, and a CI guard against regressions",
   "keywords": [
     "architecture",
@@ -67,6 +67,8 @@
     "prettier": "^3.4.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "tailwindcss": "^4.3.3",
     "tsup": "^8.3.6",
     "tsx": "^4.20.3",

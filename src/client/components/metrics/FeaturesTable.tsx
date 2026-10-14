@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Analysis, FeatureNode } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
-import { SearchIcon } from '../welcome/icons'
+import { SearchIcon } from '../icons'
 
 type SortKey = 'id' | 'layer' | 'files' | 'lines' | 'ca' | 'ce' | 'instability'
 

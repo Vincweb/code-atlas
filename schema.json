@@ -41,6 +41,14 @@
       },
       "description": "Ordered patterns: `*` binds one directory, the first match wins."
     },
+    "docs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "\\.(md|mdx|markdown)$"
+      },
+      "description": "Where a feature's doc is, in order; the first Markdown file found wins. `{feature}` is the feature id, `{name}` its last folder. Default: `{feature}/README.md`, `{feature}/AGENTS.md`, `{feature}/CLAUDE.md`."
+    },
     "layers": {
       "type": "array",
       "description": "Layers ordered top to bottom.",
@@ -471,6 +479,38 @@
               }
             },
             "required": ["id", "family", "severity", "kind", "prompt"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Features without a doc, one violation each.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique rule id."
+              },
+              "family": {
+                "type": "string",
+                "description": "Group of the score, e.g. architecture, clean-code, tooling, ai."
+              },
+              "severity": {
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Weight of the rule in its family score."
+              },
+              "title": {
+                "type": "string",
+                "description": "Label shown instead of the default."
+              },
+              "kind": {
+                "const": "docs"
+              },
+              "features": {
+                "type": "string",
+                "description": "Glob over feature ids: only these need a doc."
+              }
+            },
+            "required": ["id", "family", "severity", "kind"],
             "additionalProperties": false
           },
           {

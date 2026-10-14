@@ -8,7 +8,6 @@ export const finishRun = (
   commit: string | null,
   outcome: {
     violations?: Violation[]
-    costUsd?: number | null
     error?: string | null
     ok?: boolean
   },
@@ -29,7 +28,6 @@ export const finishRun = (
     ranAt: new Date().toISOString(),
     commit,
     stale: false,
-    costUsd: outcome.costUsd ?? null,
     error,
   }
 }
@@ -40,18 +38,3 @@ export const notRun = (rule: CommandRuleConfig | AiRuleConfig): RuleResult => ({
   score: null,
   ranAt: null,
 })
-
-export const spawnEnv = (drop: (key: string) => boolean): NodeJS.ProcessEnv =>
-  Object.fromEntries(Object.entries(process.env).filter(([key]) => !drop(key)))
-
-export const killTree = (pid: number | undefined, fallback: () => void) => {
-  if (pid !== undefined && process.platform !== 'win32') {
-    try {
-      process.kill(-pid, 'SIGKILL')
-      return
-    } catch {
-      // the group is already gone
-    }
-  }
-  fallback()
-}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useT } from '../../i18n'
 import { Button, ErrorBox, Spinner } from '../ui'
-import type { RunState } from './useRunner'
+import type { RunState } from '../../state/runs'
 
 export const RunPanel = ({ state, onCancel }: { state: RunState; onCancel: () => void }) => {
   const t = useT()
@@ -17,7 +17,7 @@ export const RunPanel = ({ state, onCancel }: { state: RunState; onCancel: () =>
       <div className="flex items-center gap-2 text-muted">
         {state.running && (
           <>
-            <Spinner /> {t.rules.running}
+            <Spinner /> {state.queued ? t.rules.queued : t.rules.running}
             <Button onClick={onCancel} className="ml-auto text-text">
               {t.rules.cancel}
             </Button>
@@ -34,6 +34,7 @@ export const RunPanel = ({ state, onCancel }: { state: RunState; onCancel: () =>
           <div ref={end} />
         </div>
       )}
+      {state.cancelled && <p className="text-muted">{t.rules.cancelled}</p>}
       {state.error && <ErrorBox message={state.error} />}
     </div>
   )

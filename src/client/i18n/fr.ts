@@ -6,6 +6,7 @@ import { auditsFr } from './audits.fr'
 import { securityFr } from './security.fr'
 import { packagesFr } from './packages.fr'
 import { databaseFr } from './database.fr'
+import { docsFr } from './docs.fr'
 
 export const fr: Strings = {
   locale: 'fr-FR',
@@ -78,6 +79,7 @@ export const fr: Strings = {
     label: 'Sections du projet',
     overview: 'Vue d’ensemble',
     graph: 'Graphe',
+    docs: 'Docs',
     rules: 'Règles',
     audits: 'Audits IA',
     security: 'Sécurité',
@@ -169,7 +171,7 @@ export const fr: Strings = {
         '',
         'Corrige le code, pas code-atlas.json. Garde le comportement identique et vérifie avec le lint et les tests du projet. Relance ensuite la commande pour confirmer que les violations ont disparu, puis résume tes changements.',
       ].join('\n'),
-    connectionLost: 'La connexion au serveur a été perdue.',
+    queued: 'En attente du run précédent…',
     cancelled: 'Annulé.',
     running: 'En cours…',
     cancel: 'Annuler',
@@ -243,6 +245,7 @@ export const fr: Strings = {
 
   security: securityFr,
   database: databaseFr,
+  docs: docsFr,
 
   configHelp: configHelpFr,
 

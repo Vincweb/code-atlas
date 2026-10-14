@@ -6,6 +6,7 @@ import { auditsEn } from './audits.en'
 import { securityEn } from './security.en'
 import { packagesEn } from './packages.en'
 import { databaseEn } from './database.en'
+import { docsEn } from './docs.en'
 
 /**
  * Every word the page shows, in English. The French file mirrors this object key for key, and the
@@ -80,6 +81,7 @@ export const en = {
     label: 'Project sections',
     overview: 'Overview',
     graph: 'Graph',
+    docs: 'Docs',
     rules: 'Rules',
     audits: 'AI audits',
     security: 'Security',
@@ -170,7 +172,7 @@ export const en = {
         '',
         'Fix the code, not code-atlas.json. Keep the behaviour identical and check with the project’s lint and tests. Then run the command again to confirm the violations are gone, and sum up your changes.',
       ].join('\n'),
-    connectionLost: 'The connection to the server was lost.',
+    queued: 'Waiting for the run before it…',
     cancelled: 'Cancelled.',
     running: 'Running…',
     cancel: 'Cancel',
@@ -244,6 +246,7 @@ export const en = {
 
   security: securityEn,
   database: databaseEn,
+  docs: docsEn,
 
   configHelp: configHelpEn,
 

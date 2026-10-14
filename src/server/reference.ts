@@ -15,6 +15,9 @@ code-atlas.json sits at the project root. Plain JSON, no comments. Every key is 
   - A pattern without "*" names a file or a folder literally: "src/routes".
   - The first matching pattern wins; a file no pattern matches belongs to its parent folder.
   - Feature ids are paths: "src/components/board", "src/lib", "src".
+- docs: string[] — where a feature's doc is, in order; the first Markdown file found wins. "{feature}" is the feature id, "{name}" its last folder. Default ["{feature}/README.md", "{feature}/AGENTS.md", "{feature}/CLAUDE.md"]; for docs kept apart: "docs/features/{name}.md", ".kiro/specs/{name}/design.md".
+  - A doc may open with a front matter — "description", "owner", "status", "title" — which the page and the "feature" MCP tool show; without one, its first heading and paragraph stand in.
+  - In a monorepo, a package's doc is looked for the same way, with the package folder as "{feature}".
 - layers: { "name": string, "features": string[], "siblings"?: boolean }[] — from the top of the stack to the foundation.
   - "features" are globs over feature ids: "src/lib/*", "src/{pages,routes}".
   - A feature belongs to the first layer that matches it; a feature in no layer is "unlayered".
@@ -48,6 +51,7 @@ Every rule: { "id": unique string, "family": "architecture" | "clean-code" | "to
 - "complexity" { "max": number, "files"?: glob } — functions whose cyclomatic complexity exceeds max.
 - "max-params" { "max": number, "files"?: glob } — functions with more parameters than max.
 - "pattern" { "pattern": regex, "flags"?: string, "files"?: glob, "exclude"?: glob } — code that must not appear; one violation per match.
+- "docs" { "features"?: glob } — features without a doc (see "docs"), those whose id matches "features" when given; one violation per feature.
 - "db-layers", "db-mutual", "db-siblings" — the same three over the database feature graph, where an edge is a foreign key from a table of one feature to a table of another. Beta: scored in their family, never in the overall score, never in --check.
 - "command" { "run": string, "timeoutSec"?: number } — a shell command run in the project; fails on a non-zero exit (lint, type check, tests).
 - "ai" { "prompt": string, "files"?: glob, "model"?: string } — Claude reads the code read-only and reports findings for the prompt.

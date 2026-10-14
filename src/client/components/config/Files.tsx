@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { CONFIG_FILE } from '../../../shared/config'
 import type { Analysis, DraftPayload } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { Button, CopyButton, ErrorBox, Spinner } from '../ui'
-import { Code, LayerStack, Section } from './parts'
+import { Button, Code, CopyButton, ErrorBox, Spinner } from '../ui'
+import { LayerStack, Section } from './parts'
 
 const JsonToggle = ({ text }: { text: string }) => {
   const t = useT()

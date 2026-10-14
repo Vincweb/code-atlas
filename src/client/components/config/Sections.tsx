@@ -3,9 +3,10 @@ import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { ruleSetting } from '../../util/ruleSetting'
 import { Link } from '../Link'
-import { SeverityBadge } from '../rules/badges'
+import { SeverityBadge } from '../badges'
 import { groupByPattern, stackOf } from './model'
-import { Chip, LayerStack, Section } from './parts'
+import { Chip } from '../ui'
+import { LayerStack, Section } from './parts'
 
 export const ScopeSection = ({ analysis }: { analysis: Analysis }) => {
   const t = useT()

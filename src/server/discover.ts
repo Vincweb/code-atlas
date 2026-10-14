@@ -4,6 +4,7 @@ import path from 'path'
 import { CONFIG_FILE } from '../shared/config'
 import type { BrowsePayload, FolderEntry, Place } from '../shared/types'
 import { detectWorkspaces } from './engine/workspace'
+import { entriesOf, isDirectory } from './engine/fs'
 
 const SKIP = new Set(['node_modules', 'dist', 'build', 'coverage', '.next', '.turbo'])
 const MAX_ENTRIES = 500
@@ -31,22 +32,6 @@ export const canonicalDir = (root: string, dir: string) => {
 
 export const expandHome = (value: string) =>
   value === '~' || value.startsWith('~/') ? path.join(os.homedir(), value.slice(1)) : value
-
-const entriesOf = (dir: string) => {
-  try {
-    return fs.readdirSync(dir, { withFileTypes: true })
-  } catch {
-    return []
-  }
-}
-
-const isDirectory = (dir: string) => {
-  try {
-    return fs.statSync(dir).isDirectory()
-  } catch {
-    return false
-  }
-}
 
 /** A folder with a package.json and either a tsconfig.json or workspace packages. */
 export const isProject = (dir: string) =>

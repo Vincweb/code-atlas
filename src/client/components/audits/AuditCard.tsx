@@ -2,16 +2,16 @@ import { useState } from 'react'
 import type { AiRuleConfig } from '../../../shared/config'
 import type { Analysis, AuditPreview, RuleResult } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { formatUsd, relativeTime } from '../../util/format'
+import { relativeTime } from '../../util/format'
 import { BAND_TEXT, bandOf } from '../../util/score'
 import { Link } from '../Link'
-import { SeverityBadge, StatusBadge } from '../rules/badges'
-import { Violations } from '../rules/Violations'
+import { SeverityBadge, StatusBadge } from '../badges'
+import { Violations } from '../Violations'
 import { ClaudeActions } from '../ClaudeActions'
 import { fixPrompt } from '../../util/claudePrompt'
 import { AuditProgress } from './AuditProgress'
-import { hasOutput } from '../rules/useRunner'
-import type { RunState } from '../rules/useRunner'
+import { hasOutput } from '../../state/runs'
+import type { RunState } from '../../state/runs'
 import { Badge, Button } from '../ui'
 import { scopedPath } from '../../state/router'
 
@@ -35,12 +35,11 @@ type Props = {
   title: string
   root: string
   state: RunState | undefined
-  locked: boolean
   onRun: () => void
   onCancel: () => void
 }
 
-/** The model, the last run and what it cost. */
+/** The model, the last run and what it found. */
 const AuditFacts = ({
   preview,
   result,
@@ -58,7 +57,6 @@ const AuditFacts = ({
       </span>
       <span>
         {result?.ranAt ? help.lastRun(relativeTime(result.ranAt, t.locale)) : help.neverRun}
-        {typeof result?.costUsd === 'number' && ` · ${formatUsd(result.costUsd)}`}
       </span>
       {ran && <span>{t.rules.violations(result.count)}</span>}
     </p>
@@ -104,7 +102,6 @@ export const AuditCard = ({
   title,
   root,
   state,
-  locked,
   onRun,
   onCancel,
 }: Props) => {
@@ -140,7 +137,7 @@ export const AuditCard = ({
       {result?.error && <p className="text-bad">{result.error}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button primary onClick={onRun} disabled={locked || running}>
+        <Button primary onClick={onRun} disabled={running}>
           {help.run}
         </Button>
         <Button onClick={() => setFull((open) => !open)} aria-expanded={full}>

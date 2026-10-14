@@ -23,7 +23,6 @@ const rule = (
   ranAt: null,
   commit: null,
   stale: false,
-  costUsd: null,
   error: null,
 })
 

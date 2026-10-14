@@ -73,9 +73,13 @@ to Claude when you run one.
   packages of a monorepo worst first, and the next steps.
 - **Graph** — one band per layer, top to bottom. Red for a dependency that climbs a layer or goes
   both ways, amber for coupling between sibling features. Click a feature for its files, its
-  coupling, and the import statements behind each red edge.
+  coupling, its doc, and the import statements behind each red edge.
+- **Docs** — what each feature is for, in its own words: the `README.md`, `AGENTS.md` or
+  `CLAUDE.md` of its folder, rendered, with the owner and status of its front matter. A feature
+  without one shows where its doc was looked for, and hands Claude Code a prompt to write it.
 - **Rules** — every rule with its violations at `file:line`, what it means, why it matters and how
-  to fix it. Command and AI rules run from here, their output streamed live.
+  to fix it. Command and AI rules run from here, one after the other; they go on when you leave the
+  tab or close the page, and their output is there when you come back.
 - **AI audits** — what an AI rule does and the prompt it sends, a gallery of ready-made audits, and
   the findings of each run.
 - **Security** — runs [Strix](https://github.com/usestrix/strix), an open-source AI pentester, on
@@ -141,9 +145,13 @@ from the graph — layers by dependency depth — to write into the project and 
 ```
 
 - **features** — ordered patterns; `*` binds one directory, first match wins.
+- **docs** — where a feature's doc is, in order: `{feature}` is its id, `{name}` its last folder.
+  Default `{feature}/README.md`, then `AGENTS.md`, then `CLAUDE.md`, next to the code; a project
+  that keeps its docs apart writes `docs/features/{name}.md` or `.kiro/specs/{name}/design.md`. A
+  front matter (`description`, `owner`, `status`) gives the feature its one-line definition.
 - **layers** — top to bottom. A dependency may only go down; `siblings` forbids coupling inside one.
 - **rules** — static kinds (`layers`, `mutual`, `siblings`, `no-cycle`, `forbid-import`,
-  `max-lines`, `complexity`, `max-params`, `pattern`, `db-layers`, `db-mutual`, `db-siblings`) are
+  `max-lines`, `complexity`, `max-params`, `pattern`, `docs`, `db-layers`, `db-mutual`, `db-siblings`) are
   computed on every analysis; `command` and `ai` rules run on a click or under `--check`.
 
 - **workspaces** — the package folders of a monorepo; read from `pnpm-workspace.yaml` or the
@@ -218,8 +226,8 @@ migration with its `snapshot.json`.
 An `ai` rule runs Claude Code headless (`claude -p`) in the project, read-only (`Read`, `Grep`,
 `Glob`), until Claude is done, and gets its findings back as structured data. It uses your own
 Claude Code login, or `ANTHROPIC_API_KEY` when it is set: code-atlas never handles a key, and sets
-no spending cap — it is your login and your plan. Results are kept per rule, with what the run
-cost, and marked stale when the commit moves. They never gate `--check`: two runs on the same
+no spending cap — it is your login and your plan. Results are kept per rule and marked stale when
+the commit moves. They never gate `--check`: two runs on the same
 commit can disagree.
 
 ## Security tests
@@ -302,7 +310,9 @@ npx @vincweb/code-atlas --check             # fails when any rule has more viola
 ```
 
 The baseline lives in `.code-atlas/baseline.json` — commit it. Runs land in `.code-atlas/runs/`:
-ignore that folder.
+ignore that folder. A rule the baseline has no count for — one you just added, or a new default
+after an upgrade — is reported as a warning and not checked until you record the baseline again;
+command rules are the exception, a failing lint fails whatever the baseline says.
 
 `--format` picks what `--check` prints, for the machine reading it:
 

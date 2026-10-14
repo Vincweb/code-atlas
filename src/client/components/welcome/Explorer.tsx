@@ -15,7 +15,7 @@ import {
   PencilIcon,
   SearchIcon,
   TerminalIcon,
-} from './icons'
+} from '../icons'
 import { tildePath } from './RecentProjects'
 
 const openProject = (dir: string) => navigate(projectPath(dir))

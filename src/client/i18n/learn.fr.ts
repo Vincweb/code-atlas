@@ -1,6 +1,5 @@
+import { plural } from './plural'
 import type { learnEn } from './learn.en'
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 export const learnFr: typeof learnEn = {
   bands: { good: 'Bon', warn: 'À surveiller', bad: 'À traiter', none: 'Incomplet' },
@@ -62,7 +61,7 @@ export const learnFr: typeof learnEn = {
   },
   familyIdle: {
     tooling: 'Pas encore lancées : les commandes se lancent depuis l’onglet Règles.',
-    ai: 'Pas encore lancés : chaque audit coûte un peu, il se lance à la demande.',
+    ai: 'Pas encore lancés : un audit prend quelques minutes à Claude, il se lance à la demande.',
     other: 'Pas encore de résultat.',
   },
   seeRules: 'Voir les règles',
@@ -132,6 +131,11 @@ export const learnFr: typeof learnEn = {
       what: 'Un problème relevé par Claude en relisant le code.',
       why: 'Il couvre ce qu’une règle automatique ne sait pas mesurer : nommage, responsabilités, intentions.',
       fix: 'Lire chaque constat : ce sont des pistes à juger, pas des verdicts.',
+    },
+    docs: {
+      what: 'Une feature sans doc : ni README.md, ni AGENTS.md, ni CLAUDE.md dans son dossier, ni là où pointe « docs » dans la config.',
+      why: 'Sa raison d’être n’existe que dans la tête de ceux qui l’ont écrite : un nouveau venu, un relecteur ou un agent doit la reconstituer depuis le code.',
+      fix: 'Ajoutez un court README.md dans son dossier — à quoi elle sert, ses points d’entrée, ce dont elle dépend. L’onglet Docs le fait rédiger par Claude Code.',
     },
     'db-layers': {
       what: 'Une clé étrangère d’une table d’une couche basse vers une table d’une couche plus haute.',

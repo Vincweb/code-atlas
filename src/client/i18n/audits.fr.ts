@@ -15,7 +15,6 @@ export const auditsFr: typeof auditsEn = {
   summary: (n: number, ran: number) =>
     `${n} ${n === 1 ? 'audit' : 'audits'} · ${ran} ${ran === 1 ? 'lancé' : 'lancés'}`,
   familyScore: 'Score Audits IA',
-  spent: (usd: string) => `${usd} au total (estimation au tarif API)`,
   runAll: 'Lancer tous les audits',
   confirm: {
     titleOne: 'Lancer cet audit IA ?',
@@ -195,8 +194,8 @@ export const auditsFr: typeof auditsEn = {
   settingsTitle: 'Réglages',
   settingsText:
     'Les valeurs par défaut de tous les audits, dans la clé « ai » de code-atlas.json. Chaque règle peut fixer son propre modèle.',
-  costTitle: 'Coût et sécurité',
-  cost: [
+  safetyTitle: 'Connexion et consentement',
+  safety: [
     'Un audit utilise votre propre connexion Claude Code : code-atlas ne gère aucune clé.',
     'Rien ne part tout seul : un audit se lance sur un clic, après confirmation, et s’annule à tout moment.',
   ],

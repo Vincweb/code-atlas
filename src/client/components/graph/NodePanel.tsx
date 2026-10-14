@@ -1,10 +1,14 @@
 import type { FeatureEdge, FeatureNode } from '../../../shared/types'
 import { cx } from '../../util/cx'
 import { useT } from '../../i18n'
+import { Link } from '../Link'
 import { Button, SectionTitle } from '../ui'
 import { EdgeImports } from './EdgeImports'
 import { CHIP, TONE, isRed } from './edges'
 import { useGraphWords } from './words'
+
+/** A feature's doc as the panel shows it: its one-line definition and the link to the Docs tab. */
+export type NodeDoc = { description: string | null; documented: boolean; to: string }
 
 type Props = {
   feature: FeatureNode
@@ -14,6 +18,20 @@ type Props = {
   onClose: () => void
   /** In a monorepo's whole view, opens the package the node stands for. */
   onOpen?: (id: string) => void
+  doc?: NodeDoc
+}
+
+const DocLine = ({ doc }: { doc: NodeDoc }) => {
+  const t = useT()
+  return (
+    <p className="flex flex-col gap-1">
+      {doc.description && <span className="leading-relaxed">{doc.description}</span>}
+      {!doc.documented && <span className="text-muted italic">{t.docs.noDoc}</span>}
+      <Link to={doc.to} className="w-fit text-accent hover:underline">
+        {doc.documented ? t.docs.read : t.docs.write} →
+      </Link>
+    </p>
+  )
 }
 
 const Chips = ({
@@ -47,7 +65,7 @@ const Chips = ({
   )
 }
 
-export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen }: Props) => {
+export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen, doc }: Props) => {
   const t = useT()
   const words = useGraphWords()
   const outgoing = edges.filter((edge) => edge.from === feature.id)
@@ -77,6 +95,7 @@ export const NodePanel = ({ feature, edges, layerName, onFocus, onClose, onOpen 
           ×
         </button>
       </div>
+      {doc && <DocLine doc={doc} />}
       <dl className="grid grid-cols-5 gap-2">
         {stats.map(([label, value]) => (
           <div key={label}>

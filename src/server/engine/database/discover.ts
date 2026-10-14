@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { DrizzleConfigInfo } from '../../../shared/types'
 import { matchGlob } from '../glob'
+import { entriesOf, isDirectory } from '../fs'
 
 const SKIP = new Set([
   'node_modules',
@@ -21,22 +22,6 @@ const MAX_DEPTH = 4
 const SOURCE = /\.(?:[cm]?[jt]s|[jt]sx)$/
 const WORKSPACE_MARKERS = ['pnpm-workspace.yaml', 'lerna.json', 'nx.json']
 const PACKAGE_DEPTH = 3
-
-const entriesOf = (dir: string) => {
-  try {
-    return fs.readdirSync(dir, { withFileTypes: true })
-  } catch {
-    return []
-  }
-}
-
-const isDirectory = (dir: string) => {
-  try {
-    return fs.statSync(dir).isDirectory()
-  } catch {
-    return false
-  }
-}
 
 const walk = (dir: string, depth: number, found: string[]) => {
   for (const entry of entriesOf(dir)) {

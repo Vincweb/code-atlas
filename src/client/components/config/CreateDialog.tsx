@@ -3,9 +3,8 @@ import { CONFIG_FILE } from '../../../shared/config'
 import { useT } from '../../i18n'
 import type { useCreateConfig, useDraft } from '../../state/queries'
 import { ConfirmDialog } from '../Dialog'
-import { FilePlusIcon } from '../welcome/icons'
-import { Spinner } from '../ui'
-import { Code } from './parts'
+import { FilePlusIcon } from '../icons'
+import { Code, Spinner } from '../ui'
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="flex flex-col gap-1">

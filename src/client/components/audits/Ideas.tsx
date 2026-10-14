@@ -4,9 +4,8 @@ import type { Analysis } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { auditPrompt } from '../../util/claudePrompt'
 import { ClaudeActions } from '../ClaudeActions'
-import { Code } from '../config/parts'
-import { SeverityBadge } from '../rules/badges'
-import { Badge, Button } from '../ui'
+import { SeverityBadge } from '../badges'
+import { Badge, Button, Code } from '../ui'
 
 type Idea = ReturnType<typeof useT>['audits']['ideas'][number]
 

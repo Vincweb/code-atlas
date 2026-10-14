@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useT } from '../../i18n'
-import type { RunState } from '../rules/useRunner'
-import { FolderIcon, SearchIcon, TerminalIcon } from '../welcome/icons'
+import type { RunState } from '../../state/runs'
+import { FolderIcon, SearchIcon, TerminalIcon } from '../icons'
 import { Button, ErrorBox, Spinner } from '../ui'
 
 const ICON: Record<string, ReactNode> = {
@@ -21,8 +21,15 @@ export const AuditProgress = ({ state, onCancel }: { state: RunState; onCancel: 
     <div className="flex flex-col gap-2 rounded-xl border border-line bg-bg p-3">
       <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted">
         {state.running && <Spinner />}
-        <span>{t.audits.progressFiles(files)}</span>
-        <span>{t.audits.progressSearches(searches)}</span>
+        {state.queued ? (
+          <span>{t.rules.queued}</span>
+        ) : (
+          <>
+            <span>{t.audits.progressFiles(files)}</span>
+            <span>{t.audits.progressSearches(searches)}</span>
+          </>
+        )}
+        {state.cancelled && <span>{t.rules.cancelled}</span>}
         {state.running && (
           <Button onClick={onCancel} className="ml-auto text-text">
             {t.rules.cancel}
