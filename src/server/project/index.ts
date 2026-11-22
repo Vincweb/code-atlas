@@ -141,14 +141,24 @@ export const projectContext = (root: string, overrides: Overrides) => {
 export const analyzeProject = (
   root: string,
   overrides: Overrides,
-  /** Whether to add this analysis to the project's history: the page does, `describe` does not. */
+  /**
+   * Whether to add this analysis to the project's history, and to write the baseline of a project
+   * that has none: the page does, `describe` and the MCP read tools do not.
+   */
   { record = false } = {},
 ): Analysis => {
   const started = performance.now()
   const { config, source, configPath, stateDir } = projectContext(root, overrides)
   const engine = analyzeEngine(root, config)
   const git = gitState(root)
-  const { rules, scores, packages, baseline } = evaluate({ root, config, engine, stateDir, git })
+  const { rules, scores, packages, baseline } = evaluate({
+    root,
+    config,
+    engine,
+    stateDir,
+    git,
+    seedBaseline: record,
+  })
   const packageOfFile: PackageOfFile = new Map(
     engine.files.map((file) => [file.path, file.package]),
   )

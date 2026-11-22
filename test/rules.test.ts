@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -232,6 +232,76 @@ test('evaluate merges stored runs, marks stale, and placeholders', () => {
   )
   assert.equal(out.baseline, null)
   assert.equal(out.scores.families.find((f) => f.family === 'ai')?.pending, 1)
+})
+
+test('the first recorded analysis writes the baseline --update-baseline --skip-commands would', async () => {
+  const root = project()
+  const stateDir = join(root, '.code-atlas')
+  const command: RuleConfig = { ...base, id: 'CMD', kind: 'command', run: 'x' }
+  const config = configOf([
+    command,
+    { ...base, id: 'L', kind: 'layers' },
+    { ...base, id: 'LINES', kind: 'max-lines', max: 400 },
+    { ...base, id: 'AI', family: 'ai', kind: 'ai', prompt: 'p' },
+  ])
+  // A stored command run counts on the page, not in a baseline nothing ran for.
+  writeRun(stateDir, command, {
+    id: 'CMD',
+    family: 'f',
+    severity: 'high',
+    kind: 'command',
+    title: 't',
+    status: 'fail',
+    count: 4,
+    score: 50,
+    violations: [],
+    ranAt: 'x',
+    commit: 'old',
+    stale: false,
+    error: null,
+  })
+  const git = { commit: 'c', dirty: false }
+
+  const read = evaluate({ root, config, engine, stateDir, git })
+  assert.equal(read.baseline, null)
+  assert.equal(readBaseline(stateDir), null, 'an analysis that does not record writes nothing')
+
+  const seeded = evaluate({ root, config, engine, stateDir, git, seedBaseline: true })
+  assert.deepEqual(seeded.baseline?.violations, { L: 2, LINES: 1 })
+  assert.deepEqual(readBaseline(stateDir), seeded.baseline)
+
+  const check = await runCheck({
+    root,
+    config,
+    engine,
+    stateDir,
+    git,
+    skipCommands: true,
+    recording: true,
+    log: () => {},
+  })
+  const recorded = makeBaseline(check.rules, check.scores, git.commit, check.packages)
+  assert.deepEqual({ ...seeded.baseline, savedAt: '' }, { ...recorded, savedAt: '' })
+})
+
+test('the first baseline never replaces a file already there', () => {
+  const root = project()
+  const stateDir = join(root, '.code-atlas')
+  const file = join(stateDir, 'baseline.json')
+  const config = configOf([{ ...base, id: 'LINES', kind: 'max-lines', max: 400 }])
+  const git = { commit: 'c', dirty: false }
+
+  const kept = makeBaseline([], { overall: null, families: [] }, 'old')
+  writeBaseline(stateDir, kept)
+  const out = evaluate({ root, config, engine, stateDir, git, seedBaseline: true })
+  assert.deepEqual(out.baseline, kept)
+  assert.deepEqual(readBaseline(stateDir), kept)
+
+  // A baseline mid-merge does not parse; it is still the user's, not a missing one.
+  writeFileSync(file, '<<<<<<< HEAD\n')
+  const conflicted = evaluate({ root, config, engine, stateDir, git, seedBaseline: true })
+  assert.equal(conflicted.baseline, null)
+  assert.equal(readFileSync(file, 'utf8'), '<<<<<<< HEAD\n')
 })
 
 test('runCheck ratchets against the baseline', async () => {

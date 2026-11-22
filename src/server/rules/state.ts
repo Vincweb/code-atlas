@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { RuleConfig } from '../../shared/config'
 import type { Baseline, RuleResult } from '../../shared/types'
@@ -29,9 +29,9 @@ const readJson = (path: string): unknown => {
   }
 }
 
-const writeJson = (path: string, value: unknown) => {
+const writeJson = (path: string, value: unknown, flag = 'w') => {
   mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`)
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, { flag })
 }
 
 const runPath = (stateDir: string, rule: RuleConfig) => join(stateDir, 'runs', `${rule.id}.json`)
@@ -51,8 +51,21 @@ export const readRun = (stateDir: string, rule: RuleConfig): RuleResult | null =
 export const writeRun = (stateDir: string, rule: RuleConfig, result: RuleResult) =>
   writeJson(runPath(stateDir, rule), { hash: ruleHash(rule), result })
 
+const baselinePath = (stateDir: string) => join(stateDir, 'baseline.json')
+
 export const readBaseline = (stateDir: string): Baseline | null =>
-  readJson(join(stateDir, 'baseline.json')) as Baseline | null
+  readJson(baselinePath(stateDir)) as Baseline | null
 
 export const writeBaseline = (stateDir: string, baseline: Baseline) =>
-  writeJson(join(stateDir, 'baseline.json'), baseline)
+  writeJson(baselinePath(stateDir), baseline)
+
+/**
+ * Writes the baseline only where there is none, and says whether it did. A file already there is
+ * never replaced, even one that does not parse: it may be a committed baseline mid-merge.
+ */
+export const createBaseline = (stateDir: string, baseline: Baseline): boolean => {
+  const path = baselinePath(stateDir)
+  if (existsSync(path)) return false
+  writeJson(path, baseline, 'wx')
+  return true
+}

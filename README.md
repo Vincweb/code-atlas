@@ -311,11 +311,14 @@ a large project. In a monorepo, `package` scopes `overview`, `violations` and `e
 ## CI
 
 ```sh
-npx @vincweb/code-atlas --update-baseline   # once, and whenever you accept the current state
+npx @vincweb/code-atlas --update-baseline   # whenever you accept the current state
 npx @vincweb/code-atlas --check             # fails when any rule has more violations than the baseline
 ```
 
-The baseline lives in `.code-atlas/baseline.json` — commit it. Runs land in `.code-atlas/runs/`:
+The baseline lives in `.code-atlas/baseline.json` — commit it. The page writes it at its first
+analysis of a project that has none, with the static rules' counts, as
+`--update-baseline --skip-commands` would, and never replaces one already there; `--check` writes
+none, so a CI without a committed baseline still fails on any violation. Runs land in `.code-atlas/runs/`:
 ignore that folder. A rule the baseline has no count for — one you just added, or a new default
 after an upgrade — is reported as a warning and not checked until you record the baseline again;
 command rules are the exception, a failing lint fails whatever the baseline says.

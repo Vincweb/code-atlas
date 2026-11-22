@@ -177,7 +177,7 @@ export const learnFr: typeof learnEn = {
     },
     baseline: {
       title: 'Enregistrer une référence',
-      done: 'Une référence existe : les écarts se mesurent depuis elle.',
+      done: 'Une référence existe, dans .code-atlas/baseline.json : commitez-la. Les écarts se mesurent depuis elle ; --update-baseline accepte un nouvel état.',
       todo: 'Figez l’état actuel ; ensuite, seule une dégradation fera échouer la CI.',
     },
     ci: {

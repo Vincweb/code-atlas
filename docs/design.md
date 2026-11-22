@@ -130,11 +130,25 @@ to the defaults by a newer code-atlas, and an upgrade must not fail a CI whose c
 The alternative, a missing count read as zero, did exactly that. Command rules keep comparing
 with zero: a baseline recorded with `--skip-commands` lacks them, and a red lint stays red.
 
+### The first baseline
+
+The page's first analysis of a project without `.code-atlas/baseline.json` writes one, so the
+Overview measures from the first day instead of waiting for a `--update-baseline` nobody had run.
+Only the recorded analysis (`/api/analysis`, the one that writes the history) does it; `describe`
+and the MCP read tools write nothing, and `--check` and MCP `check` do not either: a CI whose
+baseline was never committed would otherwise write a fresh one on every run and pass forever,
+and the CI is not detected from the environment (see `--format`). Without a baseline, `--check`
+still fails on any violation. The file holds what `--update-baseline --skip-commands` would: the
+static rules' counts, the scores over them and each package's, never a stored command run, which
+may be stale and was not run for this. It is created, never replaced: an existing file is kept
+even when it does not parse — a baseline mid-merge is the user's, not a missing one.
+
 ## Writing into the project
 
 One route writes, and only on a click: `POST /api/config/create` turns the draft into
 `code-atlas.json`, refuses other origins, and never overwrites a file (`wx`). Everything else the
-tool writes lives under `.code-atlas/`.
+tool writes lives under `.code-atlas/`: the runs and the history, and the first baseline, which
+`/api/analysis` creates the same way (see `--check`).
 
 ## Database (beta)
 

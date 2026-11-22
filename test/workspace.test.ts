@@ -116,6 +116,27 @@ test('each package is scored on its own violations', () => {
   assert.ok(scores.overall !== null)
 })
 
+test('the first baseline records each package, as --update-baseline --skip-commands does', async () => {
+  const state = stateDir()
+  const git = { commit: null, dirty: false }
+  const { baseline } = evaluate({ root, config, engine, stateDir: state, git, seedBaseline: true })
+  assert.deepEqual(Object.keys(baseline?.packages ?? {}), ['apps/web', 'packages/math'])
+  assert.equal(baseline?.packages?.['apps/web']?.violations['CC-ANY'], 1)
+
+  const check = await runCheck({
+    root,
+    config,
+    engine,
+    stateDir: state,
+    git,
+    skipCommands: true,
+    recording: true,
+    log: () => {},
+  })
+  const recorded = makeBaseline(check.rules, check.scores, null, check.packages)
+  assert.deepEqual({ ...baseline, savedAt: '' }, { ...recorded, savedAt: '' })
+})
+
 test('a rule narrowed to some files leaves the other packages out', () => {
   const narrowed = {
     ...config,

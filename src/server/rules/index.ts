@@ -16,7 +16,7 @@ import type {
 import { workspaceMembers } from '../engine/workspace'
 import { isDbKind } from '../../shared/config'
 import { runAi } from './ai'
-import { regressionsOf } from './baseline'
+import { makeBaseline, regressionsOf } from './baseline'
 import { logCheck } from './checkLog'
 import { runCommand } from './command'
 import { ownersOf, settle } from './packages'
@@ -25,7 +25,7 @@ import { notRun } from './result'
 import { computeScores } from './score'
 import type { PackageScores } from './score'
 import { evaluateStatic } from './static'
-import { readBaseline, readRun, writeRun } from './state'
+import { createBaseline, readBaseline, readRun, writeRun } from './state'
 
 export { isNewToBaseline, makeBaseline } from './baseline'
 export type { PackageScores } from './score'
@@ -50,19 +50,45 @@ const staticsOf = (
   return { owners, statics: new Map(results.map((result) => [result.id, result])) }
 }
 
+/** Whether --check gates on a rule: AI runs disagree between two runs, database rules are beta. */
+const gates = (rule: RuleConfig) => rule.kind !== 'ai' && !isDbKind(rule.kind)
+
+/** The rules a baseline counts without running anything: the static ones --check gates on. */
+const staticGates = (config: ResolvedConfig, statics: Map<string, RuleResult>) =>
+  config.rules.flatMap((rule) =>
+    gates(rule) && rule.kind !== 'command' ? [statics.get(rule.id) as RuleResult] : [],
+  )
+
+/**
+ * The baseline of a project that has none, as `--update-baseline --skip-commands` records it: the
+ * static rules' counts and the scores over them, never a stored command run, which may be stale.
+ * Null when a file is already there, even one that does not parse.
+ */
+const firstBaseline = (
+  stateDir: string,
+  rules: RuleResult[],
+  owners: Owners | null,
+  commit: string | null,
+): Baseline | null => {
+  const baseline = makeBaseline(rules, computeScores(rules), commit, scoresByPackage(rules, owners))
+  return createBaseline(stateDir, baseline) ? baseline : null
+}
+
 export const evaluate = (opts: {
   root: string
   config: ResolvedConfig
   engine: EngineResult
   stateDir: string
   git: Git
+  /** Write the baseline when there is none yet: the page's recorded analysis does, nothing else. */
+  seedBaseline?: boolean
 }): {
   rules: RuleResult[]
   scores: Scores
   packages: PackageScores[]
   baseline: Baseline | null
 } => {
-  const { root, config, engine, stateDir, git } = opts
+  const { root, config, engine, stateDir, git, seedBaseline = false } = opts
   const { owners, statics } = staticsOf({ root, config, commit: git.commit }, engine)
   const rules = config.rules.map((rule): RuleResult => {
     if (rule.kind !== 'command' && rule.kind !== 'ai') return statics.get(rule.id) as RuleResult
@@ -77,7 +103,11 @@ export const evaluate = (opts: {
     rules,
     scores: computeScores(rules),
     packages: scoresByPackage(rules, owners),
-    baseline: readBaseline(stateDir),
+    baseline:
+      readBaseline(stateDir) ??
+      (seedBaseline
+        ? firstBaseline(stateDir, staticGates(config, statics), owners, git.commit)
+        : null),
   }
 }
 
@@ -127,8 +157,7 @@ const gatedRules = async (
   const { root, config, stateDir, git, skipCommands, log } = opts
   const rules: RuleResult[] = []
   for (const rule of config.rules) {
-    // AI runs disagree between two runs; database rules are in beta. Neither gates.
-    if (rule.kind === 'ai' || isDbKind(rule.kind)) continue
+    if (!gates(rule)) continue
     if (rule.kind !== 'command') {
       rules.push(statics.get(rule.id) as RuleResult)
       continue

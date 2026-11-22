@@ -169,7 +169,7 @@ export const learnEn = {
     },
     baseline: {
       title: 'Save a baseline',
-      done: 'A baseline exists: changes are measured against it.',
+      done: 'A baseline exists, in .code-atlas/baseline.json: commit it. Changes are measured against it; --update-baseline accepts a new state.',
       todo: 'Freeze the current state; from then on only a regression fails CI.',
     },
     ci: {
